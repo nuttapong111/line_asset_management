@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/build
+**/.env
+**/.env.local
+**/uploads
+**/public
+.git
+.railway
+*.log
+.DS_Store
+agent-transcripts

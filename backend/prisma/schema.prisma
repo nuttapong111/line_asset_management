@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id            String         @id @default(cuid())
+  lineUserId    String         @unique
+  name          String
+  phone         String?
+  properties    Property[]
+  notifSettings NotifSettings?
+  createdAt     DateTime       @default(now())
+}
+
+model Property {
+  id              String   @id @default(cuid())
+  adminId         String
+  admin           Admin    @relation(fields: [adminId], references: [id])
+  name            String
+  address         String?
+  bankName        String?
+  bankAccount     String?
+  promptpayNumber String
+  units           Unit[]
+  createdAt       DateTime @default(now())
+}
+
+model Unit {
+  id            String         @id @default(cuid())
+  propertyId    String
+  property      Property       @relation(fields: [propertyId], references: [id])
+  roomNumber    String
+  floor         Int?
+  rentPrice     Decimal
+  electricRate  Decimal        @default(5)
+  waterRate     Decimal        @default(18)
+  commonFee     Decimal        @default(0)
+  status        UnitStatus     @default(VACANT)
+  inviteToken   String         @unique @default(cuid())
+  inviteExpiry  DateTime?
+  tenants       Tenant[]
+  invoices      Invoice[]
+  meterReadings MeterReading[]
+  maintenances  Maintenance[]
+  contracts     Contract[]
+  createdAt     DateTime       @default(now())
+}
+
+enum UnitStatus {
+  VACANT
+  OCCUPIED
+  MAINTENANCE
+}
+
+model Tenant {
+  id           String        @id @default(cuid())
+  lineUserId   String?       @unique
+  name         String
+  phone        String
+  lineId       String?
+  idCardNumber String?
+  unitId       String
+  unit         Unit          @relation(fields: [unitId], references: [id])
+  startDate    DateTime
+  endDate      DateTime?
+  isActive     Boolean       @default(true)
+  inviteSentAt DateTime?
+  linkedAt     DateTime?
+  contracts    Contract[]
+  payments     Payment[]
+  chatMessages ChatMessage[]
+  createdAt    DateTime      @default(now())
+}
+
+model Contract {
+  id            String         @id @default(cuid())
+  tenantId      String
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  unitId        String
+  unit          Unit           @relation(fields: [unitId], references: [id])
+  startDate     DateTime
+  endDate       DateTime
+  rentAmount    Decimal
+  deposit       Decimal
+  lateFeePerDay Decimal        @default(30)
+  dueDay        Int            @default(5)
+  terms         String?
+  pdfUrl        String?
+  status        ContractStatus @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+}
+
+enum ContractStatus {
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  unitId         String
+  unit           Unit          @relation(fields: [unitId], references: [id])
+  month          Int
+  year           Int
+  rentAmount     Decimal
+  electricAmount Decimal
+  waterAmount    Decimal
+  commonFee      Decimal
+  lateFee        Decimal       @default(0)
+  total          Decimal
+  dueDate        DateTime
+  status         InvoiceStatus @default(PENDING)
+  sentAt         DateTime?
+  payment        Payment?
+  createdAt      DateTime      @default(now())
+}
+
+enum InvoiceStatus {
+  PENDING
+  SLIP_UPLOADED
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  invoiceId      String        @unique
+  invoice        Invoice       @relation(fields: [invoiceId], references: [id])
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id])
+  slipUrl        String?
+  slipUploadedAt DateTime?
+  ocrAmount      Decimal?
+  ocrDate        DateTime?
+  ocrMatched     Boolean?
+  status         PaymentStatus @default(WAITING_SLIP)
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  rejectReason   String?
+  receiptNo      String?       @unique
+  receiptUrl     String?
+  receiptPdfUrl  String?
+  createdAt      DateTime      @default(now())
+}
+
+enum PaymentStatus {
+  WAITING_SLIP
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model MeterReading {
+  id           String   @id @default(cuid())
+  unitId       String
+  unit         Unit     @relation(fields: [unitId], references: [id])
+  month        Int
+  year         Int
+  prevElec     Decimal
+  currElec     Decimal
+  prevWater    Decimal
+  currWater    Decimal
+  elecPhotoUrl String?
+  waterPhotoUrl String?
+  createdAt    DateTime @default(now())
+}
+
+model Maintenance {
+  id          String               @id @default(cuid())
+  unitId      String
+  unit        Unit                 @relation(fields: [unitId], references: [id])
+  ticketNo    String               @unique
+  category    MaintenanceCategory
+  title       String
+  description String?
+  photoUrls   String[]
+  status      MaintenanceStatus    @default(NEW)
+  scheduledAt DateTime?
+  completedAt DateTime?
+  messages    MaintenanceMessage[]
+  createdAt   DateTime             @default(now())
+}
+
+enum MaintenanceCategory {
+  ELECTRIC
+  PLUMBING
+  APPLIANCE
+  GENERAL
+}
+
+enum MaintenanceStatus {
+  NEW
+  ACKNOWLEDGED
+  IN_PROGRESS
+  SCHEDULED
+  DONE
+  CLOSED
+}
+
+model MaintenanceMessage {
+  id            String      @id @default(cuid())
+  maintenanceId String
+  maintenance   Maintenance @relation(fields: [maintenanceId], references: [id])
+  senderRole    String
+  senderName    String
+  message       String
+  createdAt     DateTime    @default(now())
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  senderRole String
+  message    String
+  createdAt  DateTime @default(now())
+}
+
+model NotifSettings {
+  id                   String   @id @default(cuid())
+  adminId              String   @unique
+  admin                Admin    @relation(fields: [adminId], references: [id])
+  invoiceEnabled       Boolean  @default(true)
+  invoiceSendDay       Int      @default(1)
+  invoiceSendTime      String   @default("08:00")
+  rentReminderEnabled  Boolean  @default(true)
+  rentReminderDays     Int[]    @default([3, 1])
+  rentReminderTime     String   @default("08:00")
+  overdueEnabled       Boolean  @default(true)
+  overdueRepeatDays    Int      @default(2)
+  overdueSendTime      String   @default("09:00")
+  contractEnabled      Boolean  @default(true)
+  contractReminderDays Int[]    @default([60, 30, 14, 7])
+  contractSendTime     String   @default("08:00")
+  notifyTenant         Boolean  @default(true)
+  maintEnabled         Boolean  @default(true)
+  maintUnackHours      Int      @default(1)
+  quietEnabled         Boolean  @default(true)
+  quietStart           String   @default("22:00")
+  quietEnd             String   @default("07:00")
+  updatedAt            DateTime @updatedAt
+}
