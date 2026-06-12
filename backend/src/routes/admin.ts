@@ -2,7 +2,9 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { env } from '../lib/env'
-import { authMiddleware, signToken } from '../middleware/auth'
+import { authMiddleware, requireRole, signToken } from '../middleware/auth'
+import { setupRichMenu, teardownRichMenu } from '../lib/line/richMenu'
+import { isLineConfigured } from '../lib/env'
 
 const router = Router()
 
@@ -39,6 +41,27 @@ router.post('/claim', authMiddleware, async (req, res) => {
 
   const token = signToken({ lineUserId, role: 'ADMIN', adminId: admin.id })
   res.json({ ok: true, token, role: 'ADMIN', admin })
+})
+
+const adminGuard = [authMiddleware, requireRole('ADMIN')] as const
+
+// GET /api/admin/richmenu — whether LINE is configured (to enable the button)
+router.get('/richmenu', ...adminGuard, (_req, res) => {
+  res.json({ lineConfigured: isLineConfigured })
+})
+
+// POST /api/admin/richmenu/setup — create + upload image + set as default menu
+router.post('/richmenu/setup', ...adminGuard, async (_req, res) => {
+  const result = await setupRichMenu()
+  if (!result.ok) return res.status(400).json(result)
+  res.json(result)
+})
+
+// POST /api/admin/richmenu/remove — remove default + delete the app menu
+router.post('/richmenu/remove', ...adminGuard, async (_req, res) => {
+  const result = await teardownRichMenu()
+  if (!result.ok) return res.status(400).json(result)
+  res.json(result)
 })
 
 export default router
