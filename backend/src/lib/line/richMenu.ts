@@ -55,8 +55,9 @@ async function ensureRichMenu(): Promise<string | null> {
 }
 
 /**
- * Create (or recreate) the rich menu, upload its image, and set it as the
- * default menu shown to every OA friend. Returns the rich menu id.
+ * Create (or recreate) the tenant rich menu and upload its image so it is
+ * ready to be linked to tenants. This is a TENANT-only menu — it is NOT set
+ * as the default menu, so admins/owners do not get it. Returns the menu id.
  */
 export async function setupRichMenu(): Promise<{ ok: boolean; richMenuId?: string; error?: string }> {
   if (!isLineConfigured) return { ok: false, error: 'LINE ยังไม่ได้ตั้งค่า (LINE_CHANNEL_ACCESS_TOKEN/SECRET)' }
@@ -75,7 +76,6 @@ export async function setupRichMenu(): Promise<{ ok: boolean; richMenuId?: strin
     }
     const id = await lineClient.createRichMenu(richMenuObject)
     await uploadImage(id)
-    await lineClient.setDefaultRichMenu(id)
     cachedRichMenuId = id
     return { ok: true, richMenuId: id }
   } catch (err) {
@@ -84,7 +84,7 @@ export async function setupRichMenu(): Promise<{ ok: boolean; richMenuId?: strin
   }
 }
 
-/** Remove the default rich menu and delete the app's menu(s). */
+/** Delete the app's rich menu(s) and clear any default. */
 export async function teardownRichMenu(): Promise<{ ok: boolean; error?: string }> {
   if (!isLineConfigured) return { ok: false, error: 'LINE ยังไม่ได้ตั้งค่า' }
   try {

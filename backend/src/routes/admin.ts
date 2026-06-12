@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { env } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
-import { setupRichMenu, teardownRichMenu, setTenantRichMenu } from '../lib/line/richMenu'
+import { setupRichMenu, teardownRichMenu } from '../lib/line/richMenu'
 import { isLineConfigured } from '../lib/env'
 
 const router = Router()
@@ -51,15 +51,9 @@ router.get('/richmenu', ...adminGuard, (_req, res) => {
 })
 
 // POST /api/admin/richmenu/setup — create + upload image + set as default menu
-router.post('/richmenu/setup', ...adminGuard, async (req, res) => {
+router.post('/richmenu/setup', ...adminGuard, async (_req, res) => {
   const result = await setupRichMenu()
   if (!result.ok) return res.status(400).json(result)
-  // Link directly to the admin who pressed the button for immediate visibility
-  try {
-    await setTenantRichMenu(req.user!.lineUserId)
-  } catch {
-    /* default menu still applies */
-  }
   res.json(result)
 })
 

@@ -17,7 +17,7 @@ export default function Settings() {
     setRichMsg(undefined)
     try {
       const { data } = await api.post('/admin/richmenu/setup')
-      setRichMsg(data.ok ? 'ติดตั้ง Rich Menu สำเร็จ ✓ (เปิดแชต OA เพื่อตรวจสอบ)' : data.error || 'ไม่สำเร็จ')
+      setRichMsg(data.ok ? 'เตรียม Rich Menu ผู้เช่าสำเร็จ ✓ (ผู้เช่าจะเห็นเมนูหลังผูกบัญชี LINE)' : data.error || 'ไม่สำเร็จ')
     } catch (e: any) {
       setRichMsg(e.response?.data?.error || 'ติดตั้งไม่สำเร็จ')
     } finally {
@@ -62,12 +62,12 @@ export default function Settings() {
         ))}
 
         <Card>
-          <div className="font-medium">Rich Menu (LINE OA)</div>
+          <div className="font-medium">Rich Menu ผู้เช่า (LINE OA)</div>
           <div className="text-xs text-gray-400 mb-3">
-            ติดตั้งเมนูลัด 6 ปุ่มด้านล่างแชต LINE OA (ตั้งเป็นเมนูเริ่มต้นให้ทุกคน)
+            เตรียม/อัปเดตเมนูลัด 6 ปุ่มสำหรับผู้เช่า — ระบบจะผูกเมนูนี้ให้ผู้เช่าอัตโนมัติหลังผูกบัญชี LINE (แอดมิน/เจ้าของจะไม่เห็นเมนูนี้)
           </div>
           <Button variant="secondary" onClick={setupRichMenu} disabled={richLoading}>
-            {richLoading ? 'กำลังติดตั้ง...' : 'ติดตั้ง / อัปเดต Rich Menu'}
+            {richLoading ? 'กำลังเตรียม...' : 'เตรียม / อัปเดต Rich Menu ผู้เช่า'}
           </Button>
           {richMsg && <p className="text-sm mt-2 text-gray-600">{richMsg}</p>}
         </Card>
