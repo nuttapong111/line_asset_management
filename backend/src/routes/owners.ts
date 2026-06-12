@@ -6,7 +6,9 @@ import { authMiddleware, requireRole, signToken } from '../middleware/auth'
 import { setTenantRichMenu } from '../lib/line/richMenu'
 
 const router = Router()
-const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+// Invite links route by query param so they work even when LIFF drops the path
+const ownerInviteUrl = (token: string) =>
+  `${env.LIFF_BASE_URL.replace(/\/$/, '')}?token=${token}&invite=owner`
 
 // ---------- Admin: manage owners of a property ----------
 
@@ -22,7 +24,7 @@ router.post('/properties/:id/owners', authMiddleware, requireRole('ADMIN'), asyn
   const owner = await prisma.owner.create({
     data: { name: parse.data.name, phone: parse.data.phone, propertyId: prop.id, inviteExpiry: expiry },
   })
-  res.status(201).json({ ...owner, inviteUrl: liff(`/link-owner?token=${owner.inviteToken}`) })
+  res.status(201).json({ ...owner, inviteUrl: ownerInviteUrl(owner.inviteToken) })
 })
 
 // GET /api/properties/:id/owners (admin)
@@ -30,7 +32,7 @@ router.get('/properties/:id/owners', authMiddleware, requireRole('ADMIN'), async
   const prop = await prisma.property.findFirst({ where: { id: req.params.id, adminId: req.user!.adminId! } })
   if (!prop) return res.status(404).json({ error: 'Property not found' })
   const owners = await prisma.owner.findMany({ where: { propertyId: prop.id }, orderBy: { createdAt: 'desc' } })
-  res.json(owners.map((o) => ({ ...o, inviteUrl: liff(`/link-owner?token=${o.inviteToken}`) })))
+  res.json(owners.map((o) => ({ ...o, inviteUrl: ownerInviteUrl(o.inviteToken) })))
 })
 
 // GET /api/owners/:id/invite-link (admin) — refresh expiry + return link
@@ -41,7 +43,7 @@ router.get('/owners/:id/invite-link', authMiddleware, requireRole('ADMIN'), asyn
   if (!owner) return res.status(404).json({ error: 'Owner not found' })
   const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
   const updated = await prisma.owner.update({ where: { id: owner.id }, data: { inviteExpiry: expiry } })
-  res.json({ inviteToken: updated.inviteToken, inviteUrl: liff(`/link-owner?token=${updated.inviteToken}`), expiresAt: expiry })
+  res.json({ inviteToken: updated.inviteToken, inviteUrl: ownerInviteUrl(updated.inviteToken), expiresAt: expiry })
 })
 
 // DELETE /api/owners/:id (admin)

@@ -7,7 +7,9 @@ import { authMiddleware, requireRole } from '../middleware/auth'
 const router = Router()
 const guard = [authMiddleware, requireRole('ADMIN')] as const
 
-const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+// Invite links route by query param so they work even when LIFF drops the path
+const inviteUrl = (token: string, type: 'tenant' | 'owner') =>
+  `${env.LIFF_BASE_URL.replace(/\/$/, '')}?token=${token}&invite=${type}`
 
 const unitSchema = z.object({
   roomNumber: z.string().min(1),
@@ -75,7 +77,7 @@ router.get('/units/:id/invite-link', ...guard, async (req, res) => {
   const updated = await prisma.unit.update({ where: { id: unit.id }, data: { inviteExpiry: expiry } })
   res.json({
     inviteToken: updated.inviteToken,
-    inviteUrl: liff(`/link-room?token=${updated.inviteToken}`),
+    inviteUrl: inviteUrl(updated.inviteToken, 'tenant'),
     expiresAt: expiry,
   })
 })

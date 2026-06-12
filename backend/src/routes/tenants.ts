@@ -9,6 +9,9 @@ import { pushInvite, pushLinked } from '../lib/line/lineService'
 
 const router = Router()
 const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+// Invite links route by query param so they work even when LIFF drops the path
+const tenantInviteUrl = (token: string) =>
+  `${env.LIFF_BASE_URL.replace(/\/$/, '')}?token=${token}&invite=tenant`
 
 const tenantSchema = z.object({
   name: z.string().min(1),
@@ -129,7 +132,7 @@ router.post('/:id/invite/sms', authMiddleware, requireRole('ADMIN'), async (req,
 
   const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   await prisma.unit.update({ where: { id: tenant.unitId }, data: { inviteExpiry: expiry } })
-  const url = liff(`/link-room?token=${tenant.unit.inviteToken}`)
+  const url = tenantInviteUrl(tenant.unit.inviteToken)
   const msg = `คุณได้รับคำเชิญเป็นผู้เช่า ${tenant.unit.property.name} ห้อง ${tenant.unit.roomNumber}\nกรุณากดลิงก์: ${url}`
   const result = await sendSms(tenant.phone, msg)
   await prisma.tenant.update({ where: { id: tenant.id }, data: { inviteSentAt: new Date() } })
@@ -153,7 +156,7 @@ router.post('/:id/invite/line', authMiddleware, requireRole('ADMIN'), async (req
     roomNumber: tenant.unit.roomNumber,
     rentAmount: Number(tenant.unit.rentPrice),
     startDate: tenant.startDate.toLocaleDateString('th-TH'),
-    inviteUrl: liff(`/link-room?token=${tenant.unit.inviteToken}`),
+    inviteUrl: tenantInviteUrl(tenant.unit.inviteToken),
   })
   await prisma.tenant.update({ where: { id: tenant.id }, data: { inviteSentAt: new Date() } })
   res.json({ ok: true })

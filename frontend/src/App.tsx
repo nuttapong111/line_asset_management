@@ -60,6 +60,7 @@ export default function App() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const inviteToken = params.get('token')
+  const inviteType = params.get('invite')
 
   async function boot(mockRole: Role = 'ADMIN') {
     try {
@@ -81,12 +82,13 @@ export default function App() {
     if (!ready || !jwt) return
     if (inviteToken) {
       const path = window.location.pathname
-      // Respect owner invite links; otherwise treat as tenant invite
-      const target = path.includes('/link-owner') ? '/link-owner' : '/link-room'
+      // Prefer the explicit invite type (query param), fall back to the path
+      const isOwner = inviteType === 'owner' || path.includes('/link-owner')
+      const target = isOwner ? '/link-owner' : '/link-room'
       navigate(`${target}?token=${inviteToken}`, { replace: true })
       return
     }
-  }, [ready, jwt, inviteToken, navigate])
+  }, [ready, jwt, inviteToken, inviteType, navigate])
 
   function switchRole(r: Role) {
     clearAuth()
