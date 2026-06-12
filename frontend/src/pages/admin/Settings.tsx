@@ -39,9 +39,15 @@ export default function Settings() {
           <div className="w-12 h-12 rounded-full bg-line-light flex items-center justify-center text-line font-bold">
             {user?.name?.[0] || 'A'}
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="font-semibold">{user?.name}</div>
             <div className="text-xs text-gray-400">ผู้ดูแลระบบ</div>
+            <div
+              className="text-[10px] text-gray-300 truncate"
+              onClick={() => user?.lineUserId && navigator.clipboard.writeText(user.lineUserId)}
+            >
+              {user?.lineUserId}
+            </div>
           </div>
         </Card>
 
