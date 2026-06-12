@@ -38,6 +38,13 @@ export const env = {
   DEFAULT_PROMPTPAY_NUMBER: process.env.DEFAULT_PROMPTPAY_NUMBER || '',
 }
 
+/**
+ * Canonical LIFF entry URL. Opening this in LINE logs the user in and the app
+ * routes by role (admin → portfolio, tenant → home, owner → dashboard).
+ * Prefer building from LIFF_ID; fall back to LIFF_BASE_URL.
+ */
+export const liffEntryUrl = env.LIFF_ID ? `https://liff.line.me/${env.LIFF_ID}` : env.LIFF_BASE_URL
+
 /** LINE Messaging API is configured (real mode) when these are present */
 export const isLineConfigured = Boolean(env.LINE_CHANNEL_ACCESS_TOKEN && env.LINE_CHANNEL_SECRET)
 

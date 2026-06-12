@@ -1,7 +1,7 @@
 import { WebhookEvent, MessageEvent, PostbackEvent, FollowEvent } from '@line/bot-sdk'
 import { prisma } from '../prisma'
 import { env } from '../env'
-import { reply, replyQuickMenu, pushText, pushSlipApproved } from './lineService'
+import { reply, replyQuickMenu, pushText, pushSlipApproved, buildEntryMessage } from './lineService'
 import { setTenantRichMenu } from './richMenu'
 import { buildReceiptFlex } from './flexMessages'
 
@@ -30,16 +30,36 @@ async function handleEvent(event: WebhookEvent): Promise<void> {
 async function handleFollow(event: FollowEvent): Promise<void> {
   const userId = event.source.userId
   if (!userId) return
+
   const tenant = await prisma.tenant.findUnique({ where: { lineUserId: userId }, include: { unit: true } })
   if (tenant) {
     await setTenantRichMenu(userId)
     await reply(event.replyToken, { type: 'text', text: `สวัสดีครับ คุณ${tenant.name} ยินดีต้อนรับ 🏠` })
-  } else {
-    await reply(event.replyToken, {
-      type: 'text',
-      text: 'สวัสดีครับ หากคุณเป็นผู้เช่า กรุณากดลิงก์คำเชิญที่ได้รับจากเจ้าของห้องเพื่อผูกบัญชี LINE',
-    })
+    return
   }
+
+  const admin = await prisma.admin.findUnique({ where: { lineUserId: userId } })
+  if (admin) {
+    await reply(event.replyToken, [
+      { type: 'text', text: `สวัสดีครับ คุณ${admin.name} 👋` },
+      buildEntryMessage('แตะเพื่อเปิดระบบจัดการสำหรับผู้ดูแล', 'เปิดระบบจัดการ'),
+    ])
+    return
+  }
+
+  const owner = await prisma.owner.findFirst({ where: { lineUserId: userId, linkedAt: { not: null } } })
+  if (owner) {
+    await reply(event.replyToken, [
+      { type: 'text', text: `สวัสดีครับ คุณ${owner.name} 👋` },
+      buildEntryMessage('แตะเพื่อเปิดแดชบอร์ดเจ้าของ', 'เปิดแดชบอร์ด'),
+    ])
+    return
+  }
+
+  await reply(event.replyToken, {
+    type: 'text',
+    text: 'สวัสดีครับ หากคุณเป็นผู้เช่า กรุณากดลิงก์คำเชิญที่ได้รับจากเจ้าของห้องเพื่อผูกบัญชี LINE',
+  })
 }
 
 async function handleMessage(event: MessageEvent): Promise<void> {
@@ -52,6 +72,13 @@ async function handleMessage(event: MessageEvent): Promise<void> {
     : null
 
   switch (text) {
+    case 'เข้าระบบ':
+    case 'เปิดระบบ':
+    case 'เปิดแอป':
+    case 'เมนู':
+    case 'menu':
+    case 'Menu':
+      return reply(event.replyToken, buildEntryMessage())
     case 'ใบเสร็จล่าสุด': {
       if (!tenant) return replyQuickMenu(event.replyToken)
       const payment = await prisma.payment.findFirst({

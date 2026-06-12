@@ -1,6 +1,6 @@
-import { Message, FlexMessage, QuickReply } from '@line/bot-sdk'
+import { Message, FlexMessage, QuickReply, TemplateMessage } from '@line/bot-sdk'
 import { lineClient } from './client'
-import { isLineConfigured } from '../env'
+import { isLineConfigured, liffEntryUrl } from '../env'
 import {
   buildInvoiceFlex,
   buildReminderFlex,
@@ -61,6 +61,26 @@ export const pushLinked = (to: string, d: LinkedData) => push(to, buildLinkedFle
 export const pushInvite = (to: string, d: InviteData) => push(to, buildInviteFlex(d))
 
 export const pushText = (to: string, text: string) => push(to, { type: 'text', text })
+
+/**
+ * A "open the app" button card. Tapping it opens the LIFF entry URL which
+ * role-routes the user (admin → portfolio, owner → dashboard, tenant → home).
+ */
+export function buildEntryMessage(text = 'แตะปุ่มด้านล่างเพื่อเปิดระบบ PropFlow', label = 'เปิดระบบ'): TemplateMessage {
+  return {
+    type: 'template',
+    altText: 'เปิดระบบ PropFlow',
+    template: {
+      type: 'buttons',
+      title: 'PropFlow',
+      text,
+      actions: [{ type: 'uri', label, uri: liffEntryUrl }],
+    },
+  }
+}
+
+export const pushEntry = (to: string, text?: string, label?: string) =>
+  push(to, buildEntryMessage(text, label))
 
 export async function broadcastInvoices(items: { lineUserId: string; data: InvoiceData }[]): Promise<{
   sent: number
