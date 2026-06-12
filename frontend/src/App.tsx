@@ -5,6 +5,7 @@ import { useAuthStore, Role } from './store/authStore'
 import Splash from './pages/Splash'
 
 import LinkRoom from './pages/LinkRoom'
+import LinkOwner from './pages/LinkOwner'
 import Portfolio from './pages/admin/Portfolio'
 import PropertyDetail from './pages/admin/PropertyDetail'
 import AddProperty from './pages/admin/AddProperty'
@@ -22,6 +23,11 @@ import NotifSettings from './pages/admin/NotifSettings'
 import Settings from './pages/admin/Settings'
 import AdminContractView from './pages/admin/ContractView'
 import AdminMaintenanceDetail from './pages/admin/MaintenanceDetail'
+import OwnerManage from './pages/admin/OwnerManage'
+
+import OwnerHome from './pages/owner/OwnerHome'
+import OwnerPaymentDetail from './pages/owner/OwnerPaymentDetail'
+import OwnerMaintenanceDetail from './pages/owner/OwnerMaintenanceDetail'
 
 import TenantHome from './pages/tenant/TenantHome'
 import InvoiceDetail from './pages/tenant/InvoiceDetail'
@@ -42,6 +48,7 @@ function DevRoleSwitcher({ onPick }: { onPick: (r: Role) => void }) {
       <span className="text-[10px] text-gray-400 text-center">DEV</span>
       <button onClick={() => onPick('ADMIN')} className="bg-gray-800 text-white text-xs px-2 py-1 rounded">Admin</button>
       <button onClick={() => onPick('TENANT')} className="bg-line text-white text-xs px-2 py-1 rounded">Tenant</button>
+      <button onClick={() => onPick('OWNER')} className="bg-amber text-white text-xs px-2 py-1 rounded">Owner</button>
     </div>
   )
 }
@@ -72,7 +79,10 @@ export default function App() {
   useEffect(() => {
     if (!ready || !jwt) return
     if (inviteToken) {
-      navigate(`/link-room?token=${inviteToken}`, { replace: true })
+      const path = window.location.pathname
+      // Respect owner invite links; otherwise treat as tenant invite
+      const target = path.includes('/link-owner') ? '/link-owner' : '/link-room'
+      navigate(`${target}?token=${inviteToken}`, { replace: true })
       return
     }
   }, [ready, jwt, inviteToken, navigate])
@@ -85,13 +95,21 @@ export default function App() {
   if (!ready) return <Splash />
   if (error && !jwt) return <Splash error={error} />
 
-  const home = role === 'ADMIN' ? '/admin/portfolio' : role === 'TENANT' ? '/tenant/home' : '/link-room'
+  const home =
+    role === 'ADMIN'
+      ? '/admin/portfolio'
+      : role === 'TENANT'
+      ? '/tenant/home'
+      : role === 'OWNER'
+      ? '/owner/home'
+      : '/link-room'
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-[#f5f6f8]">
       <Routes>
         <Route path="/" element={<Navigate to={home} replace />} />
         <Route path="/link-room" element={<LinkRoom />} />
+        <Route path="/link-owner" element={<LinkOwner />} />
 
         {/* Admin */}
         <Route path="/admin/portfolio" element={<Portfolio />} />
@@ -111,6 +129,12 @@ export default function App() {
         <Route path="/admin/settings" element={<Settings />} />
         <Route path="/admin/contract/:id" element={<AdminContractView />} />
         <Route path="/admin/maintenance/:id" element={<AdminMaintenanceDetail />} />
+        <Route path="/admin/property/:id/owners" element={<OwnerManage />} />
+
+        {/* Owner */}
+        <Route path="/owner/home" element={<OwnerHome />} />
+        <Route path="/owner/payment/:id" element={<OwnerPaymentDetail />} />
+        <Route path="/owner/maintenance/:id" element={<OwnerMaintenanceDetail />} />
 
         {/* Tenant */}
         <Route path="/tenant/home" element={<TenantHome />} />

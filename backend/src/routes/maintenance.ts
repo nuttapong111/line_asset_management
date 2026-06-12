@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma'
 import { env } from '../lib/env'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { pushMaintNew, pushText } from '../lib/line/lineService'
+import { notifyOwnersMaintenance } from '../services/ownerNotify'
 
 const router = Router()
 router.use(authMiddleware)
@@ -62,6 +63,14 @@ router.post('/', async (req, res) => {
       viewUrl: liff(`/admin/maintenance/${ticket.id}`),
     })
   }
+
+  await notifyOwnersMaintenance({
+    propertyId: unit.property.id,
+    ticketNo: ticket.ticketNo,
+    roomNumber: unit.roomNumber,
+    title: ticket.title,
+  })
+
   res.status(201).json(ticket)
 })
 

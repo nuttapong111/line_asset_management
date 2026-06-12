@@ -9,6 +9,7 @@ import { uploadFile } from '../services/storageService'
 import { ocrSlip } from '../services/ocrService'
 import { approvePayment, rejectPayment } from '../services/paymentService'
 import { pushSlipReceived } from '../lib/line/lineService'
+import { notifyOwnersPayment } from '../services/ownerNotify'
 
 const router = Router()
 router.use(authMiddleware)
@@ -99,6 +100,14 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
       reviewUrl: liff(`/admin/slip/${payment.id}`),
     })
   }
+
+  await notifyOwnersPayment({
+    propertyId: invoice.unit.property.id,
+    roomNumber: invoice.unit.roomNumber,
+    tenantName: tenant.name,
+    amount: Number(invoice.total),
+    kind: 'slip',
+  })
 
   res.json({ ok: true, payment })
 })

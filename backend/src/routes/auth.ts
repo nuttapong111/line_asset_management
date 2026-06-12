@@ -16,7 +16,7 @@ const bodySchema = z.object({
       pictureUrl: z.string().optional(),
     })
     .optional(),
-  mockRole: z.enum(['ADMIN', 'TENANT', 'NEW']).optional(),
+  mockRole: z.enum(['ADMIN', 'TENANT', 'OWNER', 'NEW']).optional(),
 })
 
 async function resolveRole(lineUserId: string): Promise<{ payload: JwtPayload; name: string; pictureUrl?: string }> {
@@ -30,6 +30,10 @@ async function resolveRole(lineUserId: string): Promise<{ payload: JwtPayload; n
       payload: { lineUserId, role: 'TENANT', unitId: tenant.unitId, tenantId: tenant.id },
       name: tenant.name,
     }
+  }
+  const owner = await prisma.owner.findFirst({ where: { lineUserId, linkedAt: { not: null } } })
+  if (owner) {
+    return { payload: { lineUserId, role: 'OWNER', ownerId: owner.id }, name: owner.name }
   }
   return { payload: { lineUserId, role: 'NEW' }, name: '' }
 }
@@ -50,6 +54,9 @@ router.post('/line', async (req, res) => {
       } else if (mockRole === 'TENANT') {
         const tenant = await prisma.tenant.findFirst({ where: { isActive: true } })
         lineUserId = tenant?.lineUserId || 'mock_tenant_001'
+      } else if (mockRole === 'OWNER') {
+        const owner = await prisma.owner.findFirst({ where: { linkedAt: { not: null } } })
+        lineUserId = owner?.lineUserId || 'mock_owner_001'
       } else {
         lineUserId = 'mock_new_user'
       }

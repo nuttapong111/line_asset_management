@@ -113,6 +113,7 @@ export default function PropertyDetail() {
           <Button variant="secondary" onClick={() => nav(`/admin/property/${id}/meter`)}>บันทึกมิเตอร์</Button>
           <Button variant="secondary" onClick={() => nav('/admin/invoice-builder')}>สร้างบิล</Button>
         </div>
+        <Button variant="secondary" onClick={() => nav(`/admin/property/${id}/owners`)}>จัดการเจ้าของ / เชิญเจ้าของ</Button>
       </div>
     </div>
   )

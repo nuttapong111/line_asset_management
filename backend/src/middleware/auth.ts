@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import { env } from '../lib/env'
 
-export type Role = 'ADMIN' | 'TENANT' | 'NEW'
+export type Role = 'ADMIN' | 'TENANT' | 'OWNER' | 'NEW'
 
 export interface JwtPayload {
   lineUserId: string
@@ -10,6 +10,7 @@ export interface JwtPayload {
   unitId?: string
   adminId?: string
   tenantId?: string
+  ownerId?: string
 }
 
 declare global {

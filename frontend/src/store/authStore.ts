@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type Role = 'ADMIN' | 'TENANT' | 'NEW'
+export type Role = 'ADMIN' | 'TENANT' | 'OWNER' | 'NEW'
 
 export interface AuthUser {
   lineUserId: string

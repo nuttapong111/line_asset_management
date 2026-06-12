@@ -27,7 +27,23 @@ model Property {
   bankAccount     String?
   promptpayNumber String
   units           Unit[]
+  owners          Owner[]
   createdAt       DateTime @default(now())
+}
+
+model Owner {
+  id           String    @id @default(cuid())
+  lineUserId   String?
+  name         String
+  phone        String?
+  propertyId   String
+  property     Property  @relation(fields: [propertyId], references: [id])
+  inviteToken  String    @unique @default(cuid())
+  inviteExpiry DateTime?
+  linkedAt     DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([lineUserId])
 }
 
 model Unit {

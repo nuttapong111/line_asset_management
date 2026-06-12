@@ -3,6 +3,7 @@ import { env } from '../lib/env'
 import { generateReceipt } from './pdfService'
 import { uploadFile } from './storageService'
 import { pushSlipApproved, pushText } from '../lib/line/lineService'
+import { notifyOwnersPayment } from './ownerNotify'
 
 const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
 
@@ -64,6 +65,14 @@ export async function approvePayment(paymentId: string): Promise<void> {
       receiptUrl,
     })
   }
+
+  await notifyOwnersPayment({
+    propertyId: inv.unit.property.id,
+    roomNumber: inv.unit.roomNumber,
+    tenantName: payment.tenant.name,
+    amount: Number(inv.total),
+    kind: 'approved',
+  })
 }
 
 export async function rejectPayment(paymentId: string, reason: string): Promise<void> {

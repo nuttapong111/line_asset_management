@@ -11,6 +11,7 @@ import { UPLOAD_DIR } from './services/storageService'
 import authRouter from './routes/auth'
 import propertiesRouter from './routes/properties'
 import unitsRouter from './routes/units'
+import ownersRouter from './routes/owners'
 import tenantsRouter from './routes/tenants'
 import contractsRouter from './routes/contracts'
 import metersRouter from './routes/meters'
@@ -38,6 +39,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, env: env.NODE_ENV }))
 app.use('/api/auth', authRouter)
 app.use('/api/properties', propertiesRouter)
 app.use('/api', unitsRouter) // /properties/:id/units, /units/:id...
+app.use('/api', ownersRouter) // /properties/:id/owners, /owners/:id, /owner/*
 app.use('/api/tenants', tenantsRouter)
 app.use('/api/contracts', contractsRouter)
 app.use('/api/meters', metersRouter)

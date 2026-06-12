@@ -84,6 +84,16 @@ async function main() {
     },
   })
 
+  await prisma.owner.create({
+    data: {
+      lineUserId: 'mock_owner_001',
+      name: 'ประภา เจ้าของ',
+      phone: '0822222222',
+      propertyId: property.id,
+      linkedAt: new Date(),
+    },
+  })
+
   await prisma.meterReading.create({
     data: {
       unitId: room101.id,
