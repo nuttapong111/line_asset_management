@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { env, isMockAuthAllowed } from '../lib/env'
 import { signToken, JwtPayload } from '../middleware/auth'
+import { setAdminRichMenu, setTenantRichMenu } from '../lib/line/richMenu'
 
 const router = Router()
 
@@ -81,6 +82,9 @@ router.post('/line', async (req, res) => {
 
     const lineUserId = profile.userId
     const { payload, name, pictureUrl } = await resolveRole(lineUserId)
+    // Ensure the correct rich menu is linked for this user (best-effort)
+    if (payload.role === 'ADMIN') setAdminRichMenu(lineUserId).catch(() => {})
+    else if (payload.role === 'TENANT') setTenantRichMenu(lineUserId).catch(() => {})
     return res.json({
       token: signToken(payload),
       role: payload.role,

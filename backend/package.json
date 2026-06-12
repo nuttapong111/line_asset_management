@@ -11,6 +11,7 @@
     "generate": "prisma generate",
     "seed": "tsx prisma/seed.ts",
     "gen:richmenu": "tsx scripts/genRichMenu.ts",
+    "gen:richmenu:admin": "tsx scripts/genAdminRichMenu.ts",
     "typecheck": "tsc --noEmit"
   },
   "prisma": {

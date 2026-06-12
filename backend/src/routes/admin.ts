@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { env } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
-import { setupRichMenu, teardownRichMenu } from '../lib/line/richMenu'
+import { setupRichMenu, teardownRichMenu, setAdminRichMenu } from '../lib/line/richMenu'
 import { isLineConfigured } from '../lib/env'
 
 const router = Router()
@@ -39,6 +39,9 @@ router.post('/claim', authMiddleware, async (req, res) => {
       },
     }))
 
+  // Give the admin their menu (best-effort; menu is created on demand)
+  setAdminRichMenu(lineUserId).catch(() => {})
+
   const token = signToken({ lineUserId, role: 'ADMIN', adminId: admin.id })
   res.json({ ok: true, token, role: 'ADMIN', admin })
 })
@@ -50,10 +53,16 @@ router.get('/richmenu', ...adminGuard, (_req, res) => {
   res.json({ lineConfigured: isLineConfigured })
 })
 
-// POST /api/admin/richmenu/setup — create + upload image + set as default menu
-router.post('/richmenu/setup', ...adminGuard, async (_req, res) => {
+// POST /api/admin/richmenu/setup — (re)create tenant + admin menus, link admin menu to caller
+router.post('/richmenu/setup', ...adminGuard, async (req, res) => {
   const result = await setupRichMenu()
   if (!result.ok) return res.status(400).json(result)
+  // Link the admin menu to the admin who pressed the button so it shows immediately
+  try {
+    await setAdminRichMenu(req.user!.lineUserId)
+  } catch {
+    /* ignore */
+  }
   res.json(result)
 })
 
