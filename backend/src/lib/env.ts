@@ -13,6 +13,9 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET || 'dev-secret-change-me',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
 
+  // Passcode used on the /link-admin screen to register a LINE account as admin
+  ADMIN_SETUP_CODE: (process.env.ADMIN_SETUP_CODE || '').trim(),
+
   LINE_CHANNEL_ID: process.env.LINE_CHANNEL_ID || '',
   LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET || '',
   LINE_CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',

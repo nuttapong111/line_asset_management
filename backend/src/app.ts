@@ -9,6 +9,7 @@ import { startScheduler } from './services/scheduler'
 import { UPLOAD_DIR } from './services/storageService'
 
 import authRouter from './routes/auth'
+import adminRouter from './routes/admin'
 import propertiesRouter from './routes/properties'
 import unitsRouter from './routes/units'
 import ownersRouter from './routes/owners'
@@ -37,6 +38,7 @@ app.use(express.json())
 app.get('/api/health', (_req, res) => res.json({ ok: true, env: env.NODE_ENV }))
 
 app.use('/api/auth', authRouter)
+app.use('/api/admin', adminRouter)
 app.use('/api/properties', propertiesRouter)
 app.use('/api', unitsRouter) // /properties/:id/units, /units/:id...
 app.use('/api', ownersRouter) // /properties/:id/owners, /owners/:id, /owner/*

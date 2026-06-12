@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import api from '../lib/axios'
 import { useAuthStore } from '../store/authStore'
 import { Button, Card } from '../components/ui'
@@ -48,6 +48,9 @@ export default function LinkRoom() {
         <Button onClick={link} disabled={loading}>
           {loading ? 'กำลังผูกบัญชี...' : 'ยืนยันและผูก LINE'}
         </Button>
+        <Link to="/link-admin" className="block text-xs text-gray-400 mt-4">
+          เป็นผู้ดูแลระบบ? ลงทะเบียนที่นี่
+        </Link>
       </Card>
     </div>
   )

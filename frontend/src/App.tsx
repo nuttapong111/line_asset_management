@@ -6,6 +6,7 @@ import Splash from './pages/Splash'
 
 import LinkRoom from './pages/LinkRoom'
 import LinkOwner from './pages/LinkOwner'
+import LinkAdmin from './pages/LinkAdmin'
 import Portfolio from './pages/admin/Portfolio'
 import PropertyDetail from './pages/admin/PropertyDetail'
 import AddProperty from './pages/admin/AddProperty'
@@ -110,6 +111,7 @@ export default function App() {
         <Route path="/" element={<Navigate to={home} replace />} />
         <Route path="/link-room" element={<LinkRoom />} />
         <Route path="/link-owner" element={<LinkOwner />} />
+        <Route path="/link-admin" element={<LinkAdmin />} />
 
         {/* Admin */}
         <Route path="/admin/portfolio" element={<Portfolio />} />
