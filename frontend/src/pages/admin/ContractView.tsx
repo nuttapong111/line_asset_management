@@ -33,12 +33,30 @@ export default function ContractView() {
 
   if (!contract) return <div className="p-6 text-center text-gray-400">กำลังโหลด...</div>
 
-  async function genPdf() {
+  async function downloadPdf() {
     setBusy(true)
     try {
-      const { data } = await api.post(`/contracts/${id}/pdf`)
-      window.open(data.pdfUrl, '_blank')
-      await load()
+      const { data } = await api.get(`/contracts/${id}/pdf`, { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
+      window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    } catch {
+      alert('ไม่สามารถดาวน์โหลด PDF ได้')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function printPdf() {
+    setBusy(true)
+    try {
+      const { data } = await api.get(`/contracts/${id}/pdf`, { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
+      const w = window.open(url, '_blank')
+      if (w) w.addEventListener('load', () => w.print())
+      setTimeout(() => URL.revokeObjectURL(url), 120_000)
+    } catch {
+      alert('ไม่สามารถเปิด PDF สำหรับพิมพ์ได้')
     } finally {
       setBusy(false)
     }
@@ -77,8 +95,8 @@ export default function ContractView() {
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={genPdf} disabled={busy}>{busy ? 'กำลังสร้าง...' : 'สร้าง PDF ↓'}</Button>
-          <Button variant="secondary" onClick={() => window.print()}>ปริ้น</Button>
+          <Button variant="secondary" onClick={downloadPdf} disabled={busy}>{busy ? 'กำลังโหลด...' : 'ดาวน์โหลด PDF ↓'}</Button>
+          <Button variant="secondary" onClick={printPdf} disabled={busy}>ปริ้น PDF</Button>
         </div>
       </div>
     </div>

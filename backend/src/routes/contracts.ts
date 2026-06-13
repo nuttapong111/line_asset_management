@@ -4,10 +4,38 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { propertyWhere } from '../lib/scope'
 import { generateContractPdf } from '../services/pdfService'
-import { uploadFile } from '../services/storageService'
+import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
 
 const router = Router()
 router.use(authMiddleware)
+
+async function buildContractPdf(contract: NonNullable<Awaited<ReturnType<typeof loadContract>>>) {
+  const year = contract.startDate.getFullYear()
+  const seq = (await prisma.contract.count({ where: { createdAt: { lte: contract.createdAt } } })) || 1
+  const contractNo = `CTR-${year}-${String(seq).padStart(5, '0')}`
+
+  const pdf = await generateContractPdf({
+    contractNo,
+    landlordName: contract.unit.property.admin.name,
+    propertyName: contract.unit.property.name,
+    propertyAddress: contract.unit.property.address || '-',
+    roomNumber: contract.unit.roomNumber,
+    floor: contract.unit.floor,
+    tenantName: contract.tenant.name,
+    tenantIdCard: contract.tenant.idCardNumber,
+    tenantPhone: contract.tenant.phone,
+    rentAmount: Number(contract.rentAmount),
+    deposit: Number(contract.deposit),
+    dueDay: contract.dueDay,
+    lateFeePerDay: Number(contract.lateFeePerDay),
+    startDate: contract.startDate,
+    endDate: contract.endDate,
+    terms: contract.terms,
+  })
+  const stored = await uploadFile(`contracts/${contract.id}.pdf`, pdf, 'application/pdf')
+  await prisma.contract.update({ where: { id: contract.id }, data: { pdfUrl: stored } })
+  return { pdf, contractNo, stored }
+}
 
 const contractSchema = z.object({
   tenantId: z.string().min(1),
@@ -75,6 +103,27 @@ async function loadContract(
   return contract
 }
 
+// GET /api/contracts/:id/pdf — download (streams from private S3 via API)
+router.get('/:id/pdf', async (req, res) => {
+  const contract = await loadContract(req.params.id, req.user!)
+  if (!contract) return res.status(404).json({ error: 'Contract not found' })
+
+  let key = contract.pdfUrl ? extractStorageKey(contract.pdfUrl) : `contracts/${contract.id}.pdf`
+  let file: { body: Buffer; contentType: string }
+  try {
+    file = await readFile(key)
+  } catch {
+    // PDF not generated yet — create on first download
+    const built = await buildContractPdf(contract)
+    key = extractStorageKey(built.stored)
+    file = { body: built.pdf, contentType: 'application/pdf' }
+  }
+
+  res.setHeader('Content-Type', file.contentType)
+  res.setHeader('Content-Disposition', `inline; filename="contract-${contract.id}.pdf"`)
+  res.send(file.body)
+})
+
 // GET /api/contracts/:id
 router.get('/:id', async (req, res) => {
   const contract = await loadContract(req.params.id, req.user!)
@@ -82,36 +131,13 @@ router.get('/:id', async (req, res) => {
   res.json(contract)
 })
 
-// POST /api/contracts/:id/pdf
+// POST /api/contracts/:id/pdf — regenerate PDF
 router.post('/:id/pdf', async (req, res) => {
   const contract = await loadContract(req.params.id, req.user!)
   if (!contract) return res.status(404).json({ error: 'Contract not found' })
 
-  const year = contract.startDate.getFullYear()
-  const seq = (await prisma.contract.count({ where: { createdAt: { lte: contract.createdAt } } })) || 1
-  const contractNo = `CTR-${year}-${String(seq).padStart(5, '0')}`
-
-  const pdf = await generateContractPdf({
-    contractNo,
-    landlordName: contract.unit.property.admin.name,
-    propertyName: contract.unit.property.name,
-    propertyAddress: contract.unit.property.address || '-',
-    roomNumber: contract.unit.roomNumber,
-    floor: contract.unit.floor,
-    tenantName: contract.tenant.name,
-    tenantIdCard: contract.tenant.idCardNumber,
-    tenantPhone: contract.tenant.phone,
-    rentAmount: Number(contract.rentAmount),
-    deposit: Number(contract.deposit),
-    dueDay: contract.dueDay,
-    lateFeePerDay: Number(contract.lateFeePerDay),
-    startDate: contract.startDate,
-    endDate: contract.endDate,
-    terms: contract.terms,
-  })
-  const url = await uploadFile(`contracts/${contract.id}.pdf`, pdf, 'application/pdf')
-  await prisma.contract.update({ where: { id: contract.id }, data: { pdfUrl: url } })
-  res.json({ pdfUrl: url, contractNo })
+  const { contractNo } = await buildContractPdf(contract)
+  res.json({ ok: true, contractNo, downloadUrl: `/api/contracts/${contract.id}/pdf` })
 })
 
 // PUT /api/contracts/:id/renew (manager)
