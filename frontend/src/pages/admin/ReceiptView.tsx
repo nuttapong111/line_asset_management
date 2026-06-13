@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import api from '../../lib/axios'
+import { openPdfViewer } from '../../lib/pdfNav'
 import { Button, Card, Badge } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
 import { baht, thaiDate } from '../../lib/utils'
@@ -8,7 +9,7 @@ import { baht, thaiDate } from '../../lib/utils'
 interface Payment {
   id: string
   receiptNo?: string
-  receiptUrl?: string
+  hasReceipt?: boolean
   approvedAt?: string
   tenant: { name: string }
   invoice: {
@@ -24,6 +25,7 @@ interface Payment {
 
 export default function ReceiptView() {
   const { paymentId } = useParams()
+  const nav = useNavigate()
   const [payment, setPayment] = useState<Payment>()
 
   useEffect(() => {
@@ -70,10 +72,16 @@ export default function ReceiptView() {
         </Card>
 
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={() => payment.receiptUrl && window.open(payment.receiptUrl, '_blank')} disabled={!payment.receiptUrl}>
-            PDF ↓
+          <Button
+            variant="secondary"
+            onClick={() => openPdfViewer(nav, `payments/${paymentId}/receipt/pdf`, { title: 'ใบเสร็จรับเงิน' })}
+            disabled={!payment.hasReceipt}
+          >
+            ดู / ดาวน์โหลด PDF
           </Button>
-          <Button variant="secondary" onClick={() => window.print()}>ปริ้น</Button>
+          <Button variant="secondary" onClick={() => openPdfViewer(nav, `payments/${paymentId}/receipt/pdf`, { title: 'ใบเสร็จรับเงิน', print: true })}>
+            ปริ้น PDF
+          </Button>
         </div>
       </div>
     </div>

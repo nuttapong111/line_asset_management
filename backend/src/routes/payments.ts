@@ -6,11 +6,12 @@ import { env, liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { propertyWhere } from '../lib/scope'
 import { generatePromptPayPayload } from '../services/qrService'
-import { uploadFile } from '../services/storageService'
+import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
 import { ocrSlip } from '../services/ocrService'
 import { approvePayment, rejectPayment } from '../services/paymentService'
 import { pushSlipReceived } from '../lib/line/lineService'
 import { notifyOwnersPayment } from '../services/ownerNotify'
+import { linkedTenant } from '../services/tenantLifecycle'
 
 const router = Router()
 router.use(authMiddleware)
@@ -61,7 +62,7 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
   }
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
 
-  const tenant = invoice.unit.tenants[0]
+  const tenant = linkedTenant(invoice.unit.tenants)
   if (!tenant) return res.status(400).json({ error: 'No active tenant for this unit' })
 
   const key = `slips/${invoice.id}/${Date.now()}.jpg`
@@ -139,11 +140,60 @@ async function managerOwnsPayment(req: import('express').Request, paymentId: str
   })
 }
 
+// GET /api/payments/:paymentId/slip — stream slip image (private S3 via API)
+router.get('/:paymentId/slip', async (req, res) => {
+  const payment = await visiblePayment(req, req.params.paymentId)
+  if (!payment?.slipUrl) return res.status(404).json({ error: 'Slip not found' })
+  const file = await readFile(extractStorageKey(payment.slipUrl))
+  res.setHeader('Content-Type', file.contentType)
+  res.setHeader('Cache-Control', 'private, max-age=3600')
+  res.send(file.body)
+})
+
+// GET /api/payments/:paymentId/receipt/pdf — stream receipt PDF (private S3 via API)
+router.get('/:paymentId/receipt/pdf', async (req, res) => {
+  const payment = await visiblePayment(req, req.params.paymentId)
+  if (!payment) return res.status(404).json({ error: 'Payment not found' })
+  const stored = payment.receiptPdfUrl || payment.receiptUrl
+  if (!stored) return res.status(404).json({ error: 'Receipt not found' })
+  const file = await readFile(extractStorageKey(stored))
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `inline; filename="receipt-${payment.receiptNo || payment.id}.pdf"`)
+  res.send(file.body)
+})
+
+// POST /api/payments/:paymentId/reocr — re-run slip OCR (manager)
+router.post('/:paymentId/reocr', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  if (!(await managerOwnsPayment(req, req.params.paymentId)))
+    return res.status(404).json({ error: 'Payment not found' })
+  const payment = await prisma.payment.findUnique({
+    where: { id: req.params.paymentId },
+    include: { invoice: true },
+  })
+  if (!payment?.slipUrl) return res.status(400).json({ error: 'No slip uploaded' })
+  const file = await readFile(extractStorageKey(payment.slipUrl))
+  const ocr = await ocrSlip(payment.slipUrl, Number(payment.invoice.total), file.body)
+  const updated = await prisma.payment.update({
+    where: { id: payment.id },
+    data: {
+      ocrAmount: ocr.amount ?? undefined,
+      ocrDate: ocr.date ?? undefined,
+      ocrMatched: ocr.matched,
+    },
+  })
+  res.json({ ...updated, ocrNote: ocr.note, ocrProvider: ocr.provider })
+})
+
 // GET /api/payments/:paymentId  (detail for review)
 router.get('/:paymentId', async (req, res) => {
   const payment = await visiblePayment(req, req.params.paymentId)
   if (!payment) return res.status(404).json({ error: 'Payment not found' })
-  res.json(payment)
+  const { slipUrl, receiptUrl, receiptPdfUrl, ...rest } = payment
+  res.json({
+    ...rest,
+    hasSlip: !!slipUrl,
+    hasReceipt: !!(receiptPdfUrl || receiptUrl),
+  })
 })
 
 // POST /api/payments/:paymentId/approve (manager)
@@ -178,7 +228,11 @@ router.post('/:paymentId/reject', requireRole('ADMIN', 'OWNER'), async (req, res
 router.get('/:paymentId/receipt', async (req, res) => {
   const payment = await visiblePayment(req, req.params.paymentId)
   if (!payment) return res.status(404).json({ error: 'Payment not found' })
-  res.json({ receiptUrl: payment.receiptUrl, receiptNo: payment.receiptNo })
+  res.json({
+    receiptNo: payment.receiptNo,
+    hasReceipt: !!(payment.receiptPdfUrl || payment.receiptUrl),
+    downloadPath: `/payments/${payment.id}/receipt/pdf`,
+  })
 })
 
 export default router

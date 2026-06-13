@@ -62,7 +62,7 @@ export async function approvePayment(paymentId: string): Promise<void> {
       tenantName: payment.tenant.name,
       amount: Number(inv.total),
       date: new Date().toLocaleDateString('th-TH'),
-      receiptUrl,
+      receiptUrl: liff(`/pdf-viewer?path=${encodeURIComponent(`payments/${paymentId}/receipt/pdf`)}&title=${encodeURIComponent('ใบเสร็จรับเงิน')}`),
     })
   }
 

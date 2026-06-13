@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../lib/axios'
+import { openPdfViewer } from '../../lib/pdfNav'
 import { Card, Badge } from '../../components/ui'
 import { BottomNav } from '../../components/layout/BottomNav'
 import { TopBar } from '../../components/layout/TopBar'
@@ -13,7 +14,7 @@ interface Invoice {
   total: string
   status: string
   unit: { roomNumber: string }
-  payment?: { id: string; status: string; receiptUrl?: string } | null
+  payment?: { id: string; status: string; receiptNo?: string } | null
 }
 
 const statusText: Record<string, string> = {
@@ -37,8 +38,9 @@ export default function PaymentHistory() {
       <div className="p-4 space-y-2">
         {invoices.map((i) => (
           <Card key={i.id} className="flex items-center justify-between" onClick={() => {
-            if (i.status === 'PAID' && i.payment?.receiptUrl) window.open(i.payment.receiptUrl, '_blank')
-            else nav(`/tenant/invoice/${i.id}`)
+            if (i.status === 'PAID' && i.payment?.id) {
+              openPdfViewer(nav, `payments/${i.payment.id}/receipt/pdf`, { title: 'ใบเสร็จรับเงิน' })
+            } else nav(`/tenant/invoice/${i.id}`)
           }}>
             <div>
               <div className="font-medium">{thaiMonth(i.month)} {i.year}</div>

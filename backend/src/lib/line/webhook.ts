@@ -100,7 +100,9 @@ async function handleMessage(event: MessageEvent): Promise<void> {
           tenantName: tenant.name,
           amount: Number(payment.invoice.total),
           date: payment.approvedAt?.toLocaleDateString('th-TH') || '-',
-          receiptUrl: payment.receiptUrl,
+          receiptUrl: liff(
+            `/pdf-viewer?path=${encodeURIComponent(`payments/${payment.id}/receipt/pdf`)}&title=${encodeURIComponent('ใบเสร็จรับเงิน')}`
+          ),
         })
       )
     }
