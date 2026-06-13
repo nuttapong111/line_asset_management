@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
+import { pushEntry } from '../lib/line/lineService'
 
 const router = Router()
 // Invite links must be LIFF links (https://liff.line.me/<id>) so they open
@@ -76,8 +77,9 @@ router.post('/owners/link', authMiddleware, async (req, res) => {
     where: { id: owner.id },
     data: { lineUserId, linkedAt: new Date() },
   })
-  // Owners do NOT get the tenant rich menu (it routes to tenant pages); they
-  // open the dashboard via the entry button / keyword instead.
+  // Owners do NOT get the tenant rich menu (it routes to tenant pages); send a
+  // button so they can reopen the dashboard from the OA chat anytime.
+  pushEntry(lineUserId, 'แตะเพื่อเปิดแดชบอร์ดเจ้าของ', 'เปิดแดชบอร์ด').catch(() => {})
   const token = signToken({ lineUserId, role: 'OWNER', ownerId: updated.id })
   res.json({ ok: true, token, role: 'OWNER', owner: updated })
 })

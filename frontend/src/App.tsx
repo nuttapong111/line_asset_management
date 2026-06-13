@@ -7,6 +7,7 @@ import Splash from './pages/Splash'
 import LinkRoom from './pages/LinkRoom'
 import LinkOwner from './pages/LinkOwner'
 import LinkAdmin from './pages/LinkAdmin'
+import LinkInvite from './pages/LinkInvite'
 import Portfolio from './pages/admin/Portfolio'
 import PropertyDetail from './pages/admin/PropertyDetail'
 import AddProperty from './pages/admin/AddProperty'
@@ -60,7 +61,6 @@ export default function App() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const inviteToken = params.get('token')
-  const inviteType = params.get('invite')
 
   async function boot(mockRole: Role = 'ADMIN') {
     try {
@@ -77,18 +77,16 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Once authenticated, route by role (unless coming in via invite token)
+  // Once authenticated, route by role (unless coming in via invite token).
+  // The token type (owner vs tenant) is detected server-side, so we no longer
+  // depend on the `invite` query param surviving the LIFF redirect.
   useEffect(() => {
     if (!ready || !jwt) return
     if (inviteToken) {
-      const path = window.location.pathname
-      // Prefer the explicit invite type (query param), fall back to the path
-      const isOwner = inviteType === 'owner' || path.includes('/link-owner')
-      const target = isOwner ? '/link-owner' : '/link-room'
-      navigate(`${target}?token=${inviteToken}`, { replace: true })
+      navigate(`/link?token=${inviteToken}`, { replace: true })
       return
     }
-  }, [ready, jwt, inviteToken, inviteType, navigate])
+  }, [ready, jwt, inviteToken, navigate])
 
   function switchRole(r: Role) {
     clearAuth()
@@ -111,6 +109,7 @@ export default function App() {
     <div className="max-w-md mx-auto min-h-screen bg-[#f5f6f8]">
       <Routes>
         <Route path="/" element={<Navigate to={home} replace />} />
+        <Route path="/link" element={<LinkInvite />} />
         <Route path="/link-room" element={<LinkRoom />} />
         <Route path="/link-owner" element={<LinkOwner />} />
         <Route path="/link-admin" element={<LinkAdmin />} />

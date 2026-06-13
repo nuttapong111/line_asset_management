@@ -22,6 +22,7 @@ import maintenanceRouter from './routes/maintenance'
 import notificationsRouter from './routes/notifications'
 import reportsRouter from './routes/reports'
 import webhookRouter from './routes/webhook'
+import inviteRouter from './routes/invite'
 
 const app = express()
 
@@ -38,6 +39,7 @@ app.use(express.json())
 app.get('/api/health', (_req, res) => res.json({ ok: true, env: env.NODE_ENV }))
 
 app.use('/api/auth', authRouter)
+app.use('/api/invite', inviteRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api/properties', propertiesRouter)
 app.use('/api', unitsRouter) // /properties/:id/units, /units/:id...
