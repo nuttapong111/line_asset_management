@@ -73,16 +73,22 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Once authenticated, route by role (unless coming in via invite token).
-  // The token type (owner vs tenant) is detected server-side, so we no longer
-  // depend on the `invite` query param surviving the LIFF redirect.
+  // Invite links arrive with ?token=… in the LIFF URL. Only unlinked (NEW) users
+  // should see the linking screen — once linked, drop the token and go to home.
   useEffect(() => {
-    if (!ready || !jwt) return
-    if (inviteToken) {
+    if (!ready || !jwt || !inviteToken) return
+    if (role === 'NEW') {
       navigate(`/link?token=${inviteToken}`, { replace: true })
       return
     }
-  }, [ready, jwt, inviteToken, navigate])
+    const dest =
+      role === 'ADMIN' || role === 'OWNER'
+        ? '/admin/portfolio'
+        : role === 'TENANT'
+        ? '/tenant/home'
+        : '/link-room'
+    navigate(dest, { replace: true })
+  }, [ready, jwt, inviteToken, role, navigate])
 
   function switchRole(r: Role) {
     clearAuth()
