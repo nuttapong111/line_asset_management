@@ -8,7 +8,7 @@ import {
   pushMaintNew,
   pushText,
 } from '../lib/line/lineService'
-import { buildAndSendForProperty } from './invoiceService'
+import { buildAndSendRentForProperty } from './invoiceService'
 
 const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
 
@@ -41,7 +41,7 @@ export async function sendInvoicesForAdmin(adminId: string): Promise<void> {
   const props = await prisma.property.findMany({ where: { adminId } })
   const now = new Date()
   for (const p of props) {
-    await buildAndSendForProperty(p.id, now.getMonth() + 1, now.getFullYear())
+    await buildAndSendRentForProperty(p.id, now.getMonth() + 1, now.getFullYear())
   }
 }
 

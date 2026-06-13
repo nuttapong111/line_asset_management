@@ -67,13 +67,14 @@ function separator(): FlexComponent {
 }
 
 export function buildInvoiceFlex(d: InvoiceData): FlexMessage {
+  const headerTitle = d.title || 'ใบแจ้งหนี้ค่าเช่า'
   const itemRows: FlexComponent[] = d.items.map((it) => row(it.label, baht(it.amount)))
   return {
     type: 'flex',
-    altText: `ใบแจ้งหนี้ ${THAI_MONTHS[d.month]} ${d.year} ห้อง ${d.roomNumber} ${baht(d.total)}`,
+    altText: `${headerTitle} ${THAI_MONTHS[d.month]} ${d.year} ห้อง ${d.roomNumber} ${baht(d.total)}`,
     contents: {
       type: 'bubble',
-      header: header('ใบแจ้งหนี้ค่าเช่า', `${THAI_MONTHS[d.month]} ${d.year}`, COLORS.green),
+      header: header(headerTitle, `${THAI_MONTHS[d.month]} ${d.year}`, COLORS.green),
       body: {
         type: 'box',
         layout: 'vertical',

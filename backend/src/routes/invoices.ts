@@ -4,10 +4,12 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { propertyWhere, invoiceWhere } from '../lib/scope'
 import {
-  buildInvoiceDraft,
+  buildRentInvoiceDraft,
+  buildUtilityInvoiceDraft,
   createInvoiceFromDraft,
   sendInvoiceLine,
-  buildAndSendForProperty,
+  buildAndSendRentForProperty,
+  buildAndSendUtilityForProperty,
 } from '../services/invoiceService'
 
 const router = Router()
@@ -56,7 +58,14 @@ const createSchema = z.object({
   unitId: z.string(),
   month: z.number().int().min(1).max(12),
   year: z.number().int(),
+  type: z.enum(['RENT', 'UTILITY']).optional().default('RENT'),
 })
+
+async function buildDraft(unitId: string, month: number, year: number, type: 'RENT' | 'UTILITY') {
+  return type === 'UTILITY'
+    ? buildUtilityInvoiceDraft(unitId, month, year)
+    : buildRentInvoiceDraft(unitId, month, year)
+}
 
 // POST /api/invoices (manager) — build + save
 router.post('/', requireRole('ADMIN', 'OWNER'), async (req, res) => {
@@ -66,7 +75,7 @@ router.post('/', requireRole('ADMIN', 'OWNER'), async (req, res) => {
     where: { id: parse.data.unitId, property: propertyWhere(req.user!) },
   })
   if (!unit) return res.status(404).json({ error: 'Unit not found' })
-  const draft = await buildInvoiceDraft(parse.data.unitId, parse.data.month, parse.data.year)
+  const draft = await buildDraft(parse.data.unitId, parse.data.month, parse.data.year, parse.data.type)
   const invoice = await createInvoiceFromDraft(draft)
   res.status(201).json(invoice)
 })
@@ -79,7 +88,7 @@ router.post('/build-preview', requireRole('ADMIN', 'OWNER'), async (req, res) =>
     where: { id: parse.data.unitId, property: propertyWhere(req.user!) },
   })
   if (!unit) return res.status(404).json({ error: 'Unit not found' })
-  const draft = await buildInvoiceDraft(parse.data.unitId, parse.data.month, parse.data.year)
+  const draft = await buildDraft(parse.data.unitId, parse.data.month, parse.data.year, parse.data.type)
   res.json(draft)
 })
 
@@ -98,6 +107,7 @@ const bulkSchema = z.object({
   propertyId: z.string(),
   month: z.number().int().min(1).max(12),
   year: z.number().int(),
+  type: z.enum(['RENT', 'UTILITY']).optional().default('RENT'),
 })
 async function sendAllHandler(req: import('express').Request, res: import('express').Response) {
   const parse = bulkSchema.safeParse(req.body)
@@ -106,7 +116,10 @@ async function sendAllHandler(req: import('express').Request, res: import('expre
     where: { id: parse.data.propertyId, ...propertyWhere(req.user!) },
   })
   if (!prop) return res.status(404).json({ error: 'Property not found' })
-  const result = await buildAndSendForProperty(parse.data.propertyId, parse.data.month, parse.data.year)
+  const result =
+    parse.data.type === 'UTILITY'
+      ? await buildAndSendUtilityForProperty(parse.data.propertyId, parse.data.month, parse.data.year)
+      : await buildAndSendRentForProperty(parse.data.propertyId, parse.data.month, parse.data.year)
   res.json(result)
 }
 router.post('/send-bulk', requireRole('ADMIN', 'OWNER'), sendAllHandler)

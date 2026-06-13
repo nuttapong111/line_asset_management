@@ -13,6 +13,7 @@ export interface InvoiceData {
   total: number
   dueDate: string
   liffUrl: string
+  title?: string
 }
 
 export interface ReminderData {

@@ -66,7 +66,7 @@ export default function NotifSettings() {
         <Section title="เตือนล่วงหน้าค่าเช่า" enabled={s.rentReminderEnabled} onToggle={(v) => upd({ rentReminderEnabled: v })}>
           <Label>เตือนกี่วันก่อนครบกำหนด</Label>
           <div className="flex gap-2 flex-wrap">
-            {[7, 3, 1].map((d) => (
+            {[10, 5, 1].map((d) => (
               <Chip key={d} active={s.rentReminderDays.includes(d)} onClick={() => toggleDay('rentReminderDays', d)}>{d} วัน</Chip>
             ))}
           </div>
@@ -75,7 +75,7 @@ export default function NotifSettings() {
         </Section>
 
         <Section title="ค้างชำระ" enabled={s.overdueEnabled} onToggle={(v) => upd({ overdueEnabled: v })}>
-          <Label>เตือนซ้ำทุกกี่วัน</Label>
+          <Label>เตือนซ้ำทุกกี่วัน (1 = ทุกวันจนกว่าจะชำระ)</Label>
           <div className="flex gap-2 flex-wrap">
             {[1, 2, 3, 5, 7].map((d) => (
               <Chip key={d} active={s.overdueRepeatDays === d} onClick={() => upd({ overdueRepeatDays: d })}>{d} วัน</Chip>
