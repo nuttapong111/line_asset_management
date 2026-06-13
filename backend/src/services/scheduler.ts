@@ -9,6 +9,7 @@ import {
   pushText,
 } from '../lib/line/lineService'
 import { buildAndSendRentForProperty } from './invoiceService'
+import { linkedTenant } from '../services/tenantLifecycle'
 
 const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
 
@@ -57,7 +58,7 @@ export async function sendRentReminders(adminId: string, daysAhead: number): Pro
     include: { unit: { include: { tenants: { where: { isActive: true } } } } },
   })
   for (const inv of invoices) {
-    const t = inv.unit.tenants[0]
+    const t = linkedTenant(inv.unit.tenants)
     if (!t?.lineUserId) continue
     await pushRentReminder(t.lineUserId, {
       invoiceId: inv.id,
@@ -86,7 +87,7 @@ export async function sendOverdueReminders(adminId: string, repeatDays: number):
   for (const inv of invoices) {
     const daysLate = Math.floor((today.getTime() - startOfDay(inv.dueDate).getTime()) / (1000 * 60 * 60 * 24))
     if (daysLate <= 0 || daysLate % repeatDays !== 0) continue
-    const t = inv.unit.tenants[0]
+    const t = linkedTenant(inv.unit.tenants)
     if (!t?.lineUserId) continue
     const lateFeePerDay = Number(inv.unit.contracts[0]?.lateFeePerDay ?? 30)
     const lateFee = daysLate * lateFeePerDay

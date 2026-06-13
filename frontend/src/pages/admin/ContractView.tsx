@@ -20,7 +20,7 @@ interface Contract {
   signedAt?: string | null
   terms?: string
   tenant: { name: string; phone: string }
-  unit: { roomNumber: string; property: { name: string } }
+  unit: { roomNumber: string; property: { id: string; name: string } }
 }
 
 export default function ContractView() {
@@ -29,6 +29,7 @@ export default function ContractView() {
   const [contract, setContract] = useState<Contract>()
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string>()
+  const [movingOut, setMovingOut] = useState(false)
 
   const load = () => api.get(`/contracts/${id}`).then((r) => setContract(r.data))
   useEffect(() => {
@@ -70,6 +71,20 @@ export default function ContractView() {
       await load()
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function moveOut() {
+    if (!confirm('ยืนยันผู้เช่าย้ายออก?\n\nระบบจะยกเลิกสัญญา ปิดบัญชีผู้เช่า และตั้งห้องเป็นว่าง — จากนั้นสามารถเพิ่มผู้เช่าใหม่ได้')) return
+    setMovingOut(true)
+    try {
+      await api.put(`/contracts/${id}/terminate`)
+      nav(`/admin/property/${contract!.unit.property.id}`, { replace: true })
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
+      alert(typeof msg === 'string' ? msg : 'ดำเนินการไม่สำเร็จ')
+    } finally {
+      setMovingOut(false)
     }
   }
 
@@ -163,6 +178,18 @@ export default function ContractView() {
           {uploadError && <p className="text-danger text-sm mt-2">{uploadError}</p>}
           <p className="text-xs text-gray-400 mt-3">รองรับ JPG, PNG หรือ PDF ขนาดไม่เกิน 15 MB</p>
         </Card>
+
+        {contract.status === 'ACTIVE' && (
+          <Card className="border-red-200 bg-red-50">
+            <h3 className="font-semibold text-danger mb-1">ผู้เช่าย้ายออก</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              เมื่อผู้เช่าย้ายออก ให้กดปุ่มด้านล่างเพื่อยกเลิกสัญญาและปล่อยห้องว่าง จากนั้นกลับไปที่รายการห้องแล้วกด <strong>+ ผู้เช่า</strong> เพื่อรับผู้เช่าใหม่
+            </p>
+            <Button variant="danger" onClick={moveOut} disabled={movingOut}>
+              {movingOut ? 'กำลังดำเนินการ...' : 'ยกเลิกสัญญา / ผู้เช่าย้ายออก'}
+            </Button>
+          </Card>
+        )}
       </div>
     </div>
   )

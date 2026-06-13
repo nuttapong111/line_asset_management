@@ -6,6 +6,7 @@ import { authMiddleware, requireRole } from '../middleware/auth'
 import { propertyWhere } from '../lib/scope'
 import { generateContractPdf } from '../services/pdfService'
 import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
+import { moveOutByContractId } from '../services/tenantLifecycle'
 
 const router = Router()
 router.use(authMiddleware)
@@ -210,15 +211,18 @@ router.put('/:id/renew', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   res.json(updated)
 })
 
-// PUT /api/contracts/:id/terminate (manager)
+// PUT /api/contracts/:id/terminate (manager) — tenant moves out
 router.put('/:id/terminate', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   const contract = await loadContract(req.params.id, req.user!)
   if (!contract) return res.status(404).json({ error: 'Contract not found' })
-  const updated = await prisma.contract.update({
-    where: { id: contract.id },
-    data: { status: 'TERMINATED' },
-  })
-  res.json(updated)
+  try {
+    await moveOutByContractId(contract.id)
+    const updated = await prisma.contract.findUnique({ where: { id: contract.id } })
+    res.json(updated)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Terminate failed'
+    res.status(400).json({ error: msg })
+  }
 })
 
 export default router

@@ -84,7 +84,7 @@ router.get('/:id', async (req, res) => {
     include: {
       units: {
         include: {
-          tenants: { where: { isActive: true } },
+          tenants: { where: { isActive: true }, orderBy: [{ linkedAt: 'desc' }, { createdAt: 'desc' }] },
           invoices: { orderBy: { createdAt: 'desc' }, take: 1 },
           contracts: { where: { status: 'ACTIVE' }, orderBy: { createdAt: 'desc' }, take: 1 },
         },

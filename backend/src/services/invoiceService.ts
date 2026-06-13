@@ -2,6 +2,7 @@ import { InvoiceType } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { env } from '../lib/env'
 import { pushInvoice } from '../lib/line/lineService'
+import { linkedTenant } from './tenantLifecycle'
 import { InvoiceData } from '../lib/line/types/line.types'
 
 const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
@@ -168,7 +169,7 @@ export async function sendInvoiceLine(invoiceId: string): Promise<boolean> {
     include: { unit: { include: { tenants: { where: { isActive: true } } } } },
   })
   if (!invoice) return false
-  const tenant = invoice.unit.tenants[0]
+  const tenant = linkedTenant(invoice.unit.tenants)
   if (!tenant?.lineUserId) return false
 
   const typeLabel = invoice.type === 'RENT' ? 'ใบแจ้งหนี้ค่าเช่า' : 'ใบแจ้งหนี้ค่าน้ำค่าไฟ'

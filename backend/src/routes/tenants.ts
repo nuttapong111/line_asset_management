@@ -8,6 +8,7 @@ import { propertyWhere } from '../lib/scope'
 import { sendSms } from '../services/smsService'
 import { setTenantRichMenu } from '../lib/line/richMenu'
 import { pushInvite, pushLinked } from '../lib/line/lineService'
+import { linkedTenant } from '../services/tenantLifecycle'
 
 const router = Router()
 const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
@@ -41,16 +42,29 @@ router.post('/', ...managerGuard, async (req, res) => {
   const unit = await ownsUnit(req.user!, parse.data.unitId)
   if (!unit) return res.status(404).json({ error: 'Unit not found' })
 
-  const tenant = await prisma.tenant.create({
-    data: {
-      name: parse.data.name,
-      phone: parse.data.phone,
-      lineId: parse.data.lineId,
-      idCardNumber: parse.data.idCardNumber,
-      unitId: parse.data.unitId,
-      startDate: new Date(parse.data.startDate),
-      endDate: parse.data.endDate ? new Date(parse.data.endDate) : null,
-    },
+  const activeCount = await prisma.tenant.count({
+    where: { unitId: parse.data.unitId, isActive: true },
+  })
+  if (activeCount > 0) {
+    return res.status(400).json({
+      error: 'ห้องนี้มีผู้เช่าอยู่แล้ว กรุณายกเลิกสัญญาและปล่อยห้องก่อนเพิ่มผู้เช่าใหม่',
+    })
+  }
+
+  const tenant = await prisma.$transaction(async (tx) => {
+    const created = await tx.tenant.create({
+      data: {
+        name: parse.data.name,
+        phone: parse.data.phone,
+        lineId: parse.data.lineId,
+        idCardNumber: parse.data.idCardNumber,
+        unitId: parse.data.unitId,
+        startDate: new Date(parse.data.startDate),
+        endDate: parse.data.endDate ? new Date(parse.data.endDate) : null,
+      },
+    })
+    await tx.unit.update({ where: { id: parse.data.unitId }, data: { status: 'OCCUPIED' } })
+    return created
   })
   res.status(201).json(tenant)
 })
@@ -98,9 +112,9 @@ router.post('/link', authMiddleware, async (req, res) => {
     return res.status(410).json({ error: 'Invite token expired' })
   }
 
-  // Find an unlinked active tenant on this unit, else attach to most recent
+  // Prefer unlinked tenant awaiting invite; else the linked active tenant
   const tenant =
-    unit.tenants.find((t) => !t.lineUserId) || unit.tenants[unit.tenants.length - 1]
+    unit.tenants.find((t) => !t.lineUserId) || linkedTenant(unit.tenants)
   if (!tenant) return res.status(404).json({ error: 'No tenant record for this unit' })
 
   const updated = await prisma.tenant.update({
