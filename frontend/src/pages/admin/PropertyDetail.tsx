@@ -13,6 +13,7 @@ interface Unit {
   status: 'VACANT' | 'OCCUPIED' | 'MAINTENANCE'
   tenants: { id: string; name: string }[]
   invoices: { id: string; status: string }[]
+  contracts: { id: string; signedAt?: string | null }[]
 }
 interface Property {
   id: string
@@ -111,7 +112,18 @@ export default function PropertyDetail() {
                     + ผู้เช่า
                   </Button>
                 ) : (
-                  <Badge kind={overdue ? 'overdue' : 'paid'}>{overdue ? 'ค้างชำระ' : 'ปกติ'}</Badge>
+                  <div className="flex items-center gap-2">
+                    {u.contracts[0] && (
+                      <Button
+                        variant="ghost"
+                        className="w-auto px-2 py-1 text-xs"
+                        onClick={() => nav(`/admin/contract/${u.contracts[0].id}`)}
+                      >
+                        สัญญา{u.contracts[0].signedAt ? '' : ' · รอลงนาม'}
+                      </Button>
+                    )}
+                    <Badge kind={overdue ? 'overdue' : 'paid'}>{overdue ? 'ค้างชำระ' : 'ปกติ'}</Badge>
+                  </div>
                 )}
               </Card>
             )

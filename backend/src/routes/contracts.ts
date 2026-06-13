@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import multer from 'multer'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
@@ -8,6 +9,21 @@ import { uploadFile, readFile, extractStorageKey } from '../services/storageServ
 
 const router = Router()
 router.use(authMiddleware)
+
+const signedUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (['image/jpeg', 'image/png', 'application/pdf'].includes(file.mimetype)) cb(null, true)
+    else cb(new Error('Only JPEG, PNG, or PDF allowed'))
+  },
+})
+
+function extForMime(mime: string) {
+  if (mime === 'application/pdf') return 'pdf'
+  if (mime === 'image/png') return 'png'
+  return 'jpg'
+}
 
 async function buildContractPdf(contract: NonNullable<Awaited<ReturnType<typeof loadContract>>>) {
   const year = contract.startDate.getFullYear()
@@ -122,6 +138,46 @@ router.get('/:id/pdf', async (req, res) => {
   res.setHeader('Content-Type', file.contentType)
   res.setHeader('Content-Disposition', `inline; filename="contract-${contract.id}.pdf"`)
   res.send(file.body)
+})
+
+// POST /api/contracts/:id/signed — upload scanned/photo of signed contract (manager)
+router.post('/:id/signed', requireRole('ADMIN', 'OWNER'), signedUpload.single('file'), async (req, res) => {
+  const contract = await loadContract(req.params.id, req.user!)
+  if (!contract) return res.status(404).json({ error: 'Contract not found' })
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
+
+  const ext = extForMime(req.file.mimetype)
+  const key = `contracts/${contract.id}/signed-${Date.now()}.${ext}`
+  const signedDocumentUrl = await uploadFile(key, req.file.buffer, req.file.mimetype)
+  const updated = await prisma.contract.update({
+    where: { id: contract.id },
+    data: { signedDocumentUrl, signedAt: new Date() },
+  })
+  res.json(updated)
+})
+
+// GET /api/contracts/:id/signed — view signed copy (private storage via API)
+router.get('/:id/signed', async (req, res) => {
+  const contract = await loadContract(req.params.id, req.user!)
+  if (!contract) return res.status(404).json({ error: 'Contract not found' })
+  if (!contract.signedDocumentUrl) return res.status(404).json({ error: 'No signed document' })
+
+  const key = extractStorageKey(contract.signedDocumentUrl)
+  const file = await readFile(key)
+  res.setHeader('Content-Type', file.contentType)
+  res.setHeader('Content-Disposition', `inline; filename="contract-${contract.id}-signed"`)
+  res.send(file.body)
+})
+
+// DELETE /api/contracts/:id/signed — remove signed copy to re-upload (manager)
+router.delete('/:id/signed', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  const contract = await loadContract(req.params.id, req.user!)
+  if (!contract) return res.status(404).json({ error: 'Contract not found' })
+  const updated = await prisma.contract.update({
+    where: { id: contract.id },
+    data: { signedDocumentUrl: null, signedAt: null },
+  })
+  res.json(updated)
 })
 
 // GET /api/contracts/:id

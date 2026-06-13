@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/axios'
+import { openPdfViewer } from '../../lib/pdfNav'
 import { Button, Card, Badge } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
 import { baht, thaiDate } from '../../lib/utils'
@@ -15,15 +16,16 @@ interface Contract {
   lateFeePerDay: string
   status: string
   pdfUrl?: string
+  signedAt?: string | null
   tenant: { name: string }
   unit: { roomNumber: string; property: { name: string } }
 }
 
 export default function ContractView() {
   const { id } = useParams()
+  const nav = useNavigate()
   const [contract, setContract] = useState<Contract>()
   const [error, setError] = useState<string>()
-  const [busy, setBusy] = useState(false)
 
   const load = () => {
     const url = id ? `/contracts/${id}` : '/contracts/me'
@@ -39,34 +41,15 @@ export default function ContractView() {
   )
   if (!contract) return <div className="p-6 text-center text-gray-400">กำลังโหลด...</div>
 
-  async function downloadPdf() {
-    setBusy(true)
-    try {
-      const { data } = await api.get(`/contracts/${contract!.id}/pdf`, { responseType: 'blob' })
-      const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
-      window.open(url, '_blank')
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
-    } catch {
-      alert('ไม่สามารถดาวน์โหลด PDF ได้')
-    } finally {
-      setBusy(false)
-    }
+  function viewPdf(print?: boolean) {
+    openPdfViewer(nav, `contracts/${contract!.id}/pdf`, { title: 'สัญญาเช่า', print })
   }
 
-  async function printPdf() {
-    setBusy(true)
-    try {
-      const { data } = await api.get(`/contracts/${contract!.id}/pdf`, { responseType: 'blob' })
-      const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
-      const w = window.open(url, '_blank')
-      if (w) w.addEventListener('load', () => w.print())
-      setTimeout(() => URL.revokeObjectURL(url), 120_000)
-    } catch {
-      alert('ไม่สามารถเปิด PDF สำหรับพิมพ์ได้')
-    } finally {
-      setBusy(false)
-    }
+  function viewSigned() {
+    openPdfViewer(nav, `contracts/${contract!.id}/signed`, { title: 'สัญญาที่ลงนามแล้ว' })
   }
+
+  const hasSigned = Boolean(contract.signedAt)
 
   return (
     <div>
@@ -90,9 +73,12 @@ export default function ContractView() {
           </div>
         </Card>
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={downloadPdf} disabled={busy}>{busy ? 'กำลังโหลด...' : 'ดาวน์โหลด PDF'}</Button>
-          <Button variant="secondary" onClick={printPdf} disabled={busy}>ปริ้น PDF</Button>
+          <Button variant="secondary" onClick={() => viewPdf()}>ดู / ดาวน์โหลด PDF</Button>
+          <Button variant="secondary" onClick={() => viewPdf(true)}>ปริ้น PDF</Button>
         </div>
+        {hasSigned && (
+          <Button onClick={viewSigned}>ดูสัญญาที่ลงนามแล้ว</Button>
+        )}
       </div>
     </div>
   )

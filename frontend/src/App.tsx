@@ -38,6 +38,7 @@ import MaintenanceList from './pages/tenant/MaintenanceList'
 import MaintenanceForm from './pages/tenant/MaintenanceForm'
 import TenantMaintenanceDetail from './pages/tenant/MaintenanceDetail'
 import TenantProfile from './pages/tenant/Profile'
+import PdfViewer from './pages/PdfViewer'
 
 function DevRoleSwitcher({ onPick }: { onPick: (r: Role) => void }) {
   if (LIFF_ID) return null
@@ -156,6 +157,8 @@ export default function App() {
         <Route path="/tenant/maintenance/new" element={<MaintenanceForm />} />
         <Route path="/tenant/maintenance/:id" element={<TenantMaintenanceDetail />} />
         <Route path="/tenant/profile" element={<TenantProfile />} />
+
+        <Route path="/pdf-viewer" element={<PdfViewer />} />
 
         <Route path="*" element={<Navigate to={home} replace />} />
       </Routes>

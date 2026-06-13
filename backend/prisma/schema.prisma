@@ -111,10 +111,12 @@ model Contract {
   deposit       Decimal
   lateFeePerDay Decimal        @default(30)
   dueDay        Int            @default(5)
-  terms         String?
-  pdfUrl        String?
-  status        ContractStatus @default(ACTIVE)
-  createdAt     DateTime       @default(now())
+  terms              String?
+  pdfUrl             String?
+  signedDocumentUrl  String?
+  signedAt           DateTime?
+  status             ContractStatus @default(ACTIVE)
+  createdAt          DateTime       @default(now())
 }
 
 enum ContractStatus {

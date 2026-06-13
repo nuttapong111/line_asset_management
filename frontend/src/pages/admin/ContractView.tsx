@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/axios'
+import { openPdfViewer } from '../../lib/pdfNav'
 import { Button, Card, Badge } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
 import { baht, thaiDate } from '../../lib/utils'
@@ -15,6 +16,8 @@ interface Contract {
   lateFeePerDay: string
   status: string
   pdfUrl?: string
+  signedDocumentUrl?: string | null
+  signedAt?: string | null
   terms?: string
   tenant: { name: string; phone: string }
   unit: { roomNumber: string; property: { name: string } }
@@ -22,8 +25,10 @@ interface Contract {
 
 export default function ContractView() {
   const { id } = useParams()
+  const nav = useNavigate()
   const [contract, setContract] = useState<Contract>()
-  const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string>()
 
   const load = () => api.get(`/contracts/${id}`).then((r) => setContract(r.data))
   useEffect(() => {
@@ -33,39 +38,46 @@ export default function ContractView() {
 
   if (!contract) return <div className="p-6 text-center text-gray-400">กำลังโหลด...</div>
 
-  async function downloadPdf() {
-    setBusy(true)
+  function viewPdf(print?: boolean) {
+    openPdfViewer(nav, `contracts/${id}/pdf`, { title: 'สัญญาเช่า (แบบร่าง)', print })
+  }
+
+  function viewSigned() {
+    openPdfViewer(nav, `contracts/${id}/signed`, { title: 'สัญญาที่ลงนามแล้ว' })
+  }
+
+  async function uploadSigned(file: File) {
+    setUploading(true)
+    setUploadError(undefined)
     try {
-      const { data } = await api.get(`/contracts/${id}/pdf`, { responseType: 'blob' })
-      const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
-      window.open(url, '_blank')
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
-    } catch {
-      alert('ไม่สามารถดาวน์โหลด PDF ได้')
+      const fd = new FormData()
+      fd.append('file', file)
+      await api.post(`/contracts/${id}/signed`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      await load()
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
+      setUploadError(typeof msg === 'string' ? msg : 'อัปโหลดไม่สำเร็จ')
     } finally {
-      setBusy(false)
+      setUploading(false)
     }
   }
 
-  async function printPdf() {
-    setBusy(true)
+  async function removeSigned() {
+    if (!confirm('ลบหลักฐานการลงนามนี้?')) return
+    setUploading(true)
     try {
-      const { data } = await api.get(`/contracts/${id}/pdf`, { responseType: 'blob' })
-      const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
-      const w = window.open(url, '_blank')
-      if (w) w.addEventListener('load', () => w.print())
-      setTimeout(() => URL.revokeObjectURL(url), 120_000)
-    } catch {
-      alert('ไม่สามารถเปิด PDF สำหรับพิมพ์ได้')
+      await api.delete(`/contracts/${id}/signed`)
+      await load()
     } finally {
-      setBusy(false)
+      setUploading(false)
     }
   }
 
   const daysLeft = Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  const hasSigned = Boolean(contract.signedAt)
 
   return (
-    <div>
+    <div className="pb-6">
       <TopBar title="สัญญาเช่า" />
       <div className="p-4 space-y-4">
         <Card>
@@ -74,7 +86,10 @@ export default function ContractView() {
               <h3 className="font-semibold text-lg">{contract.unit.property.name}</h3>
               <p className="text-gray-400 text-sm">ห้อง {contract.unit.roomNumber}</p>
             </div>
-            <Badge kind={contract.status === 'ACTIVE' ? 'paid' : 'gray'}>{contract.status}</Badge>
+            <div className="flex flex-col items-end gap-1">
+              <Badge kind={contract.status === 'ACTIVE' ? 'paid' : 'gray'}>{contract.status}</Badge>
+              <Badge kind={hasSigned ? 'paid' : 'pending'}>{hasSigned ? 'ลงนามแล้ว' : 'รอลงนาม'}</Badge>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <Field label="ผู้เช่า" value={contract.tenant.name} />
@@ -94,10 +109,60 @@ export default function ContractView() {
           </Card>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={downloadPdf} disabled={busy}>{busy ? 'กำลังโหลด...' : 'ดาวน์โหลด PDF ↓'}</Button>
-          <Button variant="secondary" onClick={printPdf} disabled={busy}>ปริ้น PDF</Button>
-        </div>
+        <Card>
+          <h3 className="font-semibold mb-2">ขั้นตอนลงนามสัญญา</h3>
+          <ol className="text-sm text-gray-600 space-y-2 mb-4 list-decimal list-inside">
+            <li>ปริ้น PDF สัญญาจากระบบ (ปุ่มด้านล่าง)</li>
+            <li>ให้ผู้เช่าและเจ้าของลงนามบนเอกสารจริง</li>
+            <li>ถ่ายรูปหรือสแกนแล้วแนบกลับเป็นหลักฐานในระบบ</li>
+          </ol>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <Button variant="secondary" onClick={() => viewPdf()}>ดู PDF แบบร่าง</Button>
+            <Button variant="secondary" onClick={() => viewPdf(true)}>ปริ้น PDF</Button>
+          </div>
+
+          {hasSigned ? (
+            <div className="space-y-3 pt-3 border-t border-gray-100">
+              <p className="text-sm text-line font-medium">
+                แนบหลักฐานแล้ว · {thaiDate(contract.signedAt!)}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button onClick={viewSigned}>ดูหลักฐาน</Button>
+                <Button variant="danger" onClick={removeSigned} disabled={uploading}>ลบหลักฐาน</Button>
+              </div>
+              <label className="block">
+                <span className="inline-block bg-gray-100 rounded-lg px-3 py-2 text-sm cursor-pointer">
+                  {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดใหม่'}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,application/pdf"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => e.target.files?.[0] && uploadSigned(e.target.files[0])}
+                />
+              </label>
+            </div>
+          ) : (
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-sm text-amber-700 mb-2">ยังไม่มีหลักฐานการลงนาม — แนบไฟล์หลังปริ้นและเซ็นแล้ว</p>
+              <label className="block">
+                <span className="inline-flex w-full justify-center bg-line text-white rounded-xl px-4 py-3 text-sm font-medium cursor-pointer">
+                  {uploading ? 'กำลังอัปโหลด...' : '+ แนบสัญญาที่ลงนามแล้ว'}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,application/pdf"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => e.target.files?.[0] && uploadSigned(e.target.files[0])}
+                />
+              </label>
+            </div>
+          )}
+          {uploadError && <p className="text-danger text-sm mt-2">{uploadError}</p>}
+          <p className="text-xs text-gray-400 mt-3">รองรับ JPG, PNG หรือ PDF ขนาดไม่เกิน 15 MB</p>
+        </Card>
       </div>
     </div>
   )
