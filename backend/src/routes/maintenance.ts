@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
-import { env } from '../lib/env'
+import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { pushMaintNew, pushText } from '../lib/line/lineService'
 import { notifyOwnersMaintenance } from '../services/ownerNotify'
@@ -9,7 +9,7 @@ import { notifyOwnersMaintenance } from '../services/ownerNotify'
 const router = Router()
 router.use(authMiddleware)
 
-const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
 
 async function nextTicketNo(year: number): Promise<string> {
   const count = await prisma.maintenance.count({ where: { ticketNo: { startsWith: `MT-${year}-` } } })

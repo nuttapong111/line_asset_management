@@ -2,7 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
-import { env } from '../lib/env'
+import { env, liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { generatePromptPayPayload } from '../services/qrService'
 import { uploadFile } from '../services/storageService'
@@ -14,7 +14,7 @@ import { notifyOwnersPayment } from '../services/ownerNotify'
 const router = Router()
 router.use(authMiddleware)
 
-const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
 
 const upload = multer({
   storage: multer.memoryStorage(),

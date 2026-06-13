@@ -1,11 +1,11 @@
 import { WebhookEvent, MessageEvent, PostbackEvent, FollowEvent } from '@line/bot-sdk'
 import { prisma } from '../prisma'
-import { env } from '../env'
+import { liffEntryUrl } from '../env'
 import { reply, replyQuickMenu, pushText, pushSlipApproved, buildEntryMessage } from './lineService'
 import { setTenantRichMenu } from './richMenu'
 import { buildReceiptFlex } from './flexMessages'
 
-const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
 
 export async function handleLineEvents(events: WebhookEvent[]): Promise<void> {
   await Promise.allSettled(events.map(handleEvent))

@@ -1,15 +1,15 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
-import { env } from '../lib/env'
+import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole } from '../middleware/auth'
 
 const router = Router()
 const guard = [authMiddleware, requireRole('ADMIN')] as const
 
-// Invite links route by query param so they work even when LIFF drops the path
+// Invite links must be LIFF links so they open inside the LINE app
 const inviteUrl = (token: string, type: 'tenant' | 'owner') =>
-  `${env.LIFF_BASE_URL.replace(/\/$/, '')}?token=${token}&invite=${type}`
+  `${liffEntryUrl.replace(/\/$/, '')}?token=${token}&invite=${type}`
 
 const unitSchema = z.object({
   roomNumber: z.string().min(1),

@@ -1,17 +1,17 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
-import { env } from '../lib/env'
+import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
 import { sendSms } from '../services/smsService'
 import { setTenantRichMenu } from '../lib/line/richMenu'
 import { pushInvite, pushLinked } from '../lib/line/lineService'
 
 const router = Router()
-const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
-// Invite links route by query param so they work even when LIFF drops the path
+const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
+// Invite links must be LIFF links so they open inside the LINE app
 const tenantInviteUrl = (token: string) =>
-  `${env.LIFF_BASE_URL.replace(/\/$/, '')}?token=${token}&invite=tenant`
+  `${liffEntryUrl.replace(/\/$/, '')}?token=${token}&invite=tenant`
 
 const tenantSchema = z.object({
   name: z.string().min(1),

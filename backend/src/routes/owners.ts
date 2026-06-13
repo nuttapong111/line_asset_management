@@ -1,14 +1,14 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
-import { env } from '../lib/env'
+import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
-import { setTenantRichMenu } from '../lib/line/richMenu'
 
 const router = Router()
-// Invite links route by query param so they work even when LIFF drops the path
+// Invite links must be LIFF links (https://liff.line.me/<id>) so they open
+// inside the LINE app; query params survive even if LIFF drops the path.
 const ownerInviteUrl = (token: string) =>
-  `${env.LIFF_BASE_URL.replace(/\/$/, '')}?token=${token}&invite=owner`
+  `${liffEntryUrl.replace(/\/$/, '')}?token=${token}&invite=owner`
 
 // ---------- Admin: manage owners of a property ----------
 
@@ -76,7 +76,8 @@ router.post('/owners/link', authMiddleware, async (req, res) => {
     where: { id: owner.id },
     data: { lineUserId, linkedAt: new Date() },
   })
-  await setTenantRichMenu(lineUserId)
+  // Owners do NOT get the tenant rich menu (it routes to tenant pages); they
+  // open the dashboard via the entry button / keyword instead.
   const token = signToken({ lineUserId, role: 'OWNER', ownerId: updated.id })
   res.json({ ok: true, token, role: 'OWNER', owner: updated })
 })
