@@ -1,17 +1,18 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
+import { propertyWhere } from '../lib/scope'
 
 const router = Router()
-router.use(authMiddleware, requireRole('ADMIN'))
+router.use(authMiddleware, requireRole('ADMIN', 'OWNER'))
 
 // GET /api/reports/revenue
 router.get('/revenue', async (req, res) => {
-  const adminId = req.user!.adminId!
+  const scope = propertyWhere(req.user!)
   const propertyId = req.query.propertyId as string | undefined
   const year = req.query.year ? parseInt(req.query.year as string, 10) : new Date().getFullYear()
 
-  const propWhere = propertyId ? { id: propertyId, adminId } : { adminId }
+  const propWhere = propertyId ? { id: propertyId, ...scope } : scope
   const properties = await prisma.property.findMany({
     where: propWhere,
     include: { units: { include: { invoices: true } } },
@@ -52,7 +53,7 @@ router.get('/revenue', async (req, res) => {
     const m = d.getMonth() + 1
     const y = d.getFullYear()
     const invs = await prisma.invoice.findMany({
-      where: { month: m, year: y, status: 'PAID', unit: { property: { adminId } } },
+      where: { month: m, year: y, status: 'PAID', unit: { property: scope } },
     })
     byMonth.push({ month: m, year: y, revenue: invs.reduce((a, i) => a + Number(i.total), 0) })
   }
@@ -67,9 +68,8 @@ router.get('/revenue', async (req, res) => {
 
 // GET /api/reports/export?format=csv
 router.get('/export', async (req, res) => {
-  const adminId = req.user!.adminId!
   const invoices = await prisma.invoice.findMany({
-    where: { unit: { property: { adminId } } },
+    where: { unit: { property: propertyWhere(req.user!) } },
     include: { unit: { include: { property: true, tenants: { where: { isActive: true } } } } },
     orderBy: { createdAt: 'desc' },
   })

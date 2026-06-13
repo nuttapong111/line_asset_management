@@ -36,6 +36,11 @@ export const env = {
   TWILIO_FROM_NUMBER: process.env.TWILIO_FROM_NUMBER || '',
 
   DEFAULT_PROMPTPAY_NUMBER: process.env.DEFAULT_PROMPTPAY_NUMBER || '',
+
+  // Slip verification provider (rough OCR to assist manual approval).
+  // 'easyslip' uses developer.easyslip.com; anything else falls back to mock.
+  SLIP_VERIFY_PROVIDER: (process.env.SLIP_VERIFY_PROVIDER || 'mock').trim().toLowerCase(),
+  EASYSLIP_API_KEY: (process.env.EASYSLIP_API_KEY || '').trim(),
 }
 
 /**

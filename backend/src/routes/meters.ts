@@ -2,9 +2,20 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
+import { propertyWhere } from '../lib/scope'
 
 const router = Router()
 router.use(authMiddleware)
+
+// A unit the current user is allowed to read meter data for
+async function readableUnit(req: import('express').Request, unitId: string) {
+  if (req.user!.role === 'TENANT') {
+    return req.user!.unitId === unitId
+      ? prisma.unit.findUnique({ where: { id: unitId } })
+      : null
+  }
+  return prisma.unit.findFirst({ where: { id: unitId, property: propertyWhere(req.user!) } })
+}
 
 const meterSchema = z.object({
   unitId: z.string().min(1),
@@ -18,12 +29,12 @@ const meterSchema = z.object({
   waterPhotoUrl: z.string().optional(),
 })
 
-// POST /api/meters (admin)
-router.post('/', requireRole('ADMIN'), async (req, res) => {
+// POST /api/meters (manager)
+router.post('/', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   const parse = meterSchema.safeParse(req.body)
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
   const unit = await prisma.unit.findFirst({
-    where: { id: parse.data.unitId, property: { adminId: req.user!.adminId! } },
+    where: { id: parse.data.unitId, property: propertyWhere(req.user!) },
   })
   if (!unit) return res.status(404).json({ error: 'Unit not found' })
 
@@ -42,6 +53,9 @@ router.post('/', requireRole('ADMIN'), async (req, res) => {
 
 // GET /api/meters/:unitId
 router.get('/:unitId', async (req, res) => {
+  if (!(await readableUnit(req, req.params.unitId))) {
+    return res.status(404).json({ error: 'Unit not found' })
+  }
   const readings = await prisma.meterReading.findMany({
     where: { unitId: req.params.unitId },
     orderBy: [{ year: 'desc' }, { month: 'desc' }],
@@ -51,6 +65,9 @@ router.get('/:unitId', async (req, res) => {
 
 // GET /api/meters/:unitId/latest
 router.get('/:unitId/latest', async (req, res) => {
+  if (!(await readableUnit(req, req.params.unitId))) {
+    return res.status(404).json({ error: 'Unit not found' })
+  }
   const reading = await prisma.meterReading.findFirst({
     where: { unitId: req.params.unitId },
     orderBy: [{ year: 'desc' }, { month: 'desc' }],

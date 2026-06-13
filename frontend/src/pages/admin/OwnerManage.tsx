@@ -1,36 +1,51 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import api from '../../lib/axios'
 import { Button, Card, Badge, Input } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
 
+interface OwnerProp {
+  id: string
+  name: string
+}
 interface Owner {
   id: string
   name: string
   phone?: string
   linkedAt?: string
+  properties: OwnerProp[]
   inviteUrl: string
+}
+interface Property {
+  id: string
+  name: string
+  ownerId?: string | null
 }
 
 export default function OwnerManage() {
-  const { id } = useParams()
   const [owners, setOwners] = useState<Owner[]>([])
+  const [properties, setProperties] = useState<Property[]>([])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [copiedId, setCopiedId] = useState<string>()
 
-  const load = () => api.get(`/properties/${id}/owners`).then((r) => setOwners(r.data)).catch(() => {})
+  const load = () =>
+    Promise.all([api.get('/owners'), api.get('/properties')])
+      .then(([o, p]) => {
+        setOwners(o.data)
+        setProperties(p.data)
+      })
+      .catch(() => {})
+
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [])
 
   async function add() {
     if (!name.trim()) return
     setSaving(true)
     try {
-      await api.post(`/properties/${id}/owners`, { name: name.trim(), phone: phone.trim() || undefined })
+      await api.post('/owners', { name: name.trim(), phone: phone.trim() || undefined })
       setName('')
       setPhone('')
       await load()
@@ -53,17 +68,30 @@ export default function OwnerManage() {
   }
 
   async function remove(o: Owner) {
-    if (!confirm(`ลบเจ้าของ "${o.name}" ?`)) return
+    if (!confirm(`ลบเจ้าของ "${o.name}" ? ทรัพย์สินที่มอบหมายจะถูกปลดออก`)) return
     await api.delete(`/owners/${o.id}`)
     await load()
   }
+
+  async function assign(o: Owner, propertyId: string) {
+    if (!propertyId) return
+    await api.post(`/owners/${o.id}/properties`, { propertyId })
+    await load()
+  }
+
+  async function unassign(o: Owner, propertyId: string) {
+    await api.delete(`/owners/${o.id}/properties/${propertyId}`)
+    await load()
+  }
+
+  const unassigned = properties.filter((p) => !p.ownerId)
 
   return (
     <div>
       <TopBar title="จัดการเจ้าของ" />
       <div className="p-4 space-y-4">
         <div className="bg-line-light rounded-xl p-3 text-sm text-line-dark">
-          เจ้าของที่เชิญเข้ามาจะได้รับแจ้งเตือนทาง LINE เมื่อผู้เช่าชำระเงินหรือมีรายการแจ้งซ่อม และเข้ามาตรวจสอบรายการได้
+          เจ้าของจะจัดการทรัพย์สินที่ได้รับมอบหมายได้เหมือนแอดมิน (เพิ่มห้อง ผู้เช่า ออกบิล ตรวจสลิป) และรับแจ้งเตือนทาง LINE
         </div>
 
         <Card>
@@ -86,9 +114,39 @@ export default function OwnerManage() {
                 </div>
                 {o.linkedAt ? <Badge kind="paid">ผูกแล้ว</Badge> : <Badge kind="pending">รอผูก LINE</Badge>}
               </div>
+
+              <div className="mb-2">
+                <p className="text-xs text-gray-400 mb-1">ทรัพย์สินที่มอบหมาย</p>
+                {o.properties.length === 0 && <p className="text-xs text-gray-400">— ยังไม่มี —</p>}
+                <div className="flex flex-wrap gap-1">
+                  {o.properties.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => unassign(o, p.id)}
+                      className="text-xs bg-gray-100 rounded-full px-2 py-1"
+                      title="แตะเพื่อปลดออก"
+                    >
+                      {p.name} ✕
+                    </button>
+                  ))}
+                </div>
+                {unassigned.length > 0 && (
+                  <select
+                    className="mt-2 w-full border rounded-lg p-2 text-sm"
+                    value=""
+                    onChange={(e) => assign(o, e.target.value)}
+                  >
+                    <option value="">+ มอบหมายทรัพย์สิน...</option>
+                    {unassigned.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <Button variant="secondary" className="text-sm py-2" onClick={() => copy(o)}>
-                  {copiedId === o.id ? 'คัดลอกแล้ว ✓' : 'คัดลอกลิงก์'}
+                  {copiedId === o.id ? 'คัดลอกแล้ว ✓' : 'คัดลอกลิงก์เชิญ'}
                 </Button>
                 <Button variant="danger" className="text-sm py-2" onClick={() => remove(o)}>ลบ</Button>
               </div>

@@ -13,6 +13,7 @@ model Admin {
   name          String
   phone         String?
   properties    Property[]
+  owners        Owner[]
   notifSettings NotifSettings?
   createdAt     DateTime       @default(now())
 }
@@ -21,27 +22,32 @@ model Property {
   id              String   @id @default(cuid())
   adminId         String
   admin           Admin    @relation(fields: [adminId], references: [id])
+  ownerId         String?
+  owner           Owner?   @relation(fields: [ownerId], references: [id])
   name            String
   address         String?
   bankName        String?
   bankAccount     String?
   promptpayNumber String
+  paymentQrUrl    String?
   units           Unit[]
-  owners          Owner[]
   createdAt       DateTime @default(now())
 }
 
+// Owner = property manager (the landlord / paying customer of the SaaS).
+// Each owner belongs to an Admin (the operator) and manages many properties.
 model Owner {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
   lineUserId   String?
   name         String
   phone        String?
-  propertyId   String
-  property     Property  @relation(fields: [propertyId], references: [id])
-  inviteToken  String    @unique @default(cuid())
+  adminId      String
+  admin        Admin      @relation(fields: [adminId], references: [id])
+  properties   Property[]
+  inviteToken  String     @unique @default(cuid())
   inviteExpiry DateTime?
   linkedAt     DateTime?
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime   @default(now())
 
   @@index([lineUserId])
 }
@@ -145,24 +151,26 @@ enum InvoiceStatus {
 }
 
 model Payment {
-  id             String        @id @default(cuid())
-  invoiceId      String        @unique
-  invoice        Invoice       @relation(fields: [invoiceId], references: [id])
+  id             String          @id @default(cuid())
+  invoiceId      String          @unique
+  invoice        Invoice         @relation(fields: [invoiceId], references: [id])
   tenantId       String
-  tenant         Tenant        @relation(fields: [tenantId], references: [id])
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  provider       PaymentProvider @default(MANUAL_SLIP)
+  gatewayRef     String?
   slipUrl        String?
   slipUploadedAt DateTime?
   ocrAmount      Decimal?
   ocrDate        DateTime?
   ocrMatched     Boolean?
-  status         PaymentStatus @default(WAITING_SLIP)
+  status         PaymentStatus   @default(WAITING_SLIP)
   approvedAt     DateTime?
   rejectedAt     DateTime?
   rejectReason   String?
-  receiptNo      String?       @unique
+  receiptNo      String?         @unique
   receiptUrl     String?
   receiptPdfUrl  String?
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime        @default(now())
 }
 
 enum PaymentStatus {
@@ -170,6 +178,13 @@ enum PaymentStatus {
   UNDER_REVIEW
   APPROVED
   REJECTED
+}
+
+// How a payment is collected. MANUAL_SLIP = tenant uploads a transfer slip that
+// the manager verifies. GATEWAY reserved for a future payment-gateway integration.
+enum PaymentProvider {
+  MANUAL_SLIP
+  GATEWAY
 }
 
 model MeterReading {

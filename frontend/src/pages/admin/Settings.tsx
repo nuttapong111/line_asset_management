@@ -8,7 +8,8 @@ import api from '../../lib/axios'
 
 export default function Settings() {
   const nav = useNavigate()
-  const { user } = useAuth()
+  const { user, role } = useAuth()
+  const isAdmin = role === 'ADMIN'
   const [richMsg, setRichMsg] = useState<string>()
   const [richLoading, setRichLoading] = useState(false)
 
@@ -26,9 +27,15 @@ export default function Settings() {
   }
 
   const items = [
-    { label: 'การแจ้งเตือน', desc: 'ตั้งค่าใบแจ้งหนี้ เตือนค่าเช่า ฯลฯ', path: '/admin/notifications' },
     { label: 'สร้างใบแจ้งหนี้', desc: 'สร้างและส่งบิลรายเดือน', path: '/admin/invoice-builder' },
     { label: 'รายงานรายได้', desc: 'สรุปรายได้และส่งออกข้อมูล', path: '/admin/reports' },
+    // Admin-only management features
+    ...(isAdmin
+      ? [
+          { label: 'จัดการเจ้าของ', desc: 'เชิญ/มอบหมายทรัพย์สินให้เจ้าของ', path: '/admin/owners' },
+          { label: 'การแจ้งเตือน', desc: 'ตั้งค่าใบแจ้งหนี้ เตือนค่าเช่า ฯลฯ', path: '/admin/notifications' },
+        ]
+      : []),
   ]
 
   return (
@@ -41,7 +48,7 @@ export default function Settings() {
           </div>
           <div className="min-w-0">
             <div className="font-semibold">{user?.name}</div>
-            <div className="text-xs text-gray-400">ผู้ดูแลระบบ</div>
+            <div className="text-xs text-gray-400">{isAdmin ? 'ผู้ดูแลระบบ' : 'เจ้าของทรัพย์สิน'}</div>
             <div
               className="text-[10px] text-gray-300 truncate"
               onClick={() => user?.lineUserId && navigator.clipboard.writeText(user.lineUserId)}
@@ -61,16 +68,18 @@ export default function Settings() {
           </Card>
         ))}
 
-        <Card>
-          <div className="font-medium">Rich Menu ผู้เช่า (LINE OA)</div>
-          <div className="text-xs text-gray-400 mb-3">
-            เตรียม/อัปเดตเมนูลัด 6 ปุ่มสำหรับผู้เช่า — ระบบจะผูกเมนูนี้ให้ผู้เช่าอัตโนมัติหลังผูกบัญชี LINE (แอดมิน/เจ้าของจะไม่เห็นเมนูนี้)
-          </div>
-          <Button variant="secondary" onClick={setupRichMenu} disabled={richLoading}>
-            {richLoading ? 'กำลังเตรียม...' : 'เตรียม / อัปเดต Rich Menu ผู้เช่า'}
-          </Button>
-          {richMsg && <p className="text-sm mt-2 text-gray-600">{richMsg}</p>}
-        </Card>
+        {isAdmin && (
+          <Card>
+            <div className="font-medium">Rich Menu ผู้เช่า (LINE OA)</div>
+            <div className="text-xs text-gray-400 mb-3">
+              เตรียม/อัปเดตเมนูลัด 6 ปุ่มสำหรับผู้เช่า — ระบบจะผูกเมนูนี้ให้ผู้เช่าอัตโนมัติหลังผูกบัญชี LINE (แอดมิน/เจ้าของจะไม่เห็นเมนูนี้)
+            </div>
+            <Button variant="secondary" onClick={setupRichMenu} disabled={richLoading}>
+              {richLoading ? 'กำลังเตรียม...' : 'เตรียม / อัปเดต Rich Menu ผู้เช่า'}
+            </Button>
+            {richMsg && <p className="text-sm mt-2 text-gray-600">{richMsg}</p>}
+          </Card>
+        )}
       </div>
       <BottomNav role="ADMIN" />
     </div>

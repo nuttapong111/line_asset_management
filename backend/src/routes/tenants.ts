@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
+import type { JwtPayload } from '../middleware/auth'
+import { propertyWhere } from '../lib/scope'
 import { sendSms } from '../services/smsService'
 import { setTenantRichMenu } from '../lib/line/richMenu'
 import { pushInvite, pushLinked } from '../lib/line/lineService'
@@ -23,18 +25,20 @@ const tenantSchema = z.object({
   endDate: z.string().optional(),
 })
 
-async function ownsUnit(adminId: string, unitId: string) {
+const managerGuard = [authMiddleware, requireRole('ADMIN', 'OWNER')] as const
+
+async function ownsUnit(user: JwtPayload, unitId: string) {
   return prisma.unit.findFirst({
-    where: { id: unitId, property: { adminId } },
+    where: { id: unitId, property: propertyWhere(user) },
     include: { property: true },
   })
 }
 
-// POST /api/tenants  (admin)
-router.post('/', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+// POST /api/tenants  (manager)
+router.post('/', ...managerGuard, async (req, res) => {
   const parse = tenantSchema.safeParse(req.body)
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
-  const unit = await ownsUnit(req.user!.adminId!, parse.data.unitId)
+  const unit = await ownsUnit(req.user!, parse.data.unitId)
   if (!unit) return res.status(404).json({ error: 'Unit not found' })
 
   const tenant = await prisma.tenant.create({
@@ -51,20 +55,20 @@ router.post('/', authMiddleware, requireRole('ADMIN'), async (req, res) => {
   res.status(201).json(tenant)
 })
 
-// GET /api/tenants/:id (admin)
-router.get('/:id', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+// GET /api/tenants/:id (manager)
+router.get('/:id', ...managerGuard, async (req, res) => {
   const tenant = await prisma.tenant.findFirst({
-    where: { id: req.params.id, unit: { property: { adminId: req.user!.adminId! } } },
+    where: { id: req.params.id, unit: { property: propertyWhere(req.user!) } },
     include: { unit: { include: { property: true } }, contracts: true },
   })
   if (!tenant) return res.status(404).json({ error: 'Tenant not found' })
   res.json(tenant)
 })
 
-// PUT /api/tenants/:id (admin)
-router.put('/:id', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+// PUT /api/tenants/:id (manager)
+router.put('/:id', ...managerGuard, async (req, res) => {
   const tenant = await prisma.tenant.findFirst({
-    where: { id: req.params.id, unit: { property: { adminId: req.user!.adminId! } } },
+    where: { id: req.params.id, unit: { property: propertyWhere(req.user!) } },
   })
   if (!tenant) return res.status(404).json({ error: 'Tenant not found' })
   const parse = tenantSchema.partial().safeParse(req.body)
@@ -87,7 +91,7 @@ router.post('/link', authMiddleware, async (req, res) => {
 
   const unit = await prisma.unit.findUnique({
     where: { inviteToken: parse.data.inviteToken },
-    include: { property: { include: { admin: true } }, tenants: { where: { isActive: true } } },
+    include: { property: { include: { admin: true, owner: true } }, tenants: { where: { isActive: true } } },
   })
   if (!unit) return res.status(404).json({ error: 'Invalid invite token' })
   if (unit.inviteExpiry && unit.inviteExpiry < new Date()) {
@@ -107,8 +111,10 @@ router.post('/link', authMiddleware, async (req, res) => {
 
   await setTenantRichMenu(lineUserId)
 
-  if (unit.property.admin.lineUserId) {
-    await pushLinked(unit.property.admin.lineUserId, {
+  // Notify the property manager (owner if present, otherwise the admin)
+  const managerLineId = unit.property.owner?.lineUserId || unit.property.admin.lineUserId
+  if (managerLineId) {
+    await pushLinked(managerLineId, {
       tenantId: updated.id,
       tenantName: updated.name,
       roomNumber: unit.roomNumber,
@@ -122,10 +128,10 @@ router.post('/link', authMiddleware, async (req, res) => {
   res.json({ ok: true, token, role: 'TENANT', tenant: updated })
 })
 
-// POST /api/tenants/:id/invite/sms (admin)
-router.post('/:id/invite/sms', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+// POST /api/tenants/:id/invite/sms (manager)
+router.post('/:id/invite/sms', ...managerGuard, async (req, res) => {
   const tenant = await prisma.tenant.findFirst({
-    where: { id: req.params.id, unit: { property: { adminId: req.user!.adminId! } } },
+    where: { id: req.params.id, unit: { property: propertyWhere(req.user!) } },
     include: { unit: { include: { property: true } } },
   })
   if (!tenant) return res.status(404).json({ error: 'Tenant not found' })
@@ -139,10 +145,10 @@ router.post('/:id/invite/sms', authMiddleware, requireRole('ADMIN'), async (req,
   res.json({ ...result, inviteUrl: url })
 })
 
-// POST /api/tenants/:id/invite/line (admin)
-router.post('/:id/invite/line', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+// POST /api/tenants/:id/invite/line (manager)
+router.post('/:id/invite/line', ...managerGuard, async (req, res) => {
   const tenant = await prisma.tenant.findFirst({
-    where: { id: req.params.id, unit: { property: { adminId: req.user!.adminId! } } },
+    where: { id: req.params.id, unit: { property: propertyWhere(req.user!) } },
     include: { unit: { include: { property: true } } },
   })
   if (!tenant) return res.status(404).json({ error: 'Tenant not found' })

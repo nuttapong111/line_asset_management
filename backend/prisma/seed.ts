@@ -16,9 +16,21 @@ async function main() {
     },
   })
 
+  // Owner = property manager (customer of the SaaS), belongs to the admin
+  const owner = await prisma.owner.create({
+    data: {
+      lineUserId: 'mock_owner_001',
+      name: 'ประภา เจ้าของ',
+      phone: '0822222222',
+      adminId: admin.id,
+      linkedAt: new Date(),
+    },
+  })
+
   const property = await prisma.property.create({
     data: {
       adminId: admin.id,
+      ownerId: owner.id,
       name: 'คอนโด สุขุมวิท 31',
       address: '31 ถนนสุขุมวิท แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพฯ 10110',
       bankName: 'ธนาคารกสิกรไทย',
@@ -81,16 +93,6 @@ async function main() {
       lateFeePerDay: 30,
       dueDay: 5,
       status: 'ACTIVE',
-    },
-  })
-
-  await prisma.owner.create({
-    data: {
-      lineUserId: 'mock_owner_001',
-      name: 'ประภา เจ้าของ',
-      phone: '0822222222',
-      propertyId: property.id,
-      linkedAt: new Date(),
     },
   })
 

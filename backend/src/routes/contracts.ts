@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
+import { propertyWhere } from '../lib/scope'
 import { generateContractPdf } from '../services/pdfService'
 import { uploadFile } from '../services/storageService'
 
@@ -20,12 +21,12 @@ const contractSchema = z.object({
   terms: z.string().optional(),
 })
 
-// POST /api/contracts (admin)
-router.post('/', requireRole('ADMIN'), async (req, res) => {
+// POST /api/contracts (manager)
+router.post('/', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   const parse = contractSchema.safeParse(req.body)
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
   const unit = await prisma.unit.findFirst({
-    where: { id: parse.data.unitId, property: { adminId: req.user!.adminId! } },
+    where: { id: parse.data.unitId, property: propertyWhere(req.user!) },
   })
   if (!unit) return res.status(404).json({ error: 'Unit not found' })
 
@@ -59,13 +60,17 @@ router.get('/me', async (req, res) => {
   res.json(contract)
 })
 
-async function loadContract(id: string, user: { role: string; adminId?: string; unitId?: string }) {
+async function loadContract(
+  id: string,
+  user: { role: string; adminId?: string; unitId?: string; ownerId?: string }
+) {
   const contract = await prisma.contract.findUnique({
     where: { id },
     include: { tenant: true, unit: { include: { property: { include: { admin: true } } } } },
   })
   if (!contract) return null
   if (user.role === 'ADMIN' && contract.unit.property.adminId !== user.adminId) return null
+  if (user.role === 'OWNER' && contract.unit.property.ownerId !== user.ownerId) return null
   if (user.role === 'TENANT' && contract.unitId !== user.unitId) return null
   return contract
 }
@@ -109,8 +114,8 @@ router.post('/:id/pdf', async (req, res) => {
   res.json({ pdfUrl: url, contractNo })
 })
 
-// PUT /api/contracts/:id/renew (admin)
-router.put('/:id/renew', requireRole('ADMIN'), async (req, res) => {
+// PUT /api/contracts/:id/renew (manager)
+router.put('/:id/renew', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   const contract = await loadContract(req.params.id, req.user!)
   if (!contract) return res.status(404).json({ error: 'Contract not found' })
   const schema = z.object({ endDate: z.string() })
@@ -123,8 +128,8 @@ router.put('/:id/renew', requireRole('ADMIN'), async (req, res) => {
   res.json(updated)
 })
 
-// PUT /api/contracts/:id/terminate (admin)
-router.put('/:id/terminate', requireRole('ADMIN'), async (req, res) => {
+// PUT /api/contracts/:id/terminate (manager)
+router.put('/:id/terminate', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   const contract = await loadContract(req.params.id, req.user!)
   if (!contract) return res.status(404).json({ error: 'Contract not found' })
   const updated = await prisma.contract.update({

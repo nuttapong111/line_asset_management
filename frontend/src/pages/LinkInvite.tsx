@@ -41,7 +41,7 @@ export default function LinkInvite() {
       if (info.type === 'owner') {
         const { data } = await api.post('/owners/link', { inviteToken: token })
         if (data.token && user) setAuth(data.token, 'OWNER', user)
-        nav('/owner/home', { replace: true })
+        nav('/admin/portfolio', { replace: true })
       } else {
         const { data } = await api.post('/tenants/link', { inviteToken: token })
         if (data.token && user) setAuth(data.token, 'TENANT', user, { unitId: data.tenant?.unitId })
@@ -57,7 +57,7 @@ export default function LinkInvite() {
   const isOwner = info?.type === 'owner'
   const title = isOwner ? 'ยืนยันการเป็นเจ้าของ' : 'ยืนยันการเป็นผู้เช่า'
   const subtitle = isOwner
-    ? 'กดปุ่มด้านล่างเพื่อผูกบัญชี LINE คุณจะได้รับแจ้งเตือนเมื่อผู้เช่าชำระเงินหรือมีรายการแจ้งซ่อม'
+    ? 'กดปุ่มด้านล่างเพื่อผูกบัญชี LINE จากนั้นคุณจะจัดการทรัพย์สิน ห้องพัก ผู้เช่า และบิลได้ผ่านระบบ'
     : 'กดปุ่มด้านล่างเพื่อผูกบัญชี LINE ของคุณกับห้องพัก คุณจะได้รับใบแจ้งหนี้และข่าวสารผ่าน LINE'
 
   return (

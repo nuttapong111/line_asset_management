@@ -27,10 +27,6 @@ import AdminContractView from './pages/admin/ContractView'
 import AdminMaintenanceDetail from './pages/admin/MaintenanceDetail'
 import OwnerManage from './pages/admin/OwnerManage'
 
-import OwnerHome from './pages/owner/OwnerHome'
-import OwnerPaymentDetail from './pages/owner/OwnerPaymentDetail'
-import OwnerMaintenanceDetail from './pages/owner/OwnerMaintenanceDetail'
-
 import TenantHome from './pages/tenant/TenantHome'
 import InvoiceDetail from './pages/tenant/InvoiceDetail'
 import PaymentSelect from './pages/tenant/PaymentSelect'
@@ -96,13 +92,12 @@ export default function App() {
   if (!ready) return <Splash />
   if (error && !jwt) return <Splash error={error} />
 
+  // Owners are managers now → they use the same admin UI (scoped server-side)
   const home =
-    role === 'ADMIN'
+    role === 'ADMIN' || role === 'OWNER'
       ? '/admin/portfolio'
       : role === 'TENANT'
       ? '/tenant/home'
-      : role === 'OWNER'
-      ? '/owner/home'
       : '/link-room'
 
   return (
@@ -132,12 +127,10 @@ export default function App() {
         <Route path="/admin/settings" element={<Settings />} />
         <Route path="/admin/contract/:id" element={<AdminContractView />} />
         <Route path="/admin/maintenance/:id" element={<AdminMaintenanceDetail />} />
-        <Route path="/admin/property/:id/owners" element={<OwnerManage />} />
+        <Route path="/admin/owners" element={<OwnerManage />} />
 
-        {/* Owner */}
-        <Route path="/owner/home" element={<OwnerHome />} />
-        <Route path="/owner/payment/:id" element={<OwnerPaymentDetail />} />
-        <Route path="/owner/maintenance/:id" element={<OwnerMaintenanceDetail />} />
+        {/* Owner (legacy paths → manager UI) */}
+        <Route path="/owner/home" element={<Navigate to="/admin/portfolio" replace />} />
 
         {/* Tenant */}
         <Route path="/tenant/home" element={<TenantHome />} />

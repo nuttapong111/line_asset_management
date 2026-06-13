@@ -77,6 +77,11 @@ export default function SlipReview() {
             <div className="flex justify-between"><span className="text-gray-500">ยอดในสลิป</span><span>{payment.ocrAmount ? baht(payment.ocrAmount) : '-'}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">ตรงกัน</span><span>{payment.ocrMatched ? '✓ ตรงกัน' : '✗ ไม่ตรง'}</span></div>
           </div>
+          {!payment.ocrMatched && !payment.ocrAmount && (
+            <p className="text-xs text-gray-400 mt-2">
+              ระบบตรวจสลิปอัตโนมัติยังไม่เปิดใช้งาน กรุณาตรวจยอดกับรูปสลิปด้วยตนเอง
+            </p>
+          )}
         </Card>
 
         {showReject && (

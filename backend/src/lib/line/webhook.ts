@@ -2,7 +2,7 @@ import { WebhookEvent, MessageEvent, PostbackEvent, FollowEvent } from '@line/bo
 import { prisma } from '../prisma'
 import { liffEntryUrl } from '../env'
 import { reply, replyQuickMenu, pushText, pushSlipApproved, buildEntryMessage } from './lineService'
-import { setTenantRichMenu } from './richMenu'
+import { setTenantRichMenu, setAdminRichMenu } from './richMenu'
 import { buildReceiptFlex } from './flexMessages'
 
 const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
@@ -40,6 +40,7 @@ async function handleFollow(event: FollowEvent): Promise<void> {
 
   const admin = await prisma.admin.findUnique({ where: { lineUserId: userId } })
   if (admin) {
+    await setAdminRichMenu(userId)
     await reply(event.replyToken, [
       { type: 'text', text: `สวัสดีครับ คุณ${admin.name} 👋` },
       buildEntryMessage('แตะเพื่อเปิดระบบจัดการสำหรับผู้ดูแล', 'เปิดระบบจัดการ'),
@@ -49,9 +50,10 @@ async function handleFollow(event: FollowEvent): Promise<void> {
 
   const owner = await prisma.owner.findFirst({ where: { lineUserId: userId, linkedAt: { not: null } } })
   if (owner) {
+    await setAdminRichMenu(userId)
     await reply(event.replyToken, [
       { type: 'text', text: `สวัสดีครับ คุณ${owner.name} 👋` },
-      buildEntryMessage('แตะเพื่อเปิดแดชบอร์ดเจ้าของ', 'เปิดแดชบอร์ด'),
+      buildEntryMessage('แตะเพื่อเปิดระบบจัดการ', 'เปิดระบบจัดการ'),
     ])
     return
   }

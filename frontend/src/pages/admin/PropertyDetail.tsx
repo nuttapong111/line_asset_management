@@ -21,6 +21,7 @@ interface Property {
   bankName?: string
   bankAccount?: string
   promptpayNumber: string
+  paymentQrUrl?: string | null
   units: Unit[]
 }
 
@@ -37,11 +38,29 @@ export default function PropertyDetail() {
   const [prop, setProp] = useState<Property>()
   const [filter, setFilter] = useState('all')
 
+  const [qrUploading, setQrUploading] = useState(false)
   const load = () => api.get(`/properties/${id}`).then((r) => setProp(r.data))
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  async function uploadQr(file: File) {
+    setQrUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      await api.post(`/properties/${id}/payment-qr`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      await load()
+    } finally {
+      setQrUploading(false)
+    }
+  }
+
+  async function removeQr() {
+    await api.delete(`/properties/${id}/payment-qr`)
+    await load()
+  }
 
   if (!prop) return <div className="p-6 text-center text-gray-400">กำลังโหลด...</div>
 
@@ -107,13 +126,38 @@ export default function PropertyDetail() {
             <div className="flex justify-between"><span className="text-gray-400">เลขบัญชี</span><span>{prop.bankAccount || '-'}</span></div>
             <div className="flex justify-between"><span className="text-gray-400">พร้อมเพย์</span><span>{prop.promptpayNumber}</span></div>
           </div>
+
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="font-medium text-sm mb-1">QR Code รับเงิน (ไม่บังคับ)</div>
+            <p className="text-xs text-gray-400 mb-2">
+              อัปโหลดรูป QR พร้อมเพย์/ธนาคารของคุณ ผู้เช่าจะเห็น QR นี้แทนการสร้างอัตโนมัติ
+            </p>
+            {prop.paymentQrUrl ? (
+              <div className="space-y-2">
+                <img src={prop.paymentQrUrl} alt="QR" className="w-40 h-40 object-contain border rounded-lg mx-auto" />
+                <Button variant="danger" className="text-sm py-2" onClick={removeQr}>ลบรูป QR</Button>
+              </div>
+            ) : (
+              <label className="block">
+                <span className="inline-block bg-gray-100 rounded-lg px-3 py-2 text-sm cursor-pointer">
+                  {qrUploading ? 'กำลังอัปโหลด...' : '+ อัปโหลดรูป QR'}
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  className="hidden"
+                  disabled={qrUploading}
+                  onChange={(e) => e.target.files?.[0] && uploadQr(e.target.files[0])}
+                />
+              </label>
+            )}
+          </div>
         </Card>
 
         <div className="grid grid-cols-2 gap-2">
           <Button variant="secondary" onClick={() => nav(`/admin/property/${id}/meter`)}>บันทึกมิเตอร์</Button>
           <Button variant="secondary" onClick={() => nav('/admin/invoice-builder')}>สร้างบิล</Button>
         </div>
-        <Button variant="secondary" onClick={() => nav(`/admin/property/${id}/owners`)}>จัดการเจ้าของ / เชิญเจ้าของ</Button>
       </div>
     </div>
   )

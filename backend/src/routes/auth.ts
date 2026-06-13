@@ -82,8 +82,9 @@ router.post('/line', async (req, res) => {
 
     const lineUserId = profile.userId
     const { payload, name, pictureUrl } = await resolveRole(lineUserId)
-    // Ensure the correct rich menu is linked for this user (best-effort)
-    if (payload.role === 'ADMIN') setAdminRichMenu(lineUserId).catch(() => {})
+    // Ensure the correct rich menu is linked for this user (best-effort).
+    // Owners are managers now, so they share the admin/manager rich menu.
+    if (payload.role === 'ADMIN' || payload.role === 'OWNER') setAdminRichMenu(lineUserId).catch(() => {})
     else if (payload.role === 'TENANT') setTenantRichMenu(lineUserId).catch(() => {})
     return res.json({
       token: signToken(payload),

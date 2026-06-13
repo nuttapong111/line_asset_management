@@ -15,13 +15,13 @@ router.get('/info', async (req, res) => {
 
   const owner = await prisma.owner.findUnique({
     where: { inviteToken: token },
-    include: { property: true },
+    include: { properties: { select: { name: true } } },
   })
   if (owner) {
     return res.json({
       type: 'owner',
       name: owner.name,
-      propertyName: owner.property.name,
+      propertyName: owner.properties.map((p) => p.name).join(', ') || null,
       expired: owner.inviteExpiry ? owner.inviteExpiry < new Date() : false,
       linked: Boolean(owner.linkedAt),
     })

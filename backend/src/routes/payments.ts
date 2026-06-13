@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { env, liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole } from '../middleware/auth'
+import { propertyWhere } from '../lib/scope'
 import { generatePromptPayPayload } from '../services/qrService'
 import { uploadFile } from '../services/storageService'
 import { ocrSlip } from '../services/ocrService'
@@ -42,6 +43,8 @@ router.get('/:invoiceId/qr', async (req, res) => {
     payload,
     amount,
     promptpayNumber,
+    // Static QR image uploaded by the manager (used instead of generating one)
+    paymentQrUrl: invoice.unit.property.paymentQrUrl || null,
     expiresAt: new Date(Date.now() + 30 * 60 * 1000),
   })
 })
@@ -53,6 +56,9 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
     include: { unit: { include: { property: { include: { admin: true } }, tenants: { where: { isActive: true } } } } },
   })
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
+  if (req.user!.role === 'TENANT' && invoice.unitId !== req.user!.unitId) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
 
   const tenant = invoice.unit.tenants[0]
@@ -60,7 +66,7 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
 
   const key = `slips/${invoice.id}/${Date.now()}.jpg`
   const slipUrl = await uploadFile(key, req.file.buffer, req.file.mimetype)
-  const ocr = await ocrSlip(slipUrl, Number(invoice.total))
+  const ocr = await ocrSlip(slipUrl, Number(invoice.total), req.file.buffer)
 
   const payment = await prisma.payment.upsert({
     where: { invoiceId: invoice.id },
@@ -112,18 +118,38 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
   res.json({ ok: true, payment })
 })
 
-// GET /api/payments/:paymentId  (detail for review)
-router.get('/:paymentId', async (req, res) => {
+// Verify a payment belongs to the manager's scope (or the requesting tenant)
+async function visiblePayment(req: import('express').Request, paymentId: string) {
   const payment = await prisma.payment.findUnique({
-    where: { id: req.params.paymentId },
+    where: { id: paymentId },
     include: { invoice: { include: { unit: { include: { property: true } } } }, tenant: true },
   })
+  if (!payment) return null
+  const p = payment.invoice.unit.property
+  if (req.user!.role === 'TENANT') return payment.tenantId && req.user!.tenantId === payment.tenantId ? payment : null
+  if (req.user!.role === 'ADMIN') return p.adminId === req.user!.adminId ? payment : null
+  if (req.user!.role === 'OWNER') return p.ownerId === req.user!.ownerId ? payment : null
+  return null
+}
+
+// True when the payment's property is within the manager's (ADMIN/OWNER) scope
+async function managerOwnsPayment(req: import('express').Request, paymentId: string) {
+  return prisma.payment.findFirst({
+    where: { id: paymentId, invoice: { unit: { property: propertyWhere(req.user!) } } },
+  })
+}
+
+// GET /api/payments/:paymentId  (detail for review)
+router.get('/:paymentId', async (req, res) => {
+  const payment = await visiblePayment(req, req.params.paymentId)
   if (!payment) return res.status(404).json({ error: 'Payment not found' })
   res.json(payment)
 })
 
-// POST /api/payments/:paymentId/approve (admin)
-router.post('/:paymentId/approve', requireRole('ADMIN'), async (req, res) => {
+// POST /api/payments/:paymentId/approve (manager)
+router.post('/:paymentId/approve', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  if (!(await managerOwnsPayment(req, req.params.paymentId)))
+    return res.status(404).json({ error: 'Payment not found' })
   try {
     await approvePayment(req.params.paymentId)
     const payment = await prisma.payment.findUnique({ where: { id: req.params.paymentId } })
@@ -133,11 +159,13 @@ router.post('/:paymentId/approve', requireRole('ADMIN'), async (req, res) => {
   }
 })
 
-// POST /api/payments/:paymentId/reject (admin)
-router.post('/:paymentId/reject', requireRole('ADMIN'), async (req, res) => {
+// POST /api/payments/:paymentId/reject (manager)
+router.post('/:paymentId/reject', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   const schema = z.object({ rejectReason: z.string().min(1) })
   const parse = schema.safeParse(req.body)
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+  if (!(await managerOwnsPayment(req, req.params.paymentId)))
+    return res.status(404).json({ error: 'Payment not found' })
   try {
     await rejectPayment(req.params.paymentId, parse.data.rejectReason)
     res.json({ ok: true })
@@ -148,7 +176,7 @@ router.post('/:paymentId/reject', requireRole('ADMIN'), async (req, res) => {
 
 // GET /api/payments/:paymentId/receipt
 router.get('/:paymentId/receipt', async (req, res) => {
-  const payment = await prisma.payment.findUnique({ where: { id: req.params.paymentId } })
+  const payment = await visiblePayment(req, req.params.paymentId)
   if (!payment) return res.status(404).json({ error: 'Payment not found' })
   res.json({ receiptUrl: payment.receiptUrl, receiptNo: payment.receiptNo })
 })
