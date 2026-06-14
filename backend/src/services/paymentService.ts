@@ -12,21 +12,27 @@ async function nextReceiptNo(year: number): Promise<string> {
   return `RCP-${year}-${String(count + 1).padStart(5, '0')}`
 }
 
-export async function approvePayment(paymentId: string): Promise<void> {
+/** Build receipt PDF, upload to storage, persist URLs on payment. Returns storage key reference. */
+export async function ensureReceiptPdf(paymentId: string): Promise<string> {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
-      invoice: { include: { unit: { include: { property: true } } } },
+      invoice: { include: { unit: { include: { property: true, tenants: { where: { isActive: true } } } } } },
       tenant: true,
     },
   })
   if (!payment) throw new Error('Payment not found')
-  if (payment.status === 'APPROVED') return
 
-  const year = new Date().getFullYear()
-  const receiptNo = await nextReceiptNo(year)
+  const receiptNo =
+    payment.receiptNo ||
+    (await nextReceiptNo(payment.approvedAt?.getFullYear() ?? new Date().getFullYear()))
 
   const inv = payment.invoice
+  const tenantName =
+    payment.tenant.isActive
+      ? payment.tenant.name
+      : inv.unit.tenants.find((t) => t.lineUserId)?.name || payment.tenant.name
+
   const items = [
     { label: 'ค่าเช่า', amount: Number(inv.rentAmount) },
     { label: 'ค่าไฟฟ้า', amount: Number(inv.electricAmount) },
@@ -37,25 +43,52 @@ export async function approvePayment(paymentId: string): Promise<void> {
 
   const pdf = await generateReceipt({
     receiptNo,
-    date: new Date(),
+    date: payment.approvedAt ?? new Date(),
     propertyName: inv.unit.property.name,
     propertyAddress: inv.unit.property.address,
-    tenantName: payment.tenant.name,
+    tenantName,
     roomNumber: inv.unit.roomNumber,
     items,
     total: Number(inv.total),
   })
 
   const receiptUrl = await uploadFile(`receipts/${paymentId}.pdf`, pdf, 'application/pdf')
+  await prisma.payment.update({
+    where: { id: paymentId },
+    data: { receiptNo, receiptUrl, receiptPdfUrl: receiptUrl },
+  })
+  return receiptUrl
+}
+
+export async function approvePayment(paymentId: string): Promise<void> {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: {
+      invoice: { include: { unit: { include: { property: true, tenants: { where: { isActive: true } } } } } },
+      tenant: true,
+    },
+  })
+  if (!payment) throw new Error('Payment not found')
+  if (payment.status === 'APPROVED') return
+
+  const year = new Date().getFullYear()
+  const receiptNo = await nextReceiptNo(year)
 
   await prisma.payment.update({
     where: { id: paymentId },
-    data: { status: 'APPROVED', approvedAt: new Date(), receiptNo, receiptUrl, receiptPdfUrl: receiptUrl },
+    data: { status: 'APPROVED', approvedAt: new Date(), receiptNo },
   })
-  await prisma.invoice.update({ where: { id: inv.id }, data: { status: 'PAID' } })
+  await prisma.invoice.update({ where: { id: payment.invoice.id }, data: { status: 'PAID' } })
 
-  if (payment.tenant.lineUserId) {
-    await pushSlipApproved(payment.tenant.lineUserId, {
+  await ensureReceiptPdf(paymentId)
+
+  const inv = payment.invoice
+  const notifyLine =
+    payment.tenant.lineUserId ||
+    inv.unit.tenants.find((t) => t.lineUserId)?.lineUserId
+
+  if (notifyLine) {
+    await pushSlipApproved(notifyLine, {
       paymentId,
       receiptNo,
       roomNumber: inv.unit.roomNumber,

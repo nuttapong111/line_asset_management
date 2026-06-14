@@ -8,7 +8,7 @@ import { propertyWhere } from '../lib/scope'
 import { generatePromptPayPayload } from '../services/qrService'
 import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
 import { ocrSlip } from '../services/ocrService'
-import { approvePayment, rejectPayment } from '../services/paymentService'
+import { approvePayment, rejectPayment, ensureReceiptPdf } from '../services/paymentService'
 import { pushSlipReceived } from '../lib/line/lineService'
 import { notifyOwnersPayment } from '../services/ownerNotify'
 import { linkedTenant } from '../services/tenantLifecycle'
@@ -126,10 +126,19 @@ async function visiblePayment(req: import('express').Request, paymentId: string)
     include: { invoice: { include: { unit: { include: { property: true } } } }, tenant: true },
   })
   if (!payment) return null
-  const p = payment.invoice.unit.property
-  if (req.user!.role === 'TENANT') return payment.tenantId && req.user!.tenantId === payment.tenantId ? payment : null
-  if (req.user!.role === 'ADMIN') return p.adminId === req.user!.adminId ? payment : null
-  if (req.user!.role === 'OWNER') return p.ownerId === req.user!.ownerId ? payment : null
+
+  const user = req.user!
+  if (user.role === 'TENANT') {
+    if (user.tenantId === payment.tenantId) return payment
+    if (user.unitId && user.unitId === payment.invoice.unitId) return payment
+    return null
+  }
+  if (user.role === 'ADMIN' || user.role === 'OWNER') {
+    const scoped = await prisma.payment.findFirst({
+      where: { id: paymentId, invoice: { unit: { property: propertyWhere(user) } } },
+    })
+    return scoped ? payment : null
+  }
   return null
 }
 
@@ -154,12 +163,26 @@ router.get('/:paymentId/slip', async (req, res) => {
 router.get('/:paymentId/receipt/pdf', async (req, res) => {
   const payment = await visiblePayment(req, req.params.paymentId)
   if (!payment) return res.status(404).json({ error: 'Payment not found' })
-  const stored = payment.receiptPdfUrl || payment.receiptUrl
-  if (!stored) return res.status(404).json({ error: 'Receipt not found' })
-  const file = await readFile(extractStorageKey(stored))
-  res.setHeader('Content-Type', 'application/pdf')
-  res.setHeader('Content-Disposition', `inline; filename="receipt-${payment.receiptNo || payment.id}.pdf"`)
-  res.send(file.body)
+  try {
+    let stored = payment.receiptPdfUrl || payment.receiptUrl
+    if (!stored) {
+      if (payment.status !== 'APPROVED') return res.status(404).json({ error: 'Receipt not found' })
+      stored = await ensureReceiptPdf(payment.id)
+    }
+    let file
+    try {
+      file = await readFile(extractStorageKey(stored))
+    } catch {
+      stored = await ensureReceiptPdf(payment.id)
+      file = await readFile(extractStorageKey(stored))
+    }
+    res.setHeader('Content-Type', file.contentType)
+    res.setHeader('Content-Disposition', `inline; filename="receipt-${payment.receiptNo || payment.id}.pdf"`)
+    res.send(file.body)
+  } catch (e) {
+    console.error('[payments] receipt/pdf failed', (e as Error).message)
+    res.status(500).json({ error: 'Cannot load receipt PDF' })
+  }
 })
 
 // POST /api/payments/:paymentId/reocr — re-run slip OCR (manager)

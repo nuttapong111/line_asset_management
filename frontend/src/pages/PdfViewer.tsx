@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../lib/axios'
+import { useAuthStore } from '../store/authStore'
 import { Button } from '../components/ui'
 import { TopBar } from '../components/layout/TopBar'
 
@@ -9,6 +10,8 @@ export default function PdfViewer() {
   const [params] = useSearchParams()
   const nav = useNavigate()
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const jwt = useAuthStore((s) => s.jwt)
+  const ready = useAuthStore((s) => s.ready)
   const path = params.get('path') || ''
   const title = params.get('title') || 'เอกสาร'
   const autoPrint = params.get('print') === '1'
@@ -25,22 +28,50 @@ export default function PdfViewer() {
       setLoading(false)
       return
     }
+    if (!ready || !jwt) return
+
     let objectUrl: string | undefined
+    setLoading(true)
+    setError(undefined)
+    setUrl(undefined)
+
     api
       .get(`/${path.replace(/^\//, '')}`, { responseType: 'blob' })
       .then(({ data }) => {
         const type = data.type || 'application/pdf'
+        if (type.includes('json')) {
+          return data.text().then((text: string) => {
+            try {
+              const j = JSON.parse(text) as { error?: string }
+              setError(j.error || 'ไม่สามารถโหลดเอกสารได้')
+            } catch {
+              setError('ไม่สามารถโหลดเอกสารได้')
+            }
+          })
+        }
         setMime(type)
         objectUrl = URL.createObjectURL(new Blob([data], { type }))
         setUrl(objectUrl)
       })
-      .catch(() => setError('ไม่สามารถโหลดเอกสารได้'))
+      .catch(async (err) => {
+        const blob = err.response?.data
+        if (blob instanceof Blob) {
+          try {
+            const j = JSON.parse(await blob.text()) as { error?: string }
+            setError(j.error || 'ไม่สามารถโหลดเอกสารได้')
+            return
+          } catch {
+            /* fall through */
+          }
+        }
+        setError('ไม่สามารถโหลดเอกสารได้')
+      })
       .finally(() => setLoading(false))
 
     return () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [path])
+  }, [path, ready, jwt])
 
   useEffect(() => {
     if (!url || !autoPrint || isImage) return
@@ -89,6 +120,15 @@ export default function PdfViewer() {
     } catch {
       alert('ไม่สามารถพิมพ์ได้ กรุณาบันทึก PDF แล้วเปิดจากแอปไฟล์')
     }
+  }
+
+  if (!ready || !jwt) {
+    return (
+      <div className="flex flex-col h-screen bg-gray-100">
+        <TopBar title={title} />
+        <p className="flex-1 flex items-center justify-center text-gray-400">กำลังเข้าสู่ระบบ...</p>
+      </div>
+    )
   }
 
   return (
