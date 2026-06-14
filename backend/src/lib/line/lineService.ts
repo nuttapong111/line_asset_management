@@ -79,6 +79,36 @@ export function buildEntryMessage(text = 'แตะปุ่มด้านล�
   }
 }
 
+/** Button card that opens a specific LIFF path. */
+export function buildLiffPathMessage(
+  path: string,
+  opts?: { title?: string; text?: string; label?: string }
+): TemplateMessage {
+  const base = liffEntryUrl.replace(/\/$/, '')
+  const uri = `${base}${path.startsWith('/') ? '' : '/'}${path}`
+  return {
+    type: 'template',
+    altText: opts?.label || 'เปิด PropFlow',
+    template: {
+      type: 'buttons',
+      title: opts?.title || 'PropFlow',
+      text: opts?.text || 'แตะปุ่มด้านล่างเพื่อเปิด',
+      actions: [{ type: 'uri', label: opts?.label || 'เปิด', uri }],
+    },
+  }
+}
+
+export async function replyChatAnswer(
+  replyToken: string,
+  result: { text: string; followUp?: TemplateMessage },
+  role: 'TENANT' | 'MANAGER' = 'TENANT'
+): Promise<void> {
+  const quickReply = role === 'MANAGER' ? buildManagerQuickMenu() : buildQuickMenu()
+  const msgs: Message[] = [{ type: 'text', text: result.text, quickReply }]
+  if (result.followUp) msgs.push(result.followUp)
+  await reply(replyToken, msgs)
+}
+
 export const pushEntry = (to: string, text?: string, label?: string) =>
   push(to, buildEntryMessage(text, label))
 
@@ -94,10 +124,10 @@ export async function broadcastInvoices(items: { lineUserId: string; data: Invoi
 export function buildQuickMenu(): QuickReply {
   return {
     items: [
-      { type: 'action', action: { type: 'message', label: 'ชำระเงิน', text: 'ชำระเงิน' } },
-      { type: 'action', action: { type: 'message', label: 'ใบเสร็จล่าสุด', text: 'ใบเสร็จล่าสุด' } },
+      { type: 'action', action: { type: 'message', label: 'สรุปข้อมูล', text: 'สรุปข้อมูล' } },
+      { type: 'action', action: { type: 'message', label: 'สัญญาเช่า', text: 'ขอดูสัญญาเช่า' } },
       { type: 'action', action: { type: 'message', label: 'ยอดค้าง', text: 'ค้างชำระกี่ยอด' } },
-      { type: 'action', action: { type: 'message', label: 'แจ้งซ่อม', text: 'แจ้งซ่อม' } },
+      { type: 'action', action: { type: 'message', label: 'ชำระเงิน', text: 'ชำระเงิน' } },
     ],
   }
 }
@@ -105,10 +135,10 @@ export function buildQuickMenu(): QuickReply {
 export function buildManagerQuickMenu(): QuickReply {
   return {
     items: [
-      { type: 'action', action: { type: 'message', label: 'รายรับเดือนนี้', text: 'สรุปรายรับเดือนนี้' } },
+      { type: 'action', action: { type: 'message', label: 'Dashboard', text: 'ขอดู dashboard' } },
+      { type: 'action', action: { type: 'message', label: 'สรุปข้อมูล', text: 'สรุปข้อมูล' } },
       { type: 'action', action: { type: 'message', label: 'ค้างชำระ', text: 'ยอดค้างชำระ' } },
       { type: 'action', action: { type: 'message', label: 'สลิปรอตรวจ', text: 'สลิปรอตรวจ' } },
-      { type: 'action', action: { type: 'message', label: 'เปิดระบบ', text: 'เปิดระบบ' } },
     ],
   }
 }

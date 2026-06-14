@@ -3,7 +3,7 @@ import { prisma } from '../prisma'
 import { liffEntryUrl } from '../env'
 import { receiptPdfLiffUrl } from '../../services/paymentService'
 import { tryAnswerChatQuery, resolveManagerByLineUserId } from '../../services/chatQueryService'
-import { reply, replyQuickMenu, pushText, pushSlipApproved, buildEntryMessage } from './lineService'
+import { reply, replyQuickMenu, replyChatAnswer, pushText, pushSlipApproved, buildEntryMessage } from './lineService'
 import { setTenantRichMenu, setAdminRichMenu } from './richMenu'
 import { buildReceiptFlex } from './flexMessages'
 
@@ -36,7 +36,7 @@ async function handleFollow(event: FollowEvent): Promise<void> {
   const tenant = await prisma.tenant.findUnique({ where: { lineUserId: userId }, include: { unit: true } })
   if (tenant) {
     await setTenantRichMenu(userId)
-    await reply(event.replyToken, { type: 'text', text: `สวัสดีครับ คุณ${tenant.name} ยินดีต้อนรับ 🏠\nพิมพ์ "ค้างชำระ" "บิล" หรือ "ช่วยเหลือ" ได้เลย` })
+    await reply(event.replyToken, { type: 'text', text: `สวัสดีครับ คุณ${tenant.name} ยินดีต้อนรับ 🏠\nพิมพ์ "สรุปข้อมูล" "ขอดูสัญญาเช่า" หรือ "ช่วยเหลือ"` })
     return
   }
 
@@ -44,7 +44,7 @@ async function handleFollow(event: FollowEvent): Promise<void> {
   if (admin) {
     await setAdminRichMenu(userId)
     await reply(event.replyToken, [
-      { type: 'text', text: `สวัสดีครับ คุณ${admin.name} 👋\nพิมพ์ "สรุปรายรับ" "ค้างชำระ" หรือ "ช่วยเหลือ" ได้เลย` },
+      { type: 'text', text: `สวัสดีครับ คุณ${admin.name} 👋\nพิมพ์ "ขอดู dashboard" "สรุปข้อมูล" หรือ "ช่วยเหลือ"` },
       buildEntryMessage('แตะเพื่อเปิดระบบจัดการสำหรับผู้ดูแล', 'เปิดระบบจัดการ'),
     ])
     return
@@ -54,7 +54,7 @@ async function handleFollow(event: FollowEvent): Promise<void> {
   if (owner) {
     await setAdminRichMenu(userId)
     await reply(event.replyToken, [
-      { type: 'text', text: `สวัสดีครับ คุณ${owner.name} 👋\nพิมพ์ "สรุปรายรับ" "ค้างชำระ" หรือ "ช่วยเหลือ" ได้เลย` },
+      { type: 'text', text: `สวัสดีครับ คุณ${owner.name} 👋\nพิมพ์ "ขอดู dashboard" "สรุปข้อมูล" หรือ "ช่วยเหลือ"` },
       buildEntryMessage('แตะเพื่อเปิดระบบจัดการ', 'เปิดระบบจัดการ'),
     ])
     return
@@ -114,7 +114,36 @@ async function handleMessage(event: MessageEvent): Promise<void> {
     case 'แจ้งซ่อม':
       return reply(event.replyToken, { type: 'text', text: `แจ้งซ่อมได้ที่: ${liff('/maintenance/new')}` })
     case 'สัญญา':
+    case 'ขอดูสัญญาเช่า':
+    case 'ดูสัญญา': {
+      if (tenant) {
+        const answer = await tryAnswerChatQuery(text, {
+          role: 'TENANT',
+          tenantId: tenant.id,
+          unitId: tenant.unitId,
+        })
+        if (answer) return replyChatAnswer(event.replyToken, answer, 'TENANT')
+      }
       return reply(event.replyToken, { type: 'text', text: `ดูสัญญาได้ที่: ${liff('/contract')}` })
+    }
+    case 'สรุปข้อมูล':
+    case 'ขอดู dashboard':
+    case 'Dashboard':
+    case 'dashboard': {
+      if (tenant) {
+        const answer = await tryAnswerChatQuery(text, {
+          role: 'TENANT',
+          tenantId: tenant.id,
+          unitId: tenant.unitId,
+        })
+        if (answer) return replyChatAnswer(event.replyToken, answer, 'TENANT')
+      }
+      if (manager) {
+        const answer = await tryAnswerChatQuery(text, { role: 'MANAGER', manager })
+        if (answer) return replyChatAnswer(event.replyToken, answer, 'MANAGER')
+      }
+      return reply(event.replyToken, buildEntryMessage())
+    }
     default: {
       // Natural-language queries (tenant or manager)
       if (tenant) {
@@ -124,18 +153,18 @@ async function handleMessage(event: MessageEvent): Promise<void> {
           unitId: tenant.unitId,
         })
         if (answer) {
-          return replyQuickMenu(event.replyToken, answer, 'TENANT')
+          return replyChatAnswer(event.replyToken, answer, 'TENANT')
         }
       }
 
       if (manager) {
         const answer = await tryAnswerChatQuery(text, { role: 'MANAGER', manager })
         if (answer) {
-          return replyQuickMenu(event.replyToken, answer, 'MANAGER')
+          return replyChatAnswer(event.replyToken, answer, 'MANAGER')
         }
         return replyQuickMenu(
           event.replyToken,
-          'ไม่เข้าใจคำถามครับ ลองพิมพ์ "สรุปรายรับ" "ค้างชำระ" หรือ "ช่วยเหลือ"',
+          'ไม่เข้าใจคำถามครับ ลองพิมพ์ "ขอดู dashboard" "สรุปข้อมูล" หรือ "ช่วยเหลือ"',
           'MANAGER'
         )
       }
