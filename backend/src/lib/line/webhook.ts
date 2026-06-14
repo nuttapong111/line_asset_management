@@ -2,6 +2,7 @@ import { WebhookEvent, MessageEvent, PostbackEvent, FollowEvent } from '@line/bo
 import { prisma } from '../prisma'
 import { liffEntryUrl } from '../env'
 import { receiptPdfLiffUrl } from '../../services/paymentService'
+import { tryAnswerChatQuery, resolveManagerByLineUserId } from '../../services/chatQueryService'
 import { reply, replyQuickMenu, pushText, pushSlipApproved, buildEntryMessage } from './lineService'
 import { setTenantRichMenu, setAdminRichMenu } from './richMenu'
 import { buildReceiptFlex } from './flexMessages'
@@ -35,7 +36,7 @@ async function handleFollow(event: FollowEvent): Promise<void> {
   const tenant = await prisma.tenant.findUnique({ where: { lineUserId: userId }, include: { unit: true } })
   if (tenant) {
     await setTenantRichMenu(userId)
-    await reply(event.replyToken, { type: 'text', text: `สวัสดีครับ คุณ${tenant.name} ยินดีต้อนรับ 🏠` })
+    await reply(event.replyToken, { type: 'text', text: `สวัสดีครับ คุณ${tenant.name} ยินดีต้อนรับ 🏠\nพิมพ์ "ค้างชำระ" "บิล" หรือ "ช่วยเหลือ" ได้เลย` })
     return
   }
 
@@ -43,7 +44,7 @@ async function handleFollow(event: FollowEvent): Promise<void> {
   if (admin) {
     await setAdminRichMenu(userId)
     await reply(event.replyToken, [
-      { type: 'text', text: `สวัสดีครับ คุณ${admin.name} 👋` },
+      { type: 'text', text: `สวัสดีครับ คุณ${admin.name} 👋\nพิมพ์ "สรุปรายรับ" "ค้างชำระ" หรือ "ช่วยเหลือ" ได้เลย` },
       buildEntryMessage('แตะเพื่อเปิดระบบจัดการสำหรับผู้ดูแล', 'เปิดระบบจัดการ'),
     ])
     return
@@ -53,7 +54,7 @@ async function handleFollow(event: FollowEvent): Promise<void> {
   if (owner) {
     await setAdminRichMenu(userId)
     await reply(event.replyToken, [
-      { type: 'text', text: `สวัสดีครับ คุณ${owner.name} 👋` },
+      { type: 'text', text: `สวัสดีครับ คุณ${owner.name} 👋\nพิมพ์ "สรุปรายรับ" "ค้างชำระ" หรือ "ช่วยเหลือ" ได้เลย` },
       buildEntryMessage('แตะเพื่อเปิดระบบจัดการ', 'เปิดระบบจัดการ'),
     ])
     return
@@ -70,9 +71,10 @@ async function handleMessage(event: MessageEvent): Promise<void> {
   const userId = event.source.userId
   const text = event.message.text.trim()
 
-  const tenant = userId
-    ? await prisma.tenant.findUnique({ where: { lineUserId: userId } })
-    : null
+  const [tenant, manager] = await Promise.all([
+    userId ? prisma.tenant.findUnique({ where: { lineUserId: userId } }) : null,
+    userId ? resolveManagerByLineUserId(userId) : null,
+  ])
 
   switch (text) {
     case 'เข้าระบบ':
@@ -83,7 +85,7 @@ async function handleMessage(event: MessageEvent): Promise<void> {
     case 'Menu':
       return reply(event.replyToken, buildEntryMessage())
     case 'ใบเสร็จล่าสุด': {
-      if (!tenant) return replyQuickMenu(event.replyToken)
+      if (!tenant) return replyQuickMenu(event.replyToken, undefined, manager ? 'MANAGER' : 'TENANT')
       const payment = await prisma.payment.findFirst({
         where: { tenantId: tenant.id, status: 'APPROVED' },
         orderBy: { approvedAt: 'desc' },
@@ -114,20 +116,51 @@ async function handleMessage(event: MessageEvent): Promise<void> {
     case 'สัญญา':
       return reply(event.replyToken, { type: 'text', text: `ดูสัญญาได้ที่: ${liff('/contract')}` })
     default: {
+      // Natural-language queries (tenant or manager)
+      if (tenant) {
+        const answer = await tryAnswerChatQuery(text, {
+          role: 'TENANT',
+          tenantId: tenant.id,
+          unitId: tenant.unitId,
+        })
+        if (answer) {
+          return replyQuickMenu(event.replyToken, answer, 'TENANT')
+        }
+      }
+
+      if (manager) {
+        const answer = await tryAnswerChatQuery(text, { role: 'MANAGER', manager })
+        if (answer) {
+          return replyQuickMenu(event.replyToken, answer, 'MANAGER')
+        }
+        return replyQuickMenu(
+          event.replyToken,
+          'ไม่เข้าใจคำถามครับ ลองพิมพ์ "สรุปรายรับ" "ค้างชำระ" หรือ "ช่วยเหลือ"',
+          'MANAGER'
+        )
+      }
+
       if (tenant) {
         await prisma.chatMessage.create({
           data: { tenantId: tenant.id, senderRole: 'TENANT', message: text },
         })
-        // Notify admin
         const unit = await prisma.unit.findUnique({
           where: { id: tenant.unitId },
-          include: { property: { include: { admin: true } } },
+          include: { property: { include: { admin: true, owner: true } } },
         })
-        const adminLineId = unit?.property.admin.lineUserId
-        if (adminLineId) {
-          await pushText(adminLineId, `💬 ข้อความจาก ${tenant.name} (ห้อง ${unit?.roomNumber}): ${text}`)
+        const notifyMsg = `💬 ข้อความจาก ${tenant.name} (ห้อง ${unit?.roomNumber}): ${text}`
+        if (unit?.property.owner?.lineUserId) {
+          await pushText(unit.property.owner.lineUserId, notifyMsg)
+        } else if (unit?.property.admin.lineUserId) {
+          await pushText(unit.property.admin.lineUserId, notifyMsg)
         }
+        return replyQuickMenu(
+          event.replyToken,
+          'ส่งข้อความถึงเจ้าของแล้วครับ ลองพิมพ์ "ค้างชำระ" หรือ "ช่วยเหลือ" เพื่อดูข้อมูลได้ทันที',
+          'TENANT'
+        )
       }
+
       return replyQuickMenu(event.replyToken)
     }
   }

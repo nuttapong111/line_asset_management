@@ -96,14 +96,30 @@ export function buildQuickMenu(): QuickReply {
     items: [
       { type: 'action', action: { type: 'message', label: 'ชำระเงิน', text: 'ชำระเงิน' } },
       { type: 'action', action: { type: 'message', label: 'ใบเสร็จล่าสุด', text: 'ใบเสร็จล่าสุด' } },
+      { type: 'action', action: { type: 'message', label: 'ยอดค้าง', text: 'ค้างชำระกี่ยอด' } },
       { type: 'action', action: { type: 'message', label: 'แจ้งซ่อม', text: 'แจ้งซ่อม' } },
-      { type: 'action', action: { type: 'message', label: 'สัญญา', text: 'สัญญา' } },
     ],
   }
 }
 
-export async function replyQuickMenu(replyToken: string, text = 'เลือกเมนูที่ต้องการได้เลยครับ'): Promise<void> {
-  await reply(replyToken, { type: 'text', text, quickReply: buildQuickMenu() })
+export function buildManagerQuickMenu(): QuickReply {
+  return {
+    items: [
+      { type: 'action', action: { type: 'message', label: 'รายรับเดือนนี้', text: 'สรุปรายรับเดือนนี้' } },
+      { type: 'action', action: { type: 'message', label: 'ค้างชำระ', text: 'ยอดค้างชำระ' } },
+      { type: 'action', action: { type: 'message', label: 'สลิปรอตรวจ', text: 'สลิปรอตรวจ' } },
+      { type: 'action', action: { type: 'message', label: 'เปิดระบบ', text: 'เปิดระบบ' } },
+    ],
+  }
+}
+
+export async function replyQuickMenu(
+  replyToken: string,
+  text = 'เลือกเมนูที่ต้องการได้เลยครับ',
+  role: 'TENANT' | 'MANAGER' = 'TENANT'
+): Promise<void> {
+  const quickReply = role === 'MANAGER' ? buildManagerQuickMenu() : buildQuickMenu()
+  await reply(replyToken, { type: 'text', text, quickReply })
 }
 
 export function buildFlex(flex: FlexMessage): FlexMessage {
