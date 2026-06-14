@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import jwt from 'jsonwebtoken'
 import multer from 'multer'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
@@ -183,6 +184,20 @@ router.get('/:paymentId/receipt/pdf', async (req, res) => {
     console.error('[payments] receipt/pdf failed', (e as Error).message)
     res.status(500).json({ error: 'Cannot load receipt PDF' })
   }
+})
+
+// POST /api/payments/:paymentId/receipt/view-token — short-lived public URL for LIFF external browser
+router.post('/:paymentId/receipt/view-token', async (req, res) => {
+  const payment = await visiblePayment(req, req.params.paymentId)
+  if (!payment) return res.status(404).json({ error: 'Payment not found' })
+  if (payment.status !== 'APPROVED') return res.status(404).json({ error: 'Receipt not found' })
+  const token = jwt.sign(
+    { paymentId: payment.id, purpose: 'receipt_pdf' },
+    env.JWT_SECRET,
+    { expiresIn: '15m' }
+  )
+  const base = env.BACKEND_URL.replace(/\/$/, '')
+  res.json({ url: `${base}/api/public/receipt/${payment.id}?token=${token}` })
 })
 
 // POST /api/payments/:paymentId/reocr — re-run slip OCR (manager)
