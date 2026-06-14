@@ -1,11 +1,18 @@
 import { prisma } from '../lib/prisma'
-import { env } from '../lib/env'
+import { liffEntryUrl } from '../lib/env'
 import { generateReceipt } from './pdfService'
 import { uploadFile } from './storageService'
 import { pushSlipApproved, pushText } from '../lib/line/lineService'
 import { notifyOwnersPayment } from './ownerNotify'
+import { linkedTenant } from './tenantLifecycle'
 
-const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
+
+export function receiptPdfLiffUrl(paymentId: string): string {
+  return liff(
+    `/pdf-viewer?path=${encodeURIComponent(`payments/${paymentId}/receipt/pdf`)}&title=${encodeURIComponent('ใบเสร็จรับเงิน')}`
+  )
+}
 
 async function nextReceiptNo(year: number): Promise<string> {
   const count = await prisma.payment.count({ where: { receiptNo: { startsWith: `RCP-${year}-` } } })
@@ -83,19 +90,19 @@ export async function approvePayment(paymentId: string): Promise<void> {
   await ensureReceiptPdf(paymentId)
 
   const inv = payment.invoice
-  const notifyLine =
-    payment.tenant.lineUserId ||
-    inv.unit.tenants.find((t) => t.lineUserId)?.lineUserId
+  const activeTenant = linkedTenant(inv.unit.tenants) || payment.tenant
+  const notifyLine = activeTenant.lineUserId
 
   if (notifyLine) {
     await pushSlipApproved(notifyLine, {
       paymentId,
       receiptNo,
       roomNumber: inv.unit.roomNumber,
-      tenantName: payment.tenant.name,
+      tenantName: activeTenant.name,
       amount: Number(inv.total),
       date: new Date().toLocaleDateString('th-TH'),
-      receiptUrl: liff(`/pdf-viewer?path=${encodeURIComponent(`payments/${paymentId}/receipt/pdf`)}&title=${encodeURIComponent('ใบเสร็จรับเงิน')}`),
+      receiptUrl: receiptPdfLiffUrl(paymentId),
+      historyUrl: liff('/receipt'),
     })
   }
 
@@ -111,7 +118,10 @@ export async function approvePayment(paymentId: string): Promise<void> {
 export async function rejectPayment(paymentId: string, reason: string): Promise<void> {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
-    include: { invoice: { include: { unit: true } }, tenant: true },
+    include: {
+      invoice: { include: { unit: { include: { tenants: { where: { isActive: true } } } } } },
+      tenant: true,
+    },
   })
   if (!payment) throw new Error('Payment not found')
 
@@ -121,9 +131,10 @@ export async function rejectPayment(paymentId: string, reason: string): Promise<
   })
   await prisma.invoice.update({ where: { id: payment.invoiceId }, data: { status: 'PENDING' } })
 
-  if (payment.tenant.lineUserId) {
+  const notifyLine = linkedTenant(payment.invoice.unit.tenants)?.lineUserId || payment.tenant.lineUserId
+  if (notifyLine) {
     await pushText(
-      payment.tenant.lineUserId,
+      notifyLine,
       `สลิปของห้อง ${payment.invoice.unit.roomNumber} ไม่ผ่านการตรวจสอบ\nเหตุผล: ${reason}\nกรุณาอัปโหลดสลิปใหม่: ${liff('/payment')}`
     )
   }

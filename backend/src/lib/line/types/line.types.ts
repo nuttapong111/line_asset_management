@@ -45,6 +45,7 @@ export interface ReceiptData {
   amount: number
   date: string
   receiptUrl: string
+  historyUrl?: string
 }
 
 export interface ContractExpiryData {

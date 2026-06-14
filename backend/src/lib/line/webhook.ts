@@ -1,6 +1,7 @@
 import { WebhookEvent, MessageEvent, PostbackEvent, FollowEvent } from '@line/bot-sdk'
 import { prisma } from '../prisma'
 import { liffEntryUrl } from '../env'
+import { receiptPdfLiffUrl } from '../../services/paymentService'
 import { reply, replyQuickMenu, pushText, pushSlipApproved, buildEntryMessage } from './lineService'
 import { setTenantRichMenu, setAdminRichMenu } from './richMenu'
 import { buildReceiptFlex } from './flexMessages'
@@ -100,9 +101,8 @@ async function handleMessage(event: MessageEvent): Promise<void> {
           tenantName: tenant.name,
           amount: Number(payment.invoice.total),
           date: payment.approvedAt?.toLocaleDateString('th-TH') || '-',
-          receiptUrl: liff(
-            `/pdf-viewer?path=${encodeURIComponent(`payments/${payment.id}/receipt/pdf`)}&title=${encodeURIComponent('ใบเสร็จรับเงิน')}`
-          ),
+          receiptUrl: receiptPdfLiffUrl(payment.id),
+          historyUrl: liff('/receipt'),
         })
       )
     }

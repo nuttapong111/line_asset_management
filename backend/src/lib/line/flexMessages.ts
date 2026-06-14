@@ -174,12 +174,28 @@ export function buildOverdueFlex(d: OverdueData): FlexMessage {
 }
 
 export function buildReceiptFlex(d: ReceiptData): FlexMessage {
+  const footerButtons: FlexComponent[] = [
+    {
+      type: 'button',
+      style: 'primary',
+      color: COLORS.green,
+      action: { type: 'uri', label: 'ดาวน์โหลดใบเสร็จ', uri: d.receiptUrl },
+    },
+  ]
+  if (d.historyUrl) {
+    footerButtons.push({
+      type: 'button',
+      style: 'secondary',
+      action: { type: 'uri', label: 'ประวัติการชำระ', uri: d.historyUrl },
+    })
+  }
+
   return {
     type: 'flex',
-    altText: `ชำระเงินสำเร็จ ${baht(d.amount)} ใบเสร็จ ${d.receiptNo}`,
+    altText: `อนุมัติการชำระแล้ว ${baht(d.amount)} ใบเสร็จ ${d.receiptNo}`,
     contents: {
       type: 'bubble',
-      header: header('ชำระเงินสำเร็จ', baht(d.amount), COLORS.blue),
+      header: header('ชำระเงินสำเร็จ ✓', 'เจ้าของอนุมัติแล้ว — ดาวน์โหลดใบเสร็จได้', COLORS.green),
       body: {
         type: 'box',
         layout: 'vertical',
@@ -188,20 +204,15 @@ export function buildReceiptFlex(d: ReceiptData): FlexMessage {
           row('เลขใบเสร็จ', d.receiptNo),
           row('ห้อง', d.roomNumber),
           row('ผู้เช่า', d.tenantName),
+          row('ยอดชำระ', baht(d.amount), COLORS.green, true),
           row('วันที่', d.date, COLORS.muted),
         ],
       },
       footer: {
         type: 'box',
         layout: 'vertical',
-        contents: [
-          {
-            type: 'button',
-            style: 'primary',
-            color: COLORS.blue,
-            action: { type: 'uri', label: 'ดาวน์โหลดใบเสร็จ PDF', uri: d.receiptUrl },
-          },
-        ],
+        spacing: 'sm',
+        contents: footerButtons,
       },
     },
   }
