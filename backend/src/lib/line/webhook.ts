@@ -3,14 +3,30 @@ import { prisma } from '../prisma'
 import { liffEntryUrl } from '../env'
 import { receiptPdfLiffUrl } from '../../services/paymentService'
 import { tryAnswerChatQuery, resolveManagerByLineUserId } from '../../services/chatQueryService'
-import { reply, replyQuickMenu, replyChatAnswer, pushText, pushSlipApproved, buildEntryMessage } from './lineService'
+import { reply, replyQuickMenu, replyChatAnswer, pushText, buildEntryMessage } from './lineService'
 import { setTenantRichMenu, setAdminRichMenu } from './richMenu'
 import { buildReceiptFlex } from './flexMessages'
 
 const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
 
 export async function handleLineEvents(events: WebhookEvent[]): Promise<void> {
-  await Promise.allSettled(events.map(handleEvent))
+  for (const event of events) {
+    try {
+      await handleEvent(event)
+    } catch (err) {
+      console.error('[LINE] event handler error', event.type, err)
+      if (event.type === 'message' && event.message.type === 'text' && event.replyToken) {
+        try {
+          await reply(event.replyToken, {
+            type: 'text',
+            text: 'เกิดข้อผิดพลาดชั่วคราว กรุณาลองพิมพ์ "ช่วยเหลือ" อีกครั้ง',
+          })
+        } catch {
+          /* reply token may already be used */
+        }
+      }
+    }
+  }
 }
 
 async function handleEvent(event: WebhookEvent): Promise<void> {
@@ -45,12 +61,12 @@ async function handleFollow(event: FollowEvent): Promise<void> {
     await setAdminRichMenu(userId)
     await reply(event.replyToken, [
       { type: 'text', text: `สวัสดีครับ คุณ${admin.name} 👋\nพิมพ์ "ขอดู dashboard" "สรุปข้อมูล" หรือ "ช่วยเหลือ"` },
-      buildEntryMessage('แตะเพื่อเปิดระบบจัดการสำหรับผู้ดูแล', 'เปิดระบบจัดการ'),
+      buildEntryMessage('แตะเพื่อเปิดระบบจัดการ', 'เปิดระบบจัดการ'),
     ])
     return
   }
 
-  const owner = await prisma.owner.findFirst({ where: { lineUserId: userId, linkedAt: { not: null } } })
+  const owner = await prisma.owner.findFirst({ where: { lineUserId: userId } })
   if (owner) {
     await setAdminRichMenu(userId)
     await reply(event.replyToken, [
@@ -70,11 +86,30 @@ async function handleMessage(event: MessageEvent): Promise<void> {
   if (event.message.type !== 'text') return
   const userId = event.source.userId
   const text = event.message.text.trim()
+  const replyToken = event.replyToken
+
+  console.log('[LINE] message', { userId, text: text.slice(0, 100) })
 
   const [tenant, manager] = await Promise.all([
     userId ? prisma.tenant.findUnique({ where: { lineUserId: userId } }) : null,
     userId ? resolveManagerByLineUserId(userId) : null,
   ])
+
+  console.log('[LINE] roles', { userId, tenant: !!tenant, manager: manager?.role ?? null })
+
+  // Natural-language intents first (flexible wording)
+  if (manager) {
+    const answer = await tryAnswerChatQuery(text, { role: 'MANAGER', manager })
+    if (answer) return replyChatAnswer(replyToken, answer, 'MANAGER')
+  }
+  if (tenant) {
+    const answer = await tryAnswerChatQuery(text, {
+      role: 'TENANT',
+      tenantId: tenant.id,
+      unitId: tenant.unitId,
+    })
+    if (answer) return replyChatAnswer(replyToken, answer, 'TENANT')
+  }
 
   switch (text) {
     case 'เข้าระบบ':
@@ -83,19 +118,19 @@ async function handleMessage(event: MessageEvent): Promise<void> {
     case 'เมนู':
     case 'menu':
     case 'Menu':
-      return reply(event.replyToken, buildEntryMessage())
+      return reply(replyToken, buildEntryMessage())
     case 'ใบเสร็จล่าสุด': {
-      if (!tenant) return replyQuickMenu(event.replyToken, undefined, manager ? 'MANAGER' : 'TENANT')
+      if (!tenant) return replyQuickMenu(replyToken, undefined, manager ? 'MANAGER' : 'TENANT')
       const payment = await prisma.payment.findFirst({
         where: { tenantId: tenant.id, status: 'APPROVED' },
         orderBy: { approvedAt: 'desc' },
         include: { invoice: { include: { unit: true } } },
       })
       if (!payment || !payment.receiptUrl) {
-        return reply(event.replyToken, { type: 'text', text: 'ยังไม่มีใบเสร็จล่าสุดครับ' })
+        return reply(replyToken, { type: 'text', text: 'ยังไม่มีใบเสร็จล่าสุดครับ' })
       }
       return reply(
-        event.replyToken,
+        replyToken,
         buildReceiptFlex({
           paymentId: payment.id,
           receiptNo: payment.receiptNo || '-',
@@ -110,89 +145,49 @@ async function handleMessage(event: MessageEvent): Promise<void> {
     }
     case 'ชำระเงิน':
     case 'จ่ายค่าเช่า':
-      return reply(event.replyToken, { type: 'text', text: `เปิดหน้าชำระเงิน: ${liff('/payment')}` })
+      return reply(replyToken, { type: 'text', text: `เปิดหน้าชำระเงิน: ${liff('/payment')}` })
     case 'แจ้งซ่อม':
-      return reply(event.replyToken, { type: 'text', text: `แจ้งซ่อมได้ที่: ${liff('/maintenance/new')}` })
-    case 'สัญญา':
-    case 'ขอดูสัญญาเช่า':
-    case 'ดูสัญญา': {
-      if (tenant) {
-        const answer = await tryAnswerChatQuery(text, {
-          role: 'TENANT',
-          tenantId: tenant.id,
-          unitId: tenant.unitId,
-        })
-        if (answer) return replyChatAnswer(event.replyToken, answer, 'TENANT')
-      }
-      return reply(event.replyToken, { type: 'text', text: `ดูสัญญาได้ที่: ${liff('/contract')}` })
-    }
-    case 'สรุปข้อมูล':
-    case 'ขอดู dashboard':
-    case 'Dashboard':
-    case 'dashboard': {
-      if (tenant) {
-        const answer = await tryAnswerChatQuery(text, {
-          role: 'TENANT',
-          tenantId: tenant.id,
-          unitId: tenant.unitId,
-        })
-        if (answer) return replyChatAnswer(event.replyToken, answer, 'TENANT')
-      }
-      if (manager) {
-        const answer = await tryAnswerChatQuery(text, { role: 'MANAGER', manager })
-        if (answer) return replyChatAnswer(event.replyToken, answer, 'MANAGER')
-      }
-      return reply(event.replyToken, buildEntryMessage())
-    }
-    default: {
-      // Natural-language queries (tenant or manager)
-      if (tenant) {
-        const answer = await tryAnswerChatQuery(text, {
-          role: 'TENANT',
-          tenantId: tenant.id,
-          unitId: tenant.unitId,
-        })
-        if (answer) {
-          return replyChatAnswer(event.replyToken, answer, 'TENANT')
-        }
-      }
-
-      if (manager) {
-        const answer = await tryAnswerChatQuery(text, { role: 'MANAGER', manager })
-        if (answer) {
-          return replyChatAnswer(event.replyToken, answer, 'MANAGER')
-        }
-        return replyQuickMenu(
-          event.replyToken,
-          'ไม่เข้าใจคำถามครับ ลองพิมพ์ "ขอดู dashboard" "สรุปข้อมูล" หรือ "ช่วยเหลือ"',
-          'MANAGER'
-        )
-      }
-
-      if (tenant) {
-        await prisma.chatMessage.create({
-          data: { tenantId: tenant.id, senderRole: 'TENANT', message: text },
-        })
-        const unit = await prisma.unit.findUnique({
-          where: { id: tenant.unitId },
-          include: { property: { include: { admin: true, owner: true } } },
-        })
-        const notifyMsg = `💬 ข้อความจาก ${tenant.name} (ห้อง ${unit?.roomNumber}): ${text}`
-        if (unit?.property.owner?.lineUserId) {
-          await pushText(unit.property.owner.lineUserId, notifyMsg)
-        } else if (unit?.property.admin.lineUserId) {
-          await pushText(unit.property.admin.lineUserId, notifyMsg)
-        }
-        return replyQuickMenu(
-          event.replyToken,
-          'ส่งข้อความถึงเจ้าของแล้วครับ ลองพิมพ์ "ค้างชำระ" หรือ "ช่วยเหลือ" เพื่อดูข้อมูลได้ทันที',
-          'TENANT'
-        )
-      }
-
-      return replyQuickMenu(event.replyToken)
-    }
+      return reply(replyToken, { type: 'text', text: `แจ้งซ่อมได้ที่: ${liff('/maintenance/new')}` })
+    default:
+      break
   }
+
+  if (manager) {
+    return replyQuickMenu(
+      replyToken,
+      'ไม่เข้าใจคำถามครับ ลองพิมพ์ "ขอดู dashboard" "ขอรายงานรายได้" หรือ "ช่วยเหลือ"',
+      'MANAGER'
+    )
+  }
+
+  if (tenant) {
+    await prisma.chatMessage.create({
+      data: { tenantId: tenant.id, senderRole: 'TENANT', message: text },
+    })
+    const unit = await prisma.unit.findUnique({
+      where: { id: tenant.unitId },
+      include: { property: { include: { admin: true, owner: true } } },
+    })
+    const notifyMsg = `💬 ข้อความจาก ${tenant.name} (ห้อง ${unit?.roomNumber}): ${text}`
+    if (unit?.property.owner?.lineUserId) {
+      await pushText(unit.property.owner.lineUserId, notifyMsg)
+    } else if (unit?.property.admin.lineUserId) {
+      await pushText(unit.property.admin.lineUserId, notifyMsg)
+    }
+    return replyQuickMenu(
+      replyToken,
+      'ส่งข้อความถึงเจ้าของแล้วครับ ลองพิมพ์ "ค้างชำระ" หรือ "ช่วยเหลือ" เพื่อดูข้อมูลได้ทันที',
+      'TENANT'
+    )
+  }
+
+  return reply(
+    replyToken,
+    buildEntryMessage(
+      'บัญชี LINE นี้ยังไม่ได้ผูกกับระบบ\nเจ้าของ: เปิดแอป → ตั้งค่า → ผูก LINE',
+      'เปิดระบบ'
+    )
+  )
 }
 
 async function handlePostback(event: PostbackEvent): Promise<void> {
@@ -203,7 +198,6 @@ async function handlePostback(event: PostbackEvent): Promise<void> {
     return
   }
 
-  // Lazy import to avoid circular dependency
   const { approvePayment, rejectPayment } = await import('../../services/paymentService')
 
   switch (data.action) {

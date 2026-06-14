@@ -1,6 +1,7 @@
 import { Message, FlexMessage, QuickReply, TemplateMessage } from '@line/bot-sdk'
 import { lineClient } from './client'
 import { isLineConfigured, liffEntryUrl } from '../env'
+import { buildLiffPathMessage as buildLiffPathMessageHelper } from './liffHelpers'
 import {
   buildInvoiceFlex,
   buildReminderFlex,
@@ -46,7 +47,8 @@ export async function reply(replyToken: string, messages: Message | Message[]): 
   try {
     await lineClient.replyMessage(replyToken, arr)
   } catch (err) {
-    console.error('[LINE] reply failed', err)
+    console.error('[LINE] reply failed', err, JSON.stringify(arr.map((m) => m.type)))
+    throw err
   }
 }
 
@@ -73,30 +75,13 @@ export function buildEntryMessage(text = 'แตะปุ่มด้านล�
     template: {
       type: 'buttons',
       title: 'PropFlow',
-      text,
-      actions: [{ type: 'uri', label, uri: liffEntryUrl }],
+      text: text.slice(0, 60),
+      actions: [{ type: 'uri', label: label.slice(0, 20), uri: liffEntryUrl }],
     },
   }
 }
 
-/** Button card that opens a specific LIFF path. */
-export function buildLiffPathMessage(
-  path: string,
-  opts?: { title?: string; text?: string; label?: string }
-): TemplateMessage {
-  const base = liffEntryUrl.replace(/\/$/, '')
-  const uri = `${base}${path.startsWith('/') ? '' : '/'}${path}`
-  return {
-    type: 'template',
-    altText: opts?.label || 'เปิด PropFlow',
-    template: {
-      type: 'buttons',
-      title: opts?.title || 'PropFlow',
-      text: opts?.text || 'แตะปุ่มด้านล่างเพื่อเปิด',
-      actions: [{ type: 'uri', label: opts?.label || 'เปิด', uri }],
-    },
-  }
-}
+export const buildLiffPathMessage = buildLiffPathMessageHelper
 
 export async function replyChatAnswer(
   replyToken: string,
@@ -104,9 +89,13 @@ export async function replyChatAnswer(
   role: 'TENANT' | 'MANAGER' = 'TENANT'
 ): Promise<void> {
   const quickReply = role === 'MANAGER' ? buildManagerQuickMenu() : buildQuickMenu()
-  const msgs: Message[] = [{ type: 'text', text: result.text, quickReply }]
-  if (result.followUp) msgs.push(result.followUp)
-  await reply(replyToken, msgs)
+  const text = result.text.slice(0, 4900)
+  try {
+    await reply(replyToken, { type: 'text', text, quickReply })
+  } catch {
+    // Retry without quickReply if LINE rejects the combo
+    await reply(replyToken, { type: 'text', text })
+  }
 }
 
 export const pushEntry = (to: string, text?: string, label?: string) =>

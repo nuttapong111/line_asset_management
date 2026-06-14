@@ -55,7 +55,7 @@ router.get('/:invoiceId/qr', async (req, res) => {
 router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
   const invoice = await prisma.invoice.findUnique({
     where: { id: req.params.invoiceId },
-    include: { unit: { include: { property: { include: { admin: true } }, tenants: { where: { isActive: true } } } } },
+    include: { unit: { include: { property: { include: { admin: true, owner: true } }, tenants: { where: { isActive: true } } } } },
   })
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
   if (req.user!.role === 'TENANT' && invoice.unitId !== req.user!.unitId) {
@@ -96,18 +96,20 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
 
   await prisma.invoice.update({ where: { id: invoice.id }, data: { status: 'SLIP_UPLOADED' } })
 
-  const adminLine = invoice.unit.property.admin.lineUserId
-  if (adminLine) {
-    await pushSlipReceived(adminLine, {
-      paymentId: payment.id,
-      invoiceId: invoice.id,
-      roomNumber: invoice.unit.roomNumber,
-      tenantName: tenant.name,
-      amount: Number(invoice.total),
-      slipUrl,
-      reviewUrl: liff(`/admin/slip/${payment.id}`),
-    })
+  const slipPayload = {
+    paymentId: payment.id,
+    invoiceId: invoice.id,
+    roomNumber: invoice.unit.roomNumber,
+    tenantName: tenant.name,
+    amount: Number(invoice.total),
+    slipUrl,
+    reviewUrl: liff(`/admin/slip/${payment.id}`),
   }
+
+  const adminLine = invoice.unit.property.admin.lineUserId
+  const ownerLine = invoice.unit.property.owner?.lineUserId
+  if (adminLine) await pushSlipReceived(adminLine, slipPayload)
+  if (ownerLine && ownerLine !== adminLine) await pushSlipReceived(ownerLine, slipPayload)
 
   await notifyOwnersPayment({
     propertyId: invoice.unit.property.id,

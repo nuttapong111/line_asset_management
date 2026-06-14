@@ -1,8 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { TemplateMessage as LineTemplateMessage } from '@line/bot-sdk'
 import { prisma } from '../lib/prisma'
-import { liffEntryUrl } from '../lib/env'
-import { buildLiffPathMessage } from '../lib/line/lineService'
+import { buildLiffPathMessage, liffPath } from '../lib/line/liffHelpers'
 
 const THAI_MONTHS = [
   '', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
@@ -39,8 +38,7 @@ function normalize(text: string): string {
 }
 
 function liff(path: string): string {
-  const base = liffEntryUrl.replace(/\/$/, '')
-  return `${base}${path.startsWith('/') ? '' : '/'}${path}`
+  return liffPath(path)
 }
 
 function liffBtn(path: string, label: string, text?: string): LineTemplateMessage {
@@ -99,7 +97,7 @@ function detectIntent(text: string, role: 'TENANT' | 'MANAGER'): Intent | null {
   if (/dashboard|แดชบอร์ด|สรุปข้อมูล|ภาพรวม|overview|ขอดูdashboard|หน้าหลัก/.test(t)) {
     return 'MANAGER_DASHBOARD'
   }
-  if (/รายงาน|reports|report|export/.test(t)) return 'MANAGER_REPORTS'
+  if (/รายงานรายได้|ขอรายงาน|รายงาน|reports|report|export/.test(t)) return 'MANAGER_REPORTS'
   if (/บิล|ใบแจ้งหนี้|billing|ออกบิล/.test(t)) return 'MANAGER_BILLING'
   if (/รายรับ|รายได้|สรุปรายรับ|เก็บได้|รับเงิน|รายรับเดือน/.test(t)) return 'MANAGER_REVENUE'
   if (/ค้างชำระ|ใครค้าง|ยอดค้าง|ลูกหนี้|ค้างทั้งหมด/.test(t)) return 'MANAGER_OVERDUE'
@@ -707,9 +705,7 @@ export async function resolveManagerByLineUserId(lineUserId: string): Promise<Ma
   const admin = await prisma.admin.findUnique({ where: { lineUserId } })
   if (admin) return { role: 'ADMIN', adminId: admin.id, ownerId: null, name: admin.name }
 
-  const owner = await prisma.owner.findFirst({
-    where: { lineUserId, linkedAt: { not: null } },
-  })
+  const owner = await prisma.owner.findFirst({ where: { lineUserId } })
   if (owner) return { role: 'OWNER', adminId: owner.adminId, ownerId: owner.id, name: owner.name }
 
   return null

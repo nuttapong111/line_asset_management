@@ -13,7 +13,12 @@ const bodyParser = isLineConfigured ? lineSignatureMiddleware : json()
 // POST /api/webhook
 router.post('/', bodyParser, async (req, res) => {
   const events: WebhookEvent[] = req.body?.events || []
-  // Respond 200 immediately, process async
+  if (events.length) {
+    console.log(
+      '[webhook] events',
+      events.map((e) => ({ type: e.type, userId: e.source?.userId, msg: e.type === 'message' && 'message' in e ? e.message.type : undefined }))
+    )
+  }
   res.status(200).json({ ok: true })
   if (events.length) {
     handleLineEvents(events).catch((e) => console.error('[webhook] handler error', e))
