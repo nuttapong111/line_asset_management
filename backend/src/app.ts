@@ -24,6 +24,7 @@ import reportsRouter from './routes/reports'
 import webhookRouter from './routes/webhook'
 import inviteRouter from './routes/invite'
 import publicFilesRouter from './routes/publicFiles'
+import filesRouter from './routes/files'
 
 const app = express()
 
@@ -50,6 +51,7 @@ app.use('/api/contracts', contractsRouter)
 app.use('/api/meters', metersRouter)
 app.use('/api/invoices', invoicesRouter)
 app.use('/api/public', publicFilesRouter)
+app.use('/api/files', filesRouter)
 app.use('/api/payments', paymentsRouter)
 app.use('/api/maintenance', maintenanceRouter)
 app.use('/api/notifications', notificationsRouter)

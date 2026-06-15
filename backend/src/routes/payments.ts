@@ -1,5 +1,4 @@
 import { Router } from 'express'
-import jwt from 'jsonwebtoken'
 import multer from 'multer'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
@@ -10,6 +9,7 @@ import { generatePromptPayPayload } from '../services/qrService'
 import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
 import { ocrSlip } from '../services/ocrService'
 import { approvePayment, rejectPayment, ensureReceiptPdf } from '../services/paymentService'
+import { issueFileViewUrls } from '../services/fileViewService'
 import { pushSlipReceived } from '../lib/line/lineService'
 import { notifyOwnersPayment } from '../services/ownerNotify'
 import { linkedTenant } from '../services/tenantLifecycle'
@@ -190,16 +190,12 @@ router.get('/:paymentId/receipt/pdf', async (req, res) => {
 
 // POST /api/payments/:paymentId/receipt/view-token — short-lived public URL for LIFF external browser
 router.post('/:paymentId/receipt/view-token', async (req, res) => {
-  const payment = await visiblePayment(req, req.params.paymentId)
-  if (!payment) return res.status(404).json({ error: 'Payment not found' })
-  if (payment.status !== 'APPROVED') return res.status(404).json({ error: 'Receipt not found' })
-  const token = jwt.sign(
-    { paymentId: payment.id, purpose: 'receipt_pdf' },
-    env.JWT_SECRET,
-    { expiresIn: '15m' }
-  )
-  const base = env.BACKEND_URL.replace(/\/$/, '')
-  res.json({ url: `${base}/api/public/receipt/${payment.id}?token=${token}` })
+  try {
+    const urls = await issueFileViewUrls(req.user!, `payments/${req.params.paymentId}/receipt/pdf`)
+    res.json(urls)
+  } catch {
+    return res.status(404).json({ error: 'Receipt not found' })
+  }
 })
 
 // POST /api/payments/:paymentId/reocr — re-run slip OCR (manager)

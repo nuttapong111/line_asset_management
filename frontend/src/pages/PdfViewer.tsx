@@ -10,6 +10,14 @@ import { TopBar } from '../components/layout/TopBar'
 
 GlobalWorkerOptions.workerSrc = pdfWorker
 
+function isMobileDevice() {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+}
+
+function needsExternalOpen() {
+  return (LIFF_ID && liff.isInClient()) || isMobileDevice()
+}
+
 /** LIFF in-app browser cannot render blob: URLs in iframe — use pdf.js canvas instead. */
 export default function PdfViewer() {
   const [params] = useSearchParams()
@@ -26,7 +34,8 @@ export default function PdfViewer() {
   const [pdfReady, setPdfReady] = useState(false)
   const [error, setError] = useState<string>()
   const [loading, setLoading] = useState(true)
-  const [downloading, setDownloading] = useState(false)
+  const [opening, setOpening] = useState(false)
+  const externalHint = needsExternalOpen()
 
   const isImage = mime.startsWith('image/')
   const isPdf = !isImage
@@ -96,6 +105,10 @@ export default function PdfViewer() {
 
   useEffect(() => {
     if (!pdfReady || !autoPrint || isImage) return
+    if (needsExternalOpen()) {
+      void openExternal({ download: false })
+      return
+    }
     const t = setTimeout(() => printDoc(), 800)
     return () => clearTimeout(t)
   }, [pdfReady, autoPrint, isImage])
@@ -138,36 +151,38 @@ export default function PdfViewer() {
     return 'pdf'
   }
 
-  function receiptPaymentId() {
-    return path.match(/^payments\/([^/]+)\/receipt\/pdf/)?.[1]
+  async function fetchExternalUrls() {
+    const cleanPath = path.replace(/^\//, '')
+    const { data } = await api.post<{ url: string; downloadUrl: string }>('/files/view-token', { path: cleanPath })
+    return data
+  }
+
+  async function openExternal(opts: { download: boolean }) {
+    if (!path) return
+    setOpening(true)
+    try {
+      const { url: viewUrl, downloadUrl } = await fetchExternalUrls()
+      const target = opts.download ? downloadUrl : viewUrl
+      if (LIFF_ID && liff.isInClient()) {
+        liff.openWindow({ url: target, external: true })
+      } else {
+        window.open(target, '_blank')
+      }
+    } catch {
+      alert('ไม่สามารถเปิดไฟล์ได้ กรุณาลองใหม่อีกครั้ง')
+    } finally {
+      setOpening(false)
+    }
   }
 
   async function download() {
-    const paymentId = receiptPaymentId()
-    if (paymentId) {
-      setDownloading(true)
-      try {
-        const { data } = await api.post<{ url: string }>(`/payments/${paymentId}/receipt/view-token`)
-        if (LIFF_ID && liff.isInClient()) {
-          liff.openWindow({ url: data.url, external: true })
-          return
-        }
-        window.open(data.url, '_blank')
-        return
-      } catch {
-        /* fall through to blob download */
-      } finally {
-        setDownloading(false)
-      }
+    if (needsExternalOpen()) {
+      await openExternal({ download: true })
+      return
     }
 
     if (!blobRef.current) return
     const blobUrl = URL.createObjectURL(blobRef.current)
-    if (LIFF_ID && liff.isInClient()) {
-      liff.openWindow({ url: blobUrl, external: true })
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
-      return
-    }
     const a = document.createElement('a')
     a.href = blobUrl
     a.download = `${title.replace(/\s+/g, '-')}.${fileExt()}`
@@ -177,7 +192,12 @@ export default function PdfViewer() {
     URL.revokeObjectURL(blobUrl)
   }
 
-  function printDoc() {
+  async function printDoc() {
+    if (needsExternalOpen()) {
+      await openExternal({ download: false })
+      return
+    }
+
     if (isImage && url) {
       const w = window.open('')
       if (!w) {
@@ -237,11 +257,20 @@ export default function PdfViewer() {
           {isPdf && <div ref={printRootRef} id="pdf-print-root" className="p-2 min-h-[50vh]" />}
         </div>
         {showActions && (
-          <div className="p-3 grid grid-cols-2 gap-2 bg-white border-t print:hidden">
-            <Button variant="secondary" onClick={download} disabled={downloading}>
-              {downloading ? 'กำลังเปิด...' : 'ดาวน์โหลด'}
-            </Button>
-            <Button variant="secondary" onClick={printDoc}>ปริ้น</Button>
+          <div className="p-3 bg-white border-t print:hidden">
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="secondary" onClick={download} disabled={opening}>
+                {opening ? 'กำลังเปิด...' : 'ดาวน์โหลด'}
+              </Button>
+              <Button variant="secondary" onClick={printDoc} disabled={opening}>
+                {opening ? 'กำลังเปิด...' : 'ปริ้น'}
+              </Button>
+            </div>
+            {externalHint && (
+              <p className="text-xs text-gray-500 text-center mt-2 leading-relaxed">
+                บนมือถือจะเปิดใน Safari/Chrome — กดแชร์เพื่อบันทึกลงไฟล์หรือพิมพ์
+              </p>
+            )}
           </div>
         )}
         {!showActions && !loading && (

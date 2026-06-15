@@ -4,8 +4,16 @@ import { prisma } from '../lib/prisma'
 import { env } from '../lib/env'
 import { readFile, extractStorageKey } from '../services/storageService'
 import { ensureReceiptPdf } from '../services/paymentService'
+import { streamPublicFile } from '../services/fileViewService'
 
 const router = Router()
+
+/** Generic file stream — token from POST /api/files/view-token */
+router.get('/file', async (req: Request, res: Response) => {
+  const token = req.query.token as string | undefined
+  if (!token) return res.status(401).json({ error: 'Missing token' })
+  await streamPublicFile(token, res, req.query.dl === '1')
+})
 
 /** Public receipt PDF stream — requires short-lived token from POST /payments/:id/receipt/view-token */
 router.get('/receipt/:paymentId', async (req: Request, res: Response) => {
