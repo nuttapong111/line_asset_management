@@ -92,11 +92,11 @@ cd ../frontend && npm run dev   # http://localhost:5173
    TWILIO_AUTH_TOKEN=
    TWILIO_FROM_NUMBER=
 
-   # S3 (แนะนำสำหรับเก็บสลิป/ใบเสร็จถาวร — ดูหมายเหตุด้านล่าง)
-   AWS_ACCESS_KEY_ID=
-   AWS_SECRET_ACCESS_KEY=
-   AWS_BUCKET=
-   AWS_REGION=ap-southeast-1
+   # Cloudflare R2 (แนะนำ — เก็บสลิป/ใบเสร็จ)
+   R2_ACCOUNT_ID=
+   R2_ACCESS_KEY_ID=
+   R2_SECRET_ACCESS_KEY=
+   R2_BUCKET=propflow-uploads
    ```
    > Railway ตั้ง `PORT` ให้เองอัตโนมัติ — โค้ดอ่านค่าจาก `process.env.PORT`
 
@@ -120,7 +120,7 @@ cd ../frontend && npm run dev   # http://localhost:5173
 ### หมายเหตุเรื่องไฟล์อัปโหลด
 ดิสก์ของ Railway เป็น ephemeral (รีเซ็ตทุก deploy) — สลิป/ใบเสร็จที่เก็บแบบ local disk จะหายเมื่อ redeploy
 แนะนำ 1 ใน 2 วิธี:
-- **ตั้งค่า S3** (ใส่ `AWS_*`) — `storageService` จะสลับไปใช้ S3 อัตโนมัติ ✅ แนะนำ
+- **ตั้งค่า R2** (ใส่ `R2_*`) — `storageService` จะอัปโหลดไป Cloudflare R2 อัตโนมัติ ✅ แนะนำ
 - หรือเพิ่ม **Railway Volume** mount ที่ `/app/backend/uploads`
 
 ---

@@ -26,6 +26,13 @@ export const env = {
   LIFF_BASE_URL: process.env.LIFF_BASE_URL || 'http://localhost:5173',
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:4000',
 
+  // Cloudflare R2 (S3-compatible) — primary object storage
+  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID || '',
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || '',
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || '',
+  R2_BUCKET: process.env.R2_BUCKET || '',
+
+  // Legacy AWS S3 (optional fallback — prefer R2)
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || '',
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',
   AWS_BUCKET: process.env.AWS_BUCKET || '',
@@ -56,8 +63,13 @@ export const isLineConfigured = Boolean(env.LINE_CHANNEL_ACCESS_TOKEN && env.LIN
 /** Mock auth allowed when not in production OR when LINE Login is not configured */
 export const isMockAuthAllowed = env.NODE_ENV !== 'production' || !env.LINE_LOGIN_CHANNEL_ID
 
-/** S3 configured */
-export const isS3Configured = Boolean(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY && env.AWS_BUCKET)
+/** Cloudflare R2 configured */
+export const isR2Configured = Boolean(
+  env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET
+)
+
+/** @deprecated use isR2Configured */
+export const isS3Configured = isR2Configured
 
 /** Twilio configured */
 export const isTwilioConfigured = Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM_NUMBER)

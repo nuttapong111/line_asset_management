@@ -1,11 +1,30 @@
 import { InvoiceType } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { env } from '../lib/env'
-import { pushInvoice } from '../lib/line/lineService'
+import { pushInvoice, pushRentReminder } from '../lib/line/lineService'
 import { linkedTenant } from './tenantLifecycle'
 import { InvoiceData } from '../lib/line/types/line.types'
 
 const liff = (path: string) => `${env.LIFF_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function daysUntilDue(dueDate: Date): number {
+  const today = startOfDay(new Date())
+  const due = startOfDay(dueDate)
+  return Math.round((due.getTime() - today.getTime()) / 86400000)
+}
+
+/** Due date for billing month — rolls forward if before contract start (e.g. move-in on 21st, due on 1st). */
+function resolveDueDate(year: number, month: number, dueDay: number, contractStart: Date): Date {
+  let due = new Date(year, month - 1, dueDay)
+  if (due < startOfDay(contractStart)) {
+    due = new Date(year, month, dueDay)
+  }
+  return due
+}
 
 export interface InvoiceDraft {
   unitId: string
@@ -48,7 +67,7 @@ export async function buildRentInvoiceDraft(unitId: string, month: number, year:
   const commonFee = Number(unit.commonFee)
   const total = rentAmount + commonFee
   const dueDay = contract.dueDay ?? 5
-  const dueDate = new Date(year, month - 1, dueDay)
+  const dueDate = resolveDueDate(year, month, dueDay, contract.startDate)
 
   return {
     unitId,
@@ -84,7 +103,9 @@ export async function buildUtilityInvoiceDraft(unitId: string, month: number, ye
 
   const contract = await activeContract(unitId)
   const dueDay = contract?.dueDay ?? 5
-  const dueDate = new Date(year, month - 1, dueDay)
+  const dueDate = contract
+    ? resolveDueDate(year, month, dueDay, contract.startDate)
+    : new Date(year, month - 1, dueDay)
 
   return {
     unitId,
@@ -187,7 +208,54 @@ export async function sendInvoiceLine(invoiceId: string): Promise<boolean> {
   }
   await pushInvoice(tenant.lineUserId, data)
   await prisma.invoice.update({ where: { id: invoice.id }, data: { sentAt: new Date() } })
+  await maybeSendCatchUpRentReminder(invoice.id)
   return true
+}
+
+/**
+ * When an invoice is sent close to due date (e.g. move-in on 21st, due on 1st = ~10 days),
+ * the normal "10 days before" scheduler window is missed — send a catch-up reminder once.
+ */
+async function maybeSendCatchUpRentReminder(invoiceId: string): Promise<void> {
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: invoiceId },
+    include: {
+      unit: {
+        include: {
+          property: { include: { admin: { include: { notifSettings: true } } } },
+          tenants: { where: { isActive: true } },
+        },
+      },
+    },
+  })
+  if (!invoice || invoice.type !== 'RENT') return
+  if (!['PENDING', 'SLIP_UPLOADED'].includes(invoice.status)) return
+
+  const settings = invoice.unit.property.admin.notifSettings
+  if (!settings?.rentReminderEnabled) return
+
+  const daysLeft = daysUntilDue(invoice.dueDate)
+  if (daysLeft <= 0) return
+
+  const thresholds = [...settings.rentReminderDays].sort((a, b) => b - a)
+  const maxThreshold = thresholds[0] ?? 10
+  // Still within normal scheduler window
+  if (daysLeft >= maxThreshold) return
+  // Exact threshold day — let hourly scheduler handle (avoid duplicate same day)
+  if (thresholds.includes(daysLeft)) return
+
+  const tenant = linkedTenant(invoice.unit.tenants)
+  if (!tenant?.lineUserId) return
+
+  await pushRentReminder(tenant.lineUserId, {
+    invoiceId: invoice.id,
+    roomNumber: invoice.unit.roomNumber,
+    tenantName: tenant.name,
+    daysLeft,
+    amount: Number(invoice.total),
+    dueDate: invoice.dueDate.toLocaleDateString('th-TH'),
+    liffUrl: liff(`/payment/${invoice.id}`),
+  })
 }
 
 async function upsertAndSend(
