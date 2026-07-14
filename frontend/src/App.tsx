@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { initLiff, LIFF_ID } from './lib/liff'
 import { useAuthStore, Role } from './store/authStore'
 import Splash from './pages/Splash'
+import PortalApp from './pages/PortalApp'
 
 import LinkRoom from './pages/LinkRoom'
 import LinkOwner from './pages/LinkOwner'
@@ -52,8 +53,8 @@ function DevRoleSwitcher({ onPick }: { onPick: (r: Role) => void }) {
   )
 }
 
-export default function App() {
-  const { jwt, role, ready, setReady, clearAuth } = useAuthStore()
+function LiffApp() {
+  const { jwt, role, ready, setReady, clearAuth, setAuth } = useAuthStore()
   const [error, setError] = useState<string>()
   const [params] = useSearchParams()
   const navigate = useNavigate()
@@ -63,6 +64,16 @@ export default function App() {
     try {
       setReady(false)
       await initLiff(mockRole)
+      const s = useAuthStore.getState()
+      if (s.jwt && s.role) {
+        setAuth(s.jwt, s.role, s.user!, {
+          unitId: s.unitId,
+          adminId: s.adminId,
+          ownerId: s.ownerId,
+          mustChangePassword: s.mustChangePassword,
+          authSource: 'liff',
+        })
+      }
     } catch (e) {
       setError((e as Error).message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ')
       setReady(true)
@@ -74,8 +85,6 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Invite links arrive with ?token=… in the LIFF URL. Only unlinked (NEW) users
-  // should see the linking screen — once linked, drop the token and go to home.
   useEffect(() => {
     if (!ready || !jwt || !inviteToken) return
     if (role === 'NEW') {
@@ -99,7 +108,6 @@ export default function App() {
   if (!ready) return <Splash />
   if (error && !jwt) return <Splash error={error} />
 
-  // Owners are managers now → they use the same admin UI (scoped server-side)
   const home =
     role === 'ADMIN' || role === 'OWNER'
       ? '/admin/portfolio'
@@ -116,7 +124,6 @@ export default function App() {
         <Route path="/link-owner" element={<LinkOwner />} />
         <Route path="/link-admin" element={<LinkAdmin />} />
 
-        {/* Admin */}
         <Route path="/admin/portfolio" element={<Portfolio />} />
         <Route path="/admin/property/:id" element={<PropertyDetail />} />
         <Route path="/admin/property/new" element={<AddProperty />} />
@@ -136,10 +143,8 @@ export default function App() {
         <Route path="/admin/maintenance/:id" element={<AdminMaintenanceDetail />} />
         <Route path="/admin/owners" element={<OwnerManage />} />
 
-        {/* Owner (legacy paths → manager UI) */}
         <Route path="/owner/home" element={<Navigate to="/admin/portfolio" replace />} />
 
-        {/* Tenant */}
         <Route path="/tenant/home" element={<TenantHome />} />
         <Route path="/invoice" element={<TenantHome />} />
         <Route path="/payment" element={<TenantHome />} />
@@ -165,4 +170,12 @@ export default function App() {
       <DevRoleSwitcher onPick={switchRole} />
     </div>
   )
+}
+
+export default function App() {
+  const { pathname } = useLocation()
+  if (pathname.startsWith('/portal')) {
+    return <PortalApp />
+  }
+  return <LiffApp />
 }

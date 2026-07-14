@@ -1,17 +1,24 @@
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Button } from '../../components/ui'
+import { Card, Button, Input } from '../../components/ui'
 import { BottomNav } from '../../components/layout/BottomNav'
 import { TopBar } from '../../components/layout/TopBar'
 import { useAuth } from '../../hooks/useAuth'
+import { useAuthStore } from '../../store/authStore'
 import api from '../../lib/axios'
 
 export default function Settings() {
   const nav = useNavigate()
-  const { user, role } = useAuth()
+  const { user, role, setAuth } = useAuth()
   const isAdmin = role === 'ADMIN'
   const [richMsg, setRichMsg] = useState<string>()
   const [richLoading, setRichLoading] = useState(false)
+  const [username, setUsername] = useState(user?.username || '')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [pwdMsg, setPwdMsg] = useState<string>()
+  const [pwdError, setPwdError] = useState<string>()
+  const [pwdLoading, setPwdLoading] = useState(false)
 
   async function setupRichMenu() {
     setRichLoading(true)
@@ -26,10 +33,37 @@ export default function Settings() {
     }
   }
 
+  async function savePassword(e: FormEvent) {
+    e.preventDefault()
+    setPwdLoading(true)
+    setPwdError(undefined)
+    setPwdMsg(undefined)
+    try {
+      const { data } = await api.post('/auth/password', {
+        username: username || undefined,
+        currentPassword: user?.hasPassword ? currentPassword : undefined,
+        newPassword,
+      })
+      setAuth(data.token, data.role, data.user, {
+        adminId: data.adminId,
+        ownerId: data.ownerId,
+        mustChangePassword: false,
+        authSource: useAuthStore.getState().authSource || 'liff',
+        unitId: useAuthStore.getState().unitId,
+      })
+      setCurrentPassword('')
+      setNewPassword('')
+      setPwdMsg('บันทึกรหัสผ่านสำหรับ Web Portal แล้ว')
+    } catch (err: any) {
+      setPwdError(err.response?.data?.error || 'บันทึกไม่สำเร็จ')
+    } finally {
+      setPwdLoading(false)
+    }
+  }
+
   const items = [
     { label: 'สร้างใบแจ้งหนี้', desc: 'สร้างและส่งบิลรายเดือน', path: '/admin/invoice-builder' },
     { label: 'รายงานรายได้', desc: 'สรุปรายได้และส่งออกข้อมูล', path: '/admin/reports' },
-    // Admin-only management features
     ...(isAdmin
       ? [
           { label: 'จัดการเจ้าของ', desc: 'เชิญ/มอบหมายทรัพย์สินให้เจ้าของ', path: '/admin/owners' },
@@ -58,6 +92,37 @@ export default function Settings() {
           </div>
         </Card>
 
+        <Card>
+          <div className="font-medium mb-1">Web Portal (คอม)</div>
+          <div className="text-xs text-gray-400 mb-3">
+            ตั้ง Username/Password เพื่อเข้า{' '}
+            <span className="text-line">{window.location.origin}/portal/login</span>
+          </div>
+          <form onSubmit={savePassword} className="space-y-2">
+            <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="username" />
+            {user?.hasPassword && (
+              <Input
+                label="รหัสผ่านปัจจุบัน"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+            )}
+            <Input
+              label={user?.hasPassword ? 'รหัสผ่านใหม่' : 'ตั้งรหัสผ่าน'}
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="อย่างน้อย 6 ตัว"
+            />
+            {pwdError && <p className="text-danger text-sm">{pwdError}</p>}
+            {pwdMsg && <p className="text-line text-sm">{pwdMsg}</p>}
+            <Button type="submit" disabled={pwdLoading || !username || newPassword.length < 6}>
+              {pwdLoading ? 'กำลังบันทึก...' : 'บันทึกรหัส Portal'}
+            </Button>
+          </form>
+        </Card>
+
         {items.map((it) => (
           <Card key={it.path} onClick={() => nav(it.path)} className="flex items-center justify-between">
             <div>
@@ -72,7 +137,7 @@ export default function Settings() {
           <Card>
             <div className="font-medium">Rich Menu ผู้เช่า (LINE OA)</div>
             <div className="text-xs text-gray-400 mb-3">
-              เตรียม/อัปเดตเมนูลัด 6 ปุ่มสำหรับผู้เช่า — ระบบจะผูกเมนูนี้ให้ผู้เช่าอัตโนมัติหลังผูกบัญชี LINE (แอดมิน/เจ้าของจะไม่เห็นเมนูนี้)
+              เตรียม/อัปเดตเมนูลัด 6 ปุ่มสำหรับผู้เช่า — ระบบจะผูกเมนูนี้ให้ผู้เช่าอัตโนมัติหลังผูกบัญชี LINE
             </div>
             <Button variant="secondary" onClick={setupRichMenu} disabled={richLoading}>
               {richLoading ? 'กำลังเตรียม...' : 'เตรียม / อัปเดต Rich Menu ผู้เช่า'}

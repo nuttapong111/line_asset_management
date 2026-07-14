@@ -4,36 +4,67 @@ import { prisma } from '../lib/prisma'
 import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
 import { setAdminRichMenu } from '../lib/line/richMenu'
+import {
+  generateTempPassword,
+  hashPassword,
+  isValidUsername,
+  normalizeUsername,
+} from '../services/passwordService'
 
 const router = Router()
 
-// Invite links must be LIFF links (https://liff.line.me/<id>) so they open
-// inside the LINE app; query params survive even if LIFF drops the path.
 const ownerInviteUrl = (token: string) =>
   `${liffEntryUrl.replace(/\/$/, '')}?token=${token}&invite=owner`
 
 const adminOnly = [authMiddleware, requireRole('ADMIN')] as const
 
-// ---------- Admin: manage owner accounts (the SaaS "customers") ----------
-
-// POST /api/owners (admin) — create an owner account under this admin
+// POST /api/owners (admin) — create owner with portal credentials + LINE invite
 router.post('/owners', ...adminOnly, async (req, res) => {
-  const schema = z.object({ name: z.string().min(1), phone: z.string().optional() })
+  const schema = z.object({
+    name: z.string().min(1),
+    phone: z.string().optional(),
+    username: z.string().min(3),
+    password: z.string().min(6).optional(),
+  })
   const parse = schema.safeParse(req.body)
-  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+  if (!parse.success) return res.status(400).json({ error: 'กรุณากรอกชื่อและ Username (อย่างน้อย 3 ตัว)' })
+  if (!isValidUsername(parse.data.username)) {
+    return res.status(400).json({ error: 'Username ใช้ได้เฉพาะตัวอักษร ตัวเลข . _ @ + - (3–64 ตัว)' })
+  }
+
+  const username = normalizeUsername(parse.data.username)
+  const taken =
+    (await prisma.admin.findUnique({ where: { username } })) ||
+    (await prisma.owner.findUnique({ where: { username } }))
+  if (taken) return res.status(409).json({ error: 'Username นี้ถูกใช้แล้ว' })
+
+  const tempPassword = parse.data.password || generateTempPassword()
+  const passwordHash = await hashPassword(tempPassword)
   const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
   const owner = await prisma.owner.create({
     data: {
       name: parse.data.name,
       phone: parse.data.phone,
+      username,
+      passwordHash,
+      mustChangePassword: true,
       adminId: req.user!.adminId!,
       inviteExpiry: expiry,
     },
   })
-  res.status(201).json({ ...owner, inviteUrl: ownerInviteUrl(owner.inviteToken) })
+
+  res.status(201).json({
+    id: owner.id,
+    name: owner.name,
+    phone: owner.phone,
+    username: owner.username,
+    mustChangePassword: owner.mustChangePassword,
+    inviteUrl: ownerInviteUrl(owner.inviteToken),
+    temporaryPassword: tempPassword,
+  })
 })
 
-// GET /api/owners (admin) — list owner accounts + property counts
 router.get('/owners', ...adminOnly, async (req, res) => {
   const owners = await prisma.owner.findMany({
     where: { adminId: req.user!.adminId! },
@@ -45,6 +76,9 @@ router.get('/owners', ...adminOnly, async (req, res) => {
       id: o.id,
       name: o.name,
       phone: o.phone,
+      username: o.username,
+      hasPassword: Boolean(o.passwordHash),
+      mustChangePassword: o.mustChangePassword,
       linkedAt: o.linkedAt,
       lineUserId: o.lineUserId,
       properties: o.properties,
@@ -53,17 +87,16 @@ router.get('/owners', ...adminOnly, async (req, res) => {
   )
 })
 
-// GET /api/owners/:id (admin) — owner detail
 router.get('/owners/:id', ...adminOnly, async (req, res) => {
   const owner = await prisma.owner.findFirst({
     where: { id: req.params.id, adminId: req.user!.adminId! },
     include: { properties: { include: { units: true } } },
   })
   if (!owner) return res.status(404).json({ error: 'Owner not found' })
-  res.json({ ...owner, inviteUrl: ownerInviteUrl(owner.inviteToken) })
+  const { passwordHash: _, ...safe } = owner
+  res.json({ ...safe, inviteUrl: ownerInviteUrl(owner.inviteToken) })
 })
 
-// PUT /api/owners/:id (admin)
 router.put('/owners/:id', ...adminOnly, async (req, res) => {
   const owner = await prisma.owner.findFirst({ where: { id: req.params.id, adminId: req.user!.adminId! } })
   if (!owner) return res.status(404).json({ error: 'Owner not found' })
@@ -71,10 +104,21 @@ router.put('/owners/:id', ...adminOnly, async (req, res) => {
   const parse = schema.safeParse(req.body)
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
   const updated = await prisma.owner.update({ where: { id: owner.id }, data: parse.data })
-  res.json(updated)
+  const { passwordHash: _, ...safe } = updated
+  res.json(safe)
 })
 
-// GET /api/owners/:id/invite-link (admin) — refresh expiry + return link
+router.post('/owners/:id/reset-password', ...adminOnly, async (req, res) => {
+  const owner = await prisma.owner.findFirst({ where: { id: req.params.id, adminId: req.user!.adminId! } })
+  if (!owner) return res.status(404).json({ error: 'Owner not found' })
+  const tempPassword = generateTempPassword()
+  await prisma.owner.update({
+    where: { id: owner.id },
+    data: { passwordHash: await hashPassword(tempPassword), mustChangePassword: true },
+  })
+  res.json({ ok: true, username: owner.username, temporaryPassword: tempPassword })
+})
+
 router.get('/owners/:id/invite-link', ...adminOnly, async (req, res) => {
   const owner = await prisma.owner.findFirst({ where: { id: req.params.id, adminId: req.user!.adminId! } })
   if (!owner) return res.status(404).json({ error: 'Owner not found' })
@@ -83,7 +127,6 @@ router.get('/owners/:id/invite-link', ...adminOnly, async (req, res) => {
   res.json({ inviteToken: updated.inviteToken, inviteUrl: ownerInviteUrl(updated.inviteToken), expiresAt: expiry })
 })
 
-// DELETE /api/owners/:id (admin) — unassign their properties then delete
 router.delete('/owners/:id', ...adminOnly, async (req, res) => {
   const owner = await prisma.owner.findFirst({ where: { id: req.params.id, adminId: req.user!.adminId! } })
   if (!owner) return res.status(404).json({ error: 'Owner not found' })
@@ -92,7 +135,6 @@ router.delete('/owners/:id', ...adminOnly, async (req, res) => {
   res.json({ ok: true })
 })
 
-// POST /api/owners/:id/properties (admin) — assign a property to this owner
 router.post('/owners/:id/properties', ...adminOnly, async (req, res) => {
   const owner = await prisma.owner.findFirst({ where: { id: req.params.id, adminId: req.user!.adminId! } })
   if (!owner) return res.status(404).json({ error: 'Owner not found' })
@@ -107,7 +149,6 @@ router.post('/owners/:id/properties', ...adminOnly, async (req, res) => {
   res.json(updated)
 })
 
-// DELETE /api/owners/:id/properties/:propertyId (admin) — unassign
 router.delete('/owners/:id/properties/:propertyId', ...adminOnly, async (req, res) => {
   const prop = await prisma.property.findFirst({
     where: { id: req.params.propertyId, adminId: req.user!.adminId!, ownerId: req.params.id },
@@ -117,9 +158,6 @@ router.delete('/owners/:id/properties/:propertyId', ...adminOnly, async (req, re
   res.json({ ok: true })
 })
 
-// ---------- Owner: link account ----------
-
-// POST /api/owners/link  { inviteToken }
 router.post('/owners/link', authMiddleware, async (req, res) => {
   const schema = z.object({ inviteToken: z.string().min(1), lineUserId: z.string().optional() })
   const parse = schema.safeParse(req.body)
@@ -137,10 +175,14 @@ router.post('/owners/link', authMiddleware, async (req, res) => {
     where: { id: owner.id },
     data: { lineUserId, linkedAt: new Date() },
   })
-  // Owners are managers now → give them the manager (admin) rich menu
   setAdminRichMenu(lineUserId).catch(() => {})
-  const token = signToken({ lineUserId, role: 'OWNER', ownerId: updated.id })
-  res.json({ ok: true, token, role: 'OWNER', owner: updated })
+  const token = signToken({
+    lineUserId,
+    role: 'OWNER',
+    ownerId: updated.id,
+    mustChangePassword: updated.mustChangePassword,
+  })
+  res.json({ ok: true, token, role: 'OWNER', owner: { ...updated, passwordHash: undefined } })
 })
 
 export default router

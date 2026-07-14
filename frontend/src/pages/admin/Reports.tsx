@@ -21,9 +21,18 @@ export default function Reports() {
   if (!report) return <div className="p-6 text-center text-gray-400">กำลังโหลด...</div>
   const maxRevenue = Math.max(1, ...report.byMonth.map((m) => m.revenue))
 
-  function exportCsv() {
-    const base = import.meta.env.VITE_API_URL || '/api'
-    window.open(`${base}/reports/export?format=csv`, '_blank')
+  async function exportCsv() {
+    try {
+      const res = await api.get('/reports/export?format=csv', { responseType: 'blob' })
+      const url = URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'invoices.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('ส่งออกไม่สำเร็จ')
+    }
   }
 
   return (

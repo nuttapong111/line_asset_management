@@ -8,14 +8,17 @@ datasource db {
 }
 
 model Admin {
-  id            String         @id @default(cuid())
-  lineUserId    String         @unique
-  name          String
-  phone         String?
-  properties    Property[]
-  owners        Owner[]
-  notifSettings NotifSettings?
-  createdAt     DateTime       @default(now())
+  id                 String         @id @default(cuid())
+  lineUserId         String?        @unique
+  username           String?        @unique
+  passwordHash       String?
+  mustChangePassword Boolean        @default(false)
+  name               String
+  phone              String?
+  properties         Property[]
+  owners             Owner[]
+  notifSettings      NotifSettings?
+  createdAt          DateTime       @default(now())
 }
 
 model Property {
@@ -37,17 +40,20 @@ model Property {
 // Owner = property manager (the landlord / paying customer of the SaaS).
 // Each owner belongs to an Admin (the operator) and manages many properties.
 model Owner {
-  id           String     @id @default(cuid())
-  lineUserId   String?
-  name         String
-  phone        String?
-  adminId      String
-  admin        Admin      @relation(fields: [adminId], references: [id])
-  properties   Property[]
-  inviteToken  String     @unique @default(cuid())
-  inviteExpiry DateTime?
-  linkedAt     DateTime?
-  createdAt    DateTime   @default(now())
+  id                 String     @id @default(cuid())
+  lineUserId         String?
+  username           String?    @unique
+  passwordHash       String?
+  mustChangePassword Boolean    @default(false)
+  name               String
+  phone              String?
+  adminId            String
+  admin              Admin      @relation(fields: [adminId], references: [id])
+  properties         Property[]
+  inviteToken        String     @unique @default(cuid())
+  inviteExpiry       DateTime?
+  linkedAt           DateTime?
+  createdAt          DateTime   @default(now())
 
   @@index([lineUserId])
 }

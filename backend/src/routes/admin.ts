@@ -27,6 +27,9 @@ router.post('/claim', authMiddleware, async (req, res) => {
   }
 
   const lineUserId = req.user!.lineUserId
+  if (!lineUserId) {
+    return res.status(400).json({ error: 'ต้องเข้าสู่ระบบผ่าน LINE ก่อนผูกเป็นผู้ดูแล' })
+  }
 
   const existing = await prisma.admin.findUnique({ where: { lineUserId } })
   const admin =
@@ -59,7 +62,7 @@ router.post('/richmenu/setup', ...adminGuard, async (req, res) => {
   if (!result.ok) return res.status(400).json(result)
   // Link the admin menu to the admin who pressed the button so it shows immediately
   try {
-    await setAdminRichMenu(req.user!.lineUserId)
+    if (req.user!.lineUserId) await setAdminRichMenu(req.user!.lineUserId)
   } catch {
     /* ignore */
   }

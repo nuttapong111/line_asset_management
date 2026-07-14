@@ -11,6 +11,7 @@ interface Owner {
   id: string
   name: string
   phone?: string
+  username?: string
   linkedAt?: string
   properties: OwnerProp[]
   inviteUrl: string
@@ -26,8 +27,12 @@ export default function OwnerManage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
   const [copiedId, setCopiedId] = useState<string>()
+  const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string; inviteUrl: string }>()
+  const [error, setError] = useState<string>()
 
   const load = () =>
     Promise.all([api.get('/owners'), api.get('/properties')])
@@ -42,13 +47,29 @@ export default function OwnerManage() {
   }, [])
 
   async function add() {
-    if (!name.trim()) return
+    if (!name.trim() || !username.trim()) return
     setSaving(true)
+    setError(undefined)
+    setCreatedCreds(undefined)
     try {
-      await api.post('/owners', { name: name.trim(), phone: phone.trim() || undefined })
+      const { data } = await api.post('/owners', {
+        name: name.trim(),
+        phone: phone.trim() || undefined,
+        username: username.trim(),
+        password: password.trim() || undefined,
+      })
+      setCreatedCreds({
+        username: data.username,
+        password: data.temporaryPassword,
+        inviteUrl: data.inviteUrl,
+      })
       setName('')
       setPhone('')
+      setUsername('')
+      setPassword('')
       await load()
+    } catch (e: any) {
+      setError(e.response?.data?.error || 'สร้างไม่สำเร็จ')
     } finally {
       setSaving(false)
     }
@@ -60,11 +81,21 @@ export default function OwnerManage() {
       const { data } = await api.get(`/owners/${o.id}/invite-link`)
       url = data.inviteUrl
     } catch {
-      /* fall back to existing url */
+      /* fall back */
     }
     navigator.clipboard.writeText(url)
     setCopiedId(o.id)
     setTimeout(() => setCopiedId(undefined), 1500)
+  }
+
+  async function resetPassword(o: Owner) {
+    if (!confirm(`รีเซ็ตรหัสผ่านของ ${o.name}?`)) return
+    const { data } = await api.post(`/owners/${o.id}/reset-password`)
+    setCreatedCreds({
+      username: data.username,
+      password: data.temporaryPassword,
+      inviteUrl: o.inviteUrl,
+    })
   }
 
   async function remove(o: Owner) {
@@ -85,21 +116,57 @@ export default function OwnerManage() {
   }
 
   const unassigned = properties.filter((p) => !p.ownerId)
+  const portalUrl = `${window.location.origin}/portal/login`
 
   return (
     <div>
       <TopBar title="จัดการเจ้าของ" />
       <div className="p-4 space-y-4">
         <div className="bg-line-light rounded-xl p-3 text-sm text-line-dark">
-          เจ้าของจะจัดการทรัพย์สินที่ได้รับมอบหมายได้เหมือนแอดมิน (เพิ่มห้อง ผู้เช่า ออกบิล ตรวจสลิป) และรับแจ้งเตือนทาง LINE
+          สร้าง Username/Password สำหรับเข้าเว็บ Portal และส่งลิงก์ผูก LINE แยก — อย่าส่งรหัสผ่านในแชทกลุ่ม
         </div>
+
+        {createdCreds && (
+          <Card className="bg-white space-y-2 text-sm">
+            <p className="font-semibold text-line-dark">ส่งให้เจ้าของ</p>
+            <p>
+              Portal: <span className="break-all">{portalUrl}</span>
+            </p>
+            <p>
+              Username: <code>{createdCreds.username}</code>
+            </p>
+            <p>
+              Password: <code>{createdCreds.password}</code>
+            </p>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                navigator.clipboard.writeText(
+                  `Portal: ${portalUrl}\nUsername: ${createdCreds.username}\nPassword: ${createdCreds.password}\nลิงก์ผูก LINE: ${createdCreds.inviteUrl}`
+                )
+              }
+            >
+              คัดลอกข้อความทั้งหมด
+            </Button>
+          </Card>
+        )}
 
         <Card>
           <h3 className="font-semibold mb-2">เพิ่มเจ้าของ</h3>
           <div className="space-y-2">
             <Input label="ชื่อเจ้าของ" value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น คุณสมชาย" />
-            <Input label="เบอร์โทร (ไม่บังคับ)" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08x-xxx-xxxx" />
-            <Button onClick={add} disabled={saving || !name.trim()}>{saving ? 'กำลังบันทึก...' : 'สร้างคำเชิญ'}</Button>
+            <Input label="เบอร์โทร (ไม่บังคับ)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="somchai" />
+            <Input
+              label="Password (ว่าง = สุ่ม)"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {error && <p className="text-danger text-sm">{error}</p>}
+            <Button onClick={add} disabled={saving || !name.trim() || !username.trim()}>
+              {saving ? 'กำลังบันทึก...' : 'สร้างบัญชี'}
+            </Button>
           </div>
         </Card>
 
@@ -110,9 +177,9 @@ export default function OwnerManage() {
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <p className="font-medium">{o.name}</p>
-                  {o.phone && <p className="text-xs text-gray-400">{o.phone}</p>}
+                  <p className="text-xs text-gray-400">@{o.username || '—'}{o.phone ? ` · ${o.phone}` : ''}</p>
                 </div>
-                {o.linkedAt ? <Badge kind="paid">ผูกแล้ว</Badge> : <Badge kind="pending">รอผูก LINE</Badge>}
+                {o.linkedAt ? <Badge kind="paid">ผูก LINE แล้ว</Badge> : <Badge kind="pending">รอผูก LINE</Badge>}
               </div>
 
               <div className="mb-2">
@@ -138,7 +205,9 @@ export default function OwnerManage() {
                   >
                     <option value="">+ มอบหมายทรัพย์สิน...</option>
                     {unassigned.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
                     ))}
                   </select>
                 )}
@@ -146,9 +215,14 @@ export default function OwnerManage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <Button variant="secondary" className="text-sm py-2" onClick={() => copy(o)}>
-                  {copiedId === o.id ? 'คัดลอกแล้ว ✓' : 'คัดลอกลิงก์เชิญ'}
+                  {copiedId === o.id ? 'คัดลอกแล้ว ✓' : 'ลิงก์ผูก LINE'}
                 </Button>
-                <Button variant="danger" className="text-sm py-2" onClick={() => remove(o)}>ลบ</Button>
+                <Button variant="secondary" className="text-sm py-2" onClick={() => resetPassword(o)}>
+                  รีเซ็ตรหัส
+                </Button>
+                <Button variant="danger" className="text-sm py-2 col-span-2" onClick={() => remove(o)}>
+                  ลบ
+                </Button>
               </div>
             </Card>
           ))}

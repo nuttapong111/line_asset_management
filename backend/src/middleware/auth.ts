@@ -5,12 +5,14 @@ import { env } from '../lib/env'
 export type Role = 'ADMIN' | 'TENANT' | 'OWNER' | 'NEW'
 
 export interface JwtPayload {
-  lineUserId: string
+  lineUserId?: string
   role: Role
   unitId?: string
   adminId?: string
   tenantId?: string
   ownerId?: string
+  /** Portal login mustChangePassword — clients should redirect to change-password */
+  mustChangePassword?: boolean
 }
 
 declare global {
