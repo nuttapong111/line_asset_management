@@ -81,11 +81,19 @@ export default function PortalLogin() {
             {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
           </Button>
         </form>
-        <p className="text-xs text-gray-400 mt-5 text-center">
-          ยังไม่มีบัญชีแอดมิน?{' '}
-          <Link to="/portal/register" className="text-line hover:underline">
-            ลงทะเบียนด้วยรหัส setup
-          </Link>
+        <p className="text-xs text-gray-400 mt-5 text-center space-y-1">
+          <span className="block">
+            ยังไม่มีบัญชีแอดมิน?{' '}
+            <Link to="/portal/register" className="text-line hover:underline">
+              ลงทะเบียนด้วยรหัส setup
+            </Link>
+          </span>
+          <span className="block">
+            Portal ว่างแต่ LINE มีข้อมูล?{' '}
+            <Link to="/portal/link-admin" className="text-line hover:underline">
+              ผูกบัญชีกับ LINE
+            </Link>
+          </span>
         </p>
       </div>
     </div>

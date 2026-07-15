@@ -204,7 +204,7 @@ router.post('/login', async (req, res) => {
   return res.status(401).json({ error: 'Username หรือ Password ไม่ถูกต้อง' })
 })
 
-// POST /api/auth/register-admin — first admin or additional admins with setup code (portal)
+// POST /api/auth/register-admin — create portal credentials (or attach to existing LINE admin)
 router.post('/register-admin', async (req, res) => {
   if (!env.ADMIN_SETUP_CODE) {
     return res.status(403).json({ error: 'ระบบยังไม่เปิดให้ลงทะเบียนผู้ดูแล (ยังไม่ได้ตั้ง ADMIN_SETUP_CODE)' })
@@ -231,17 +231,38 @@ router.post('/register-admin', async (req, res) => {
   if (taken) return res.status(409).json({ error: 'Username นี้ถูกใช้แล้ว' })
 
   const passwordHash = await hashPassword(parse.data.password)
-  const admin = await prisma.admin.create({
-    data: {
-      name: parse.data.name.trim(),
-      username,
-      passwordHash,
-      mustChangePassword: false,
-      notifSettings: { create: {} },
-    },
+
+  // Prefer attaching credentials to an existing LINE admin (has data) instead of
+  // creating a second empty admin that makes Portal/LINE look "unlinked".
+  const lineAdmins = await prisma.admin.findMany({
+    where: { lineUserId: { not: null }, username: null },
+    include: { _count: { select: { properties: true } } },
+    orderBy: { createdAt: 'asc' },
   })
+  const existingLineAdmin = [...lineAdmins].sort((a, b) => b._count.properties - a._count.properties)[0]
+
+  const admin = existingLineAdmin
+    ? await prisma.admin.update({
+        where: { id: existingLineAdmin.id },
+        data: {
+          username,
+          passwordHash,
+          mustChangePassword: false,
+          name: parse.data.name.trim() || existingLineAdmin.name,
+        },
+      })
+    : await prisma.admin.create({
+        data: {
+          name: parse.data.name.trim(),
+          username,
+          passwordHash,
+          mustChangePassword: false,
+          notifSettings: { create: {} },
+        },
+      })
 
   const payload: JwtPayload = {
+    lineUserId: admin.lineUserId || undefined,
     role: 'ADMIN',
     adminId: admin.id,
     mustChangePassword: false,
@@ -250,7 +271,111 @@ router.post('/register-admin', async (req, res) => {
     authResponse(signToken(payload), payload, admin.name, {
       username: admin.username,
       hasPassword: true,
-      lineLinked: false,
+      lineLinked: Boolean(admin.lineUserId),
+    })
+  )
+})
+
+/**
+ * POST /api/auth/link-portal-admin
+ * Fixes split accounts: portal-only admin (username/password, no LINE data) →
+ * move credentials onto the LINE admin that already has properties.
+ * Body: { code, username, password }
+ */
+router.post('/link-portal-admin', async (req, res) => {
+  if (!env.ADMIN_SETUP_CODE) {
+    return res.status(403).json({ error: 'ระบบยังไม่เปิดให้ผูกบัญชี (ยังไม่ได้ตั้ง ADMIN_SETUP_CODE)' })
+  }
+  const schema = z.object({
+    code: z.string().min(1),
+    username: z.string().min(1),
+    password: z.string().min(1),
+  })
+  const parse = schema.safeParse(req.body)
+  if (!parse.success) return res.status(400).json({ error: 'กรุณากรอกข้อมูลให้ครบ' })
+  if (parse.data.code.trim() !== env.ADMIN_SETUP_CODE) {
+    return res.status(401).json({ error: 'รหัสลงทะเบียนไม่ถูกต้อง' })
+  }
+
+  const username = normalizeUsername(parse.data.username)
+  const portalAdmin = await prisma.admin.findUnique({ where: { username } })
+  if (!portalAdmin?.passwordHash) {
+    return res.status(404).json({ error: 'ไม่พบบัญชี Portal ด้วย Username นี้' })
+  }
+  const ok = await verifyPassword(parse.data.password, portalAdmin.passwordHash)
+  if (!ok) return res.status(401).json({ error: 'Password ไม่ถูกต้อง' })
+
+  // Already linked to LINE and has properties — nothing to fix
+  if (portalAdmin.lineUserId) {
+    const propCount = await prisma.property.count({ where: { adminId: portalAdmin.id } })
+    if (propCount > 0) {
+      const payload: JwtPayload = {
+        lineUserId: portalAdmin.lineUserId,
+        role: 'ADMIN',
+        adminId: portalAdmin.id,
+        mustChangePassword: portalAdmin.mustChangePassword,
+      }
+      return res.json(
+        authResponse(signToken(payload), payload, portalAdmin.name, {
+          username: portalAdmin.username,
+          hasPassword: true,
+          lineLinked: true,
+        })
+      )
+    }
+  }
+
+  const candidates = await prisma.admin.findMany({
+    where: {
+      lineUserId: { not: null },
+      id: { not: portalAdmin.id },
+    },
+    include: { _count: { select: { properties: true } } },
+  })
+  const lineAdmin = [...candidates].sort((a, b) => b._count.properties - a._count.properties)[0]
+  if (!lineAdmin) {
+    return res.status(404).json({
+      error: 'ไม่พบแอดมินที่ผูก LINE แล้ว — เปิด LIFF แล้วไปตั้งค่า → ตั้ง Username/Password แทน',
+    })
+  }
+
+  // Move portal credentials onto the LINE admin that owns the data
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.admin.update({
+      where: { id: portalAdmin.id },
+      data: { username: null, passwordHash: null },
+    })
+    const next = await tx.admin.update({
+      where: { id: lineAdmin.id },
+      data: {
+        username,
+        passwordHash: portalAdmin.passwordHash,
+        mustChangePassword: false,
+      },
+    })
+    // Orphan portal admin with no LINE and no leftover useful ties → delete
+    const orphan = await tx.admin.findUnique({
+      where: { id: portalAdmin.id },
+      include: { _count: { select: { properties: true, owners: true } } },
+    })
+    if (orphan && !orphan.lineUserId && orphan._count.properties === 0 && orphan._count.owners === 0) {
+      await tx.notifSettings.deleteMany({ where: { adminId: orphan.id } }).catch(() => {})
+      await tx.admin.delete({ where: { id: orphan.id } })
+    }
+    return next
+  })
+
+  const payload: JwtPayload = {
+    lineUserId: updated.lineUserId || undefined,
+    role: 'ADMIN',
+    adminId: updated.id,
+    mustChangePassword: false,
+  }
+  return res.json(
+    authResponse(signToken(payload), payload, updated.name, {
+      username: updated.username,
+      hasPassword: true,
+      lineLinked: Boolean(updated.lineUserId),
     })
   )
 })

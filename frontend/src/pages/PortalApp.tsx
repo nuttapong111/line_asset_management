@@ -9,6 +9,7 @@ import PortalDashboard from './portal/PortalDashboard'
 import PortalReports from './portal/PortalReports'
 import PortalSettings from './portal/PortalSettings'
 import PortalOwners from './portal/PortalOwners'
+import PortalLinkAdmin from './portal/PortalLinkAdmin'
 
 function PortalGuard({ children }: { children: React.ReactNode }) {
   const jwt = useAuthStore((s) => s.jwt)
@@ -45,6 +46,7 @@ export default function PortalApp() {
     <Routes>
       <Route path="/portal/login" element={<PortalLogin />} />
       <Route path="/portal/register" element={<PortalRegister />} />
+      <Route path="/portal/link-admin" element={<PortalLinkAdmin />} />
       <Route
         path="/portal/change-password"
         element={
