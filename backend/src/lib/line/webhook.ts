@@ -199,6 +199,9 @@ async function handlePostback(event: PostbackEvent): Promise<void> {
   }
 
   const { approvePayment, rejectPayment } = await import('../../services/paymentService')
+  const { approveSubscriptionPayment, rejectSubscriptionPayment } = await import(
+    '../../services/subscriptionService'
+  )
 
   switch (data.action) {
     case 'APPROVE_PAYMENT':
@@ -208,6 +211,20 @@ async function handlePostback(event: PostbackEvent): Promise<void> {
     case 'REJECT_PAYMENT':
       if (data.paymentId) await rejectPayment(data.paymentId, 'ปฏิเสธจาก LINE')
       await reply(event.replyToken, { type: 'text', text: 'ปฏิเสธสลิปแล้ว' })
+      return
+    case 'APPROVE_SUB':
+      if (data.paymentId) {
+        const admin = await prisma.admin.findUnique({ where: { lineUserId: event.source.userId! } })
+        if (admin) await approveSubscriptionPayment(data.paymentId, admin.id)
+      }
+      await reply(event.replyToken, { type: 'text', text: 'อนุมัติค่าบริการแล้ว และต่ออายุให้เจ้าของเรียบร้อย ✅' })
+      return
+    case 'REJECT_SUB':
+      if (data.paymentId) {
+        const admin = await prisma.admin.findUnique({ where: { lineUserId: event.source.userId! } })
+        if (admin) await rejectSubscriptionPayment(data.paymentId, admin.id, 'ปฏิเสธจาก LINE')
+      }
+      await reply(event.replyToken, { type: 'text', text: 'ปฏิเสธสลิปค่าบริการแล้ว' })
       return
     case 'ACK_MAINTENANCE':
       if (data.ticketId) {

@@ -3,11 +3,12 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole } from '../middleware/auth'
+import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere } from '../lib/scope'
 import type { JwtPayload } from '../middleware/auth'
 
 const router = Router()
-const guard = [authMiddleware, requireRole('ADMIN', 'OWNER')] as const
+const guard = [authMiddleware, requireRole('ADMIN', 'OWNER'), requireActiveSubscription] as const
 
 // Invite links must be LIFF links so they open inside the LINE app
 const inviteUrl = (token: string, type: 'tenant' | 'owner') =>

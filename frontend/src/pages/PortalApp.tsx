@@ -10,6 +10,8 @@ import PortalReports from './portal/PortalReports'
 import PortalSettings from './portal/PortalSettings'
 import PortalOwners from './portal/PortalOwners'
 import PortalLinkAdmin from './portal/PortalLinkAdmin'
+import PortalSubscription from './portal/PortalSubscription'
+import PortalSubscriptionsAdmin from './portal/PortalSubscriptionsAdmin'
 
 function PortalGuard({ children }: { children: React.ReactNode }) {
   const jwt = useAuthStore((s) => s.jwt)
@@ -67,6 +69,8 @@ export default function PortalApp() {
         <Route path="reports" element={<PortalReports />} />
         <Route path="settings" element={<PortalSettings />} />
         <Route path="owners" element={<PortalOwners />} />
+        <Route path="subscription" element={<PortalSubscription />} />
+        <Route path="subscriptions" element={<PortalSubscriptionsAdmin />} />
       </Route>
       <Route path="/portal/*" element={<Navigate to="/portal" replace />} />
     </Routes>

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
+import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere, invoiceWhere } from '../lib/scope'
 import {
   buildRentInvoiceDraft,
@@ -13,7 +14,7 @@ import {
 } from '../services/invoiceService'
 
 const router = Router()
-router.use(authMiddleware)
+router.use(authMiddleware, requireActiveSubscription)
 
 // GET /api/invoices  (manager: scoped; tenant: own unit)
 router.get('/', async (req, res) => {

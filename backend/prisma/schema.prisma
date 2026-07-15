@@ -40,22 +40,64 @@ model Property {
 // Owner = property manager (the landlord / paying customer of the SaaS).
 // Each owner belongs to an Admin (the operator) and manages many properties.
 model Owner {
-  id                 String     @id @default(cuid())
-  lineUserId         String?
-  username           String?    @unique
-  passwordHash       String?
-  mustChangePassword Boolean    @default(false)
-  name               String
-  phone              String?
-  adminId            String
-  admin              Admin      @relation(fields: [adminId], references: [id])
-  properties         Property[]
-  inviteToken        String     @unique @default(cuid())
-  inviteExpiry       DateTime?
-  linkedAt           DateTime?
-  createdAt          DateTime   @default(now())
+  id                     String                 @id @default(cuid())
+  lineUserId             String?
+  username               String?                @unique
+  passwordHash           String?
+  mustChangePassword     Boolean                @default(false)
+  name                   String
+  phone                  String?
+  adminId                String
+  admin                  Admin                  @relation(fields: [adminId], references: [id])
+  properties             Property[]
+  inviteToken            String                 @unique @default(cuid())
+  inviteExpiry           DateTime?
+  linkedAt               DateTime?
+  subscriptionStatus     SubscriptionStatus     @default(TRIAL)
+  expiresAt              DateTime?
+  /// Avoid duplicate daily reminders: "YYYY-MM-DD:7"
+  subscriptionReminderKey String?
+  subscriptionPayments   SubscriptionPayment[]
+  createdAt              DateTime               @default(now())
 
   @@index([lineUserId])
+  @@index([expiresAt])
+  @@index([subscriptionStatus])
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  GRACE
+  SUSPENDED
+}
+
+/// SaaS service fee payments (Owner → Platform), separate from rent Payment
+model SubscriptionPayment {
+  id             String                     @id @default(cuid())
+  ownerId        String
+  owner          Owner                      @relation(fields: [ownerId], references: [id])
+  billNo         String                     @unique
+  amount         Decimal
+  periodDays     Int                        @default(30)
+  status         SubscriptionPaymentStatus  @default(PENDING_SLIP)
+  slipUrl        String?
+  slipUploadedAt DateTime?
+  rejectReason   String?
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  /// Subscription end date after this payment is approved
+  extendsTo      DateTime?
+  createdAt      DateTime                   @default(now())
+
+  @@index([ownerId, status])
+}
+
+enum SubscriptionPaymentStatus {
+  PENDING_SLIP
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
 }
 
 model Unit {

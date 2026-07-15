@@ -44,6 +44,18 @@ export const env = {
 
   DEFAULT_PROMPTPAY_NUMBER: process.env.DEFAULT_PROMPTPAY_NUMBER || '',
 
+  // Platform SaaS subscription (Owner pays PropFlow)
+  PLATFORM_PROMPTPAY_NUMBER: (process.env.PLATFORM_PROMPTPAY_NUMBER || process.env.DEFAULT_PROMPTPAY_NUMBER || '').trim(),
+  SUBSCRIPTION_PRICE: parseFloat(process.env.SUBSCRIPTION_PRICE || '499'),
+  SUBSCRIPTION_PERIOD_DAYS: parseInt(process.env.SUBSCRIPTION_PERIOD_DAYS || '30', 10),
+  SUBSCRIPTION_GRACE_DAYS: parseInt(process.env.SUBSCRIPTION_GRACE_DAYS || '7', 10),
+  SUBSCRIPTION_TRIAL_DAYS: parseInt(process.env.SUBSCRIPTION_TRIAL_DAYS || '14', 10),
+  SUBSCRIPTION_REMIND_DAYS: (process.env.SUBSCRIPTION_REMIND_DAYS || '7,3,1')
+    .split(',')
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => !Number.isNaN(n)),
+  SUBSCRIPTION_REMIND_TIME: process.env.SUBSCRIPTION_REMIND_TIME || '09:00',
+
   // Slip verification provider (rough OCR to assist manual approval).
   // 'easyslip' uses developer.easyslip.com; anything else falls back to mock.
   SLIP_VERIFY_PROVIDER: (process.env.SLIP_VERIFY_PROVIDER || 'mock').trim().toLowerCase(),

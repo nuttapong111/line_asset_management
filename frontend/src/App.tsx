@@ -27,6 +27,8 @@ import Settings from './pages/admin/Settings'
 import AdminContractView from './pages/admin/ContractView'
 import AdminMaintenanceDetail from './pages/admin/MaintenanceDetail'
 import OwnerManage from './pages/admin/OwnerManage'
+import SubscriptionPay from './pages/admin/SubscriptionPay'
+import SubscriptionReview from './pages/admin/SubscriptionReview'
 
 import TenantHome from './pages/tenant/TenantHome'
 import InvoiceDetail from './pages/tenant/InvoiceDetail'
@@ -142,6 +144,8 @@ function LiffApp() {
         <Route path="/admin/contract/:id" element={<AdminContractView />} />
         <Route path="/admin/maintenance/:id" element={<AdminMaintenanceDetail />} />
         <Route path="/admin/owners" element={<OwnerManage />} />
+        <Route path="/admin/subscription" element={<SubscriptionPay />} />
+        <Route path="/admin/subscriptions" element={<SubscriptionReview />} />
 
         <Route path="/owner/home" element={<Navigate to="/admin/portfolio" replace />} />
 

@@ -6,6 +6,7 @@ import { cls } from '../../lib/utils'
 const links = [
   { to: '/portal', end: true, label: 'ภาพรวม' },
   { to: '/portal/reports', end: false, label: 'รายงาน' },
+  { to: '/portal/subscription', end: false, label: 'ค่าบริการ', ownerOnly: true },
   { to: '/portal/settings', end: false, label: 'ตั้งค่า' },
 ]
 
@@ -14,6 +15,7 @@ export function PortalLayout() {
   const nav = useNavigate()
   const [open, setOpen] = useState(false)
   const isAdmin = role === 'ADMIN'
+  const isOwner = role === 'OWNER'
 
   function logout() {
     clearAuth()
@@ -22,7 +24,9 @@ export function PortalLayout() {
 
   const navItems = (
     <>
-      {links.map((l) => (
+      {links
+        .filter((l) => !('ownerOnly' in l && l.ownerOnly) || isOwner)
+        .map((l) => (
         <NavLink
           key={l.to}
           to={l.to}
@@ -39,18 +43,32 @@ export function PortalLayout() {
         </NavLink>
       ))}
       {isAdmin && (
-        <NavLink
-          to="/portal/owners"
-          onClick={() => setOpen(false)}
-          className={({ isActive }) =>
-            cls(
-              'block px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-              isActive ? 'bg-line text-white' : 'text-gray-700 hover:bg-gray-100'
-            )
-          }
-        >
-          เจ้าของ
-        </NavLink>
+        <>
+          <NavLink
+            to="/portal/owners"
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              cls(
+                'block px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive ? 'bg-line text-white' : 'text-gray-700 hover:bg-gray-100'
+              )
+            }
+          >
+            เจ้าของ
+          </NavLink>
+          <NavLink
+            to="/portal/subscriptions"
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              cls(
+                'block px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive ? 'bg-line text-white' : 'text-gray-700 hover:bg-gray-100'
+              )
+            }
+          >
+            บิลค่าบริการ
+          </NavLink>
+        </>
       )}
     </>
   )

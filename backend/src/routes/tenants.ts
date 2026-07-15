@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma'
 import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
 import type { JwtPayload } from '../middleware/auth'
+import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere } from '../lib/scope'
 import { sendSms } from '../services/smsService'
 import { setTenantRichMenu } from '../lib/line/richMenu'
@@ -26,7 +27,7 @@ const tenantSchema = z.object({
   endDate: z.string().optional(),
 })
 
-const managerGuard = [authMiddleware, requireRole('ADMIN', 'OWNER')] as const
+const managerGuard = [authMiddleware, requireRole('ADMIN', 'OWNER'), requireActiveSubscription] as const
 
 async function ownsUnit(user: JwtPayload, unitId: string) {
   return prisma.unit.findFirst({

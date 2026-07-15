@@ -10,6 +10,7 @@ import {
   isValidUsername,
   normalizeUsername,
 } from '../services/passwordService'
+import { trialExpiresAt } from '../services/subscriptionService'
 
 const router = Router()
 
@@ -51,6 +52,8 @@ router.post('/owners', ...adminOnly, async (req, res) => {
       mustChangePassword: true,
       adminId: req.user!.adminId!,
       inviteExpiry: expiry,
+      subscriptionStatus: 'TRIAL',
+      expiresAt: trialExpiresAt(),
     },
   })
 

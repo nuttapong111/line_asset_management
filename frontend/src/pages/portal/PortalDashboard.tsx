@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../lib/axios'
 import { baht, thaiDate } from '../../lib/utils'
+import { useAuthStore } from '../../store/authStore'
 
 interface Dashboard {
   summary: {
@@ -35,15 +36,29 @@ interface Dashboard {
 }
 
 export default function PortalDashboard() {
+  const role = useAuthStore((s) => s.role)
   const [data, setData] = useState<Dashboard>()
   const [error, setError] = useState<string>()
+  const [subBanner, setSubBanner] = useState<{ status: string; daysLeft: number | null; expiresAt?: string }>()
 
   useEffect(() => {
     api
       .get('/reports/dashboard')
       .then((r) => setData(r.data))
       .catch(() => setError('โหลดข้อมูลไม่สำเร็จ'))
-  }, [])
+    if (role === 'OWNER') {
+      api
+        .get('/subscriptions/me')
+        .then((r) =>
+          setSubBanner({
+            status: r.data.owner.subscriptionStatus,
+            daysLeft: r.data.owner.daysLeft,
+            expiresAt: r.data.owner.expiresAt,
+          })
+        )
+        .catch(() => {})
+    }
+  }, [role])
 
   if (error) return <p className="text-danger">{error}</p>
   if (!data) return <p className="text-gray-400">กำลังโหลด...</p>
@@ -56,6 +71,12 @@ export default function PortalDashboard() {
     { label: 'อัตราเช่า', value: `${s.occupancyRate}%`, tone: 'text-gray-800' },
   ]
 
+  const showSubWarn =
+    subBanner &&
+    (subBanner.status === 'GRACE' ||
+      subBanner.status === 'SUSPENDED' ||
+      (subBanner.daysLeft !== null && subBanner.daysLeft <= 7))
+
   return (
     <div className="space-y-6">
       <div>
@@ -64,6 +85,22 @@ export default function PortalDashboard() {
           {s.propertyCount} ทรัพย์สิน · {s.occupiedUnits}/{s.totalUnits} ห้องเช่าแล้ว
         </p>
       </div>
+
+      {showSubWarn && (
+        <Link
+          to="/portal/subscription"
+          className="block rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+        >
+          <div className="font-semibold">
+            {subBanner.status === 'SUSPENDED'
+              ? 'บัญชีถูกระงับ — กดเพื่อชำระค่าบริการ'
+              : subBanner.status === 'GRACE'
+              ? 'เลยกำหนดค่าบริการแล้ว (อยู่ในระยะผ่อนผัน)'
+              : `ค่าบริการใกล้หมดอายุ (เหลือ ${subBanner.daysLeft} วัน)`}
+          </div>
+          <div className="text-xs mt-1 opacity-80">หมดอายุ {thaiDate(subBanner.expiresAt)} — แตะเพื่อชำระ</div>
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cards.map((c) => (

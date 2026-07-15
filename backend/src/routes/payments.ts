@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { env, liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole } from '../middleware/auth'
+import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere } from '../lib/scope'
 import { generatePromptPayPayload } from '../services/qrService'
 import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
@@ -15,7 +16,7 @@ import { notifyOwnersPayment } from '../services/ownerNotify'
 import { linkedTenant } from '../services/tenantLifecycle'
 
 const router = Router()
-router.use(authMiddleware)
+router.use(authMiddleware, requireActiveSubscription)
 
 const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
 

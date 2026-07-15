@@ -149,6 +149,11 @@ export async function sendUnacknowledgedMaintReminders(adminId: string, hours: n
 async function tick(): Promise<void> {
   const now = new Date()
   const HH_mm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+  // Platform SaaS subscription jobs (independent of admin notif settings quiet hours for status refresh)
+  const { tickSubscriptionJobs } = await import('./subscriptionService')
+  await tickSubscriptionJobs(HH_mm)
+
   const admins = await prisma.admin.findMany({ include: { notifSettings: true } })
 
   for (const admin of admins) {

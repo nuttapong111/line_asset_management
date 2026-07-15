@@ -64,9 +64,13 @@ export default function Settings() {
   const items = [
     { label: 'สร้างใบแจ้งหนี้', desc: 'สร้างและส่งบิลรายเดือน', path: '/admin/invoice-builder' },
     { label: 'รายงานรายได้', desc: 'สรุปรายได้และส่งออกข้อมูล', path: '/admin/reports' },
+    ...(!isAdmin
+      ? [{ label: 'ค่าบริการ PropFlow', desc: 'ดูวันหมดอายุ ชำระและแนบสลิป', path: '/admin/subscription' }]
+      : []),
     ...(isAdmin
       ? [
           { label: 'จัดการเจ้าของ', desc: 'เชิญ/มอบหมายทรัพย์สินให้เจ้าของ', path: '/admin/owners' },
+          { label: 'บิลค่าบริการ Owner', desc: 'อนุมัติสลิปต่ออายุสมาชิก', path: '/admin/subscriptions' },
           { label: 'การแจ้งเตือน', desc: 'ตั้งค่าใบแจ้งหนี้ เตือนค่าเช่า ฯลฯ', path: '/admin/notifications' },
         ]
       : []),

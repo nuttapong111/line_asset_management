@@ -100,3 +100,30 @@ export interface ChatMessageData {
   tenantName: string
   message: string
 }
+
+export interface SubscriptionReminderData {
+  ownerName: string
+  daysLeft: number
+  expiresAt: string
+  amount: number
+  billNo: string
+  payUrl: string
+  status: string
+}
+
+export interface SubscriptionSlipReceivedData {
+  paymentId: string
+  billNo: string
+  ownerName: string
+  amount: number
+  reviewUrl: string
+}
+
+export interface SubscriptionResultData {
+  ok: boolean
+  ownerName: string
+  billNo: string
+  amount: number
+  expiresAt: string
+  reason: string | null
+}

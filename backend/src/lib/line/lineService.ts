@@ -12,6 +12,9 @@ import {
   buildLinkedFlex,
   buildInviteFlex,
   buildSlipReceivedFlex,
+  buildSubscriptionReminderFlex,
+  buildSubscriptionSlipReceivedFlex,
+  buildSubscriptionResultFlex,
 } from './flexMessages'
 import {
   InvoiceData,
@@ -23,6 +26,9 @@ import {
   LinkedData,
   InviteData,
   SlipReceivedData,
+  SubscriptionReminderData,
+  SubscriptionSlipReceivedData,
+  SubscriptionResultData,
 } from './types/line.types'
 
 async function push(to: string, messages: Message | Message[]): Promise<void> {
@@ -61,6 +67,12 @@ export const pushContractExpiry = (to: string, d: ContractExpiryData) => push(to
 export const pushMaintNew = (to: string, d: MaintData) => push(to, buildMaintNewFlex(d))
 export const pushLinked = (to: string, d: LinkedData) => push(to, buildLinkedFlex(d))
 export const pushInvite = (to: string, d: InviteData) => push(to, buildInviteFlex(d))
+export const pushSubscriptionReminder = (to: string, d: SubscriptionReminderData) =>
+  push(to, buildSubscriptionReminderFlex(d))
+export const pushSubscriptionSlipReceived = (to: string, d: SubscriptionSlipReceivedData) =>
+  push(to, buildSubscriptionSlipReceivedFlex(d))
+export const pushSubscriptionResult = (to: string, d: SubscriptionResultData) =>
+  push(to, buildSubscriptionResultFlex(d))
 
 export const pushText = (to: string, text: string) => push(to, { type: 'text', text })
 

@@ -9,6 +9,9 @@ import {
   LinkedData,
   InviteData,
   SlipReceivedData,
+  SubscriptionReminderData,
+  SubscriptionSlipReceivedData,
+  SubscriptionResultData,
 } from './types/line.types'
 
 const COLORS = {
@@ -403,6 +406,125 @@ export function buildInviteFlex(d: InviteData): FlexMessage {
             color: COLORS.green,
             action: { type: 'uri', label: 'ยืนยันและผูก LINE', uri: d.inviteUrl },
           },
+        ],
+      },
+    },
+  }
+}
+
+export function buildSubscriptionReminderFlex(d: SubscriptionReminderData): FlexMessage {
+  const overdue = d.daysLeft < 0 || d.status === 'GRACE'
+  const title = overdue ? 'ค่าบริการเลยกำหนด' : 'ค่าบริการใกล้หมดอายุ'
+  const subtitle =
+    d.daysLeft > 0 ? `เหลือ ${d.daysLeft} วัน` : d.daysLeft === 0 ? 'หมดอายุวันนี้' : 'อยู่ในระยะผ่อนผัน'
+  return {
+    type: 'flex',
+    altText: `${title} — ${baht(d.amount)}`,
+    contents: {
+      type: 'bubble',
+      header: header(title, d.ownerName, overdue ? COLORS.red : COLORS.amber),
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          row('หมดอายุ', d.expiresAt),
+          row('เลขที่บิล', d.billNo),
+          row('ยอดชำระ', baht(d.amount), COLORS.green, true),
+          separator(),
+          {
+            type: 'text',
+            text: 'ชำระผ่าน PromptPay ของ PropFlow แล้วแนบสลิปในระบบ',
+            size: 'xs',
+            color: COLORS.muted,
+            wrap: true,
+          },
+        ],
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: COLORS.green,
+            action: { type: 'uri', label: 'ชำระค่าบริการ', uri: d.payUrl },
+          },
+        ],
+      },
+    },
+  }
+}
+
+export function buildSubscriptionSlipReceivedFlex(d: SubscriptionSlipReceivedData): FlexMessage {
+  return {
+    type: 'flex',
+    altText: `สลิปค่าบริการ ${d.ownerName} ${baht(d.amount)}`,
+    contents: {
+      type: 'bubble',
+      header: header('สลิปค่าบริการใหม่', d.billNo, COLORS.blue),
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          row('เจ้าของ', d.ownerName),
+          row('ยอด', baht(d.amount), COLORS.green, true),
+        ],
+      },
+      footer: {
+        type: 'box',
+        layout: 'horizontal',
+        spacing: 'sm',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: COLORS.green,
+            action: {
+              type: 'postback',
+              label: 'อนุมัติ',
+              data: JSON.stringify({ action: 'APPROVE_SUB', paymentId: d.paymentId }),
+            },
+          },
+          {
+            type: 'button',
+            style: 'secondary',
+            action: { type: 'uri', label: 'ตรวจสลิป', uri: d.reviewUrl },
+          },
+        ],
+      },
+    },
+  }
+}
+
+export function buildSubscriptionResultFlex(d: SubscriptionResultData): FlexMessage {
+  return {
+    type: 'flex',
+    altText: d.ok ? 'อนุมัติค่าบริการแล้ว' : 'สลิปค่าบริการไม่ผ่าน',
+    contents: {
+      type: 'bubble',
+      header: header(d.ok ? 'ชำระค่าบริการสำเร็จ' : 'สลิปไม่ผ่านการอนุมัติ', d.billNo, d.ok ? COLORS.green : COLORS.red),
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          row('ยอด', baht(d.amount)),
+          ...(d.ok ? [row('ใช้ได้ถึง', d.expiresAt, COLORS.green, true)] : []),
+          ...(d.reason
+            ? [
+                {
+                  type: 'text' as const,
+                  text: d.reason,
+                  size: 'sm' as const,
+                  color: COLORS.red,
+                  wrap: true,
+                  margin: 'md' as const,
+                },
+              ]
+            : []),
         ],
       },
     },

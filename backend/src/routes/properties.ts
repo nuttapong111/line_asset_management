@@ -3,12 +3,13 @@ import multer from 'multer'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
+import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere, resolveAdminId } from '../lib/scope'
 import { uploadFile } from '../services/storageService'
 
 const router = Router()
 // Both admins and owners manage properties (owners are scoped to their own)
-router.use(authMiddleware, requireRole('ADMIN', 'OWNER'))
+router.use(authMiddleware, requireRole('ADMIN', 'OWNER'), requireActiveSubscription)
 
 const upload = multer({
   storage: multer.memoryStorage(),
