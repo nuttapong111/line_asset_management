@@ -89,9 +89,14 @@ export default function PortalLogin() {
             </Link>
           </span>
           <span className="block">
+            สร้างแอดมินจาก Portal แล้วยังไม่ผูก LINE? เปิดในแอป LINE:
+            <br />
+            <span className="text-line">เมนู / หรือลิงก์ …/link-admin</span>
+          </span>
+          <span className="block">
             Portal ว่างแต่ LINE มีข้อมูล?{' '}
             <Link to="/portal/link-admin" className="text-line hover:underline">
-              ผูกบัญชีกับ LINE
+              รวมบัญชีที่นี่
             </Link>
           </span>
         </p>

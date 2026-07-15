@@ -40,8 +40,13 @@ export default function PortalLinkAdmin() {
         <div className="mb-6">
           <div className="text-2xl font-bold text-line">ผูก Portal กับ LINE</div>
           <p className="text-sm text-gray-500 mt-1">
-            ใช้เมื่อ Portal โชว์ข้อมูลว่าง แต่ใน LINE มีข้อมูลแล้ว — จะย้าย Username/Password
-            ไปยังบัญชีแอดมินที่ผูก LINE อยู่
+            ใช้เมื่อมีบัญชีแอดมินใน LINE อยู่แล้ว (มีข้อมูลในระบบ) แต่สมัคร Portal แยกจนได้บัญชีว่าง —
+            จะย้าย Username/Password ไปบัญชี LINE นั้น
+          </p>
+          <p className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2 mt-2">
+            ถ้าสร้างแอดมินจาก Portal แล้วยังไม่เคยผูก LINE ให้เปิดในแอป LINE แทน:
+            <br />
+            <code className="break-all">https://liff.line.me/YOUR_LIFF_ID/link-admin</code>
           </p>
         </div>
         <form onSubmit={onSubmit} className="space-y-3">

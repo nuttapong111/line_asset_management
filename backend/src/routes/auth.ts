@@ -380,6 +380,78 @@ router.post('/link-portal-admin', async (req, res) => {
   )
 })
 
+/**
+ * POST /api/auth/bind-line
+ * Attach current LINE user to an existing portal Admin (username/password).
+ * Used when admin was created on /portal/register without LINE.
+ */
+router.post('/bind-line', authMiddleware, async (req, res) => {
+  if (!env.ADMIN_SETUP_CODE) {
+    return res.status(403).json({ error: 'ระบบยังไม่เปิดให้ผูกบัญชี (ยังไม่ได้ตั้ง ADMIN_SETUP_CODE)' })
+  }
+  const lineUserId = req.user!.lineUserId
+  if (!lineUserId) {
+    return res.status(400).json({ error: 'ต้องเปิดจาก LINE / LIFF ก่อน' })
+  }
+
+  const schema = z.object({
+    code: z.string().min(1),
+    username: z.string().min(1),
+    password: z.string().min(1),
+  })
+  const parse = schema.safeParse(req.body)
+  if (!parse.success) return res.status(400).json({ error: 'กรุณากรอก Username, Password และรหัส setup' })
+  if (parse.data.code.trim() !== env.ADMIN_SETUP_CODE) {
+    return res.status(401).json({ error: 'รหัสลงทะเบียนไม่ถูกต้อง' })
+  }
+
+  const username = normalizeUsername(parse.data.username)
+  const admin = await prisma.admin.findUnique({ where: { username } })
+  if (!admin?.passwordHash) {
+    return res.status(404).json({ error: 'ไม่พบบัญชีแอดมินด้วย Username นี้' })
+  }
+  const ok = await verifyPassword(parse.data.password, admin.passwordHash)
+  if (!ok) return res.status(401).json({ error: 'Password ไม่ถูกต้อง' })
+
+  if (admin.lineUserId && admin.lineUserId !== lineUserId) {
+    return res.status(409).json({ error: 'บัญชีนี้ผูก LINE คนอื่นไว้แล้ว' })
+  }
+
+  const takenByLine = await prisma.admin.findUnique({ where: { lineUserId } })
+  if (takenByLine && takenByLine.id !== admin.id) {
+    return res.status(409).json({
+      error: 'LINE นี้ถูกใช้กับแอดมินคนอื่นแล้ว — ใช้ /portal/link-admin เพื่อรวมบัญชีแทน',
+    })
+  }
+
+  // Also ensure not already an owner/tenant with this LINE
+  const asOwner = await prisma.owner.findFirst({ where: { lineUserId } })
+  const asTenant = await prisma.tenant.findUnique({ where: { lineUserId } })
+  if (asOwner || asTenant) {
+    return res.status(409).json({ error: 'LINE นี้ถูกใช้เป็นเจ้าของหรือผู้เช่าอยู่แล้ว' })
+  }
+
+  const updated = await prisma.admin.update({
+    where: { id: admin.id },
+    data: { lineUserId },
+  })
+  setAdminRichMenu(lineUserId).catch(() => {})
+
+  const payload: JwtPayload = {
+    lineUserId,
+    role: 'ADMIN',
+    adminId: updated.id,
+    mustChangePassword: updated.mustChangePassword,
+  }
+  return res.json(
+    authResponse(signToken(payload), payload, updated.name, {
+      username: updated.username,
+      hasPassword: true,
+      lineLinked: true,
+    })
+  )
+})
+
 // GET /api/auth/me
 router.get('/me', authMiddleware, async (req, res) => {
   const u = req.user!
