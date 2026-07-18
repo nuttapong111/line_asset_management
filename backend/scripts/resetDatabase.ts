@@ -28,6 +28,7 @@ async function main() {
       "Maintenance",
       "MeterReading",
       "Payment",
+      "SubscriptionPayment",
       "Invoice",
       "Contract",
       "Tenant",
