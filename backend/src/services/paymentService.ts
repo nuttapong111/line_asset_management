@@ -5,6 +5,8 @@ import { uploadFile } from './storageService'
 import { pushSlipApproved, pushText } from '../lib/line/lineService'
 import { notifyOwnersPayment } from './ownerNotify'
 import { linkedTenant } from './tenantLifecycle'
+import { resolveDocumentTemplate, renderTemplatePdf } from './documentTemplateService'
+import { receiptValues } from './documentTemplateValues'
 
 const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
 
@@ -40,24 +42,48 @@ export async function ensureReceiptPdf(paymentId: string): Promise<string> {
       ? payment.tenant.name
       : inv.unit.tenants.find((t) => t.lineUserId)?.name || payment.tenant.name
 
-  const items = [
-    { label: 'ค่าเช่า', amount: Number(inv.rentAmount) },
-    { label: 'ค่าไฟฟ้า', amount: Number(inv.electricAmount) },
-    { label: 'ค่าน้ำ', amount: Number(inv.waterAmount) },
-    { label: 'ค่าส่วนกลาง', amount: Number(inv.commonFee) },
-  ]
-  if (Number(inv.lateFee) > 0) items.push({ label: 'ค่าปรับล่าช้า', amount: Number(inv.lateFee) })
+  const property = inv.unit.property
+  const template = await resolveDocumentTemplate(property.ownerId, 'RECEIPT', property.id)
 
-  const pdf = await generateReceipt({
-    receiptNo,
-    date: payment.approvedAt ?? new Date(),
-    propertyName: inv.unit.property.name,
-    propertyAddress: inv.unit.property.address,
-    tenantName,
-    roomNumber: inv.unit.roomNumber,
-    items,
-    total: Number(inv.total),
-  })
+  let pdf: Buffer
+  if (template) {
+    pdf = await renderTemplatePdf(
+      template,
+      receiptValues({
+        receiptNo,
+        date: payment.approvedAt ?? new Date(),
+        propertyName: property.name,
+        propertyAddress: property.address,
+        tenantName,
+        roomNumber: inv.unit.roomNumber,
+        rentAmount: Number(inv.rentAmount),
+        electricAmount: Number(inv.electricAmount),
+        waterAmount: Number(inv.waterAmount),
+        commonFee: Number(inv.commonFee),
+        lateFee: Number(inv.lateFee),
+        total: Number(inv.total),
+      })
+    )
+  } else {
+    const items = [
+      { label: 'ค่าเช่า', amount: Number(inv.rentAmount) },
+      { label: 'ค่าไฟฟ้า', amount: Number(inv.electricAmount) },
+      { label: 'ค่าน้ำ', amount: Number(inv.waterAmount) },
+      { label: 'ค่าส่วนกลาง', amount: Number(inv.commonFee) },
+    ]
+    if (Number(inv.lateFee) > 0) items.push({ label: 'ค่าปรับล่าช้า', amount: Number(inv.lateFee) })
+
+    pdf = await generateReceipt({
+      receiptNo,
+      date: payment.approvedAt ?? new Date(),
+      propertyName: property.name,
+      propertyAddress: property.address,
+      tenantName,
+      roomNumber: inv.unit.roomNumber,
+      items,
+      total: Number(inv.total),
+    })
+  }
 
   const receiptUrl = await uploadFile(`receipts/${paymentId}.pdf`, pdf, 'application/pdf')
   await prisma.payment.update({

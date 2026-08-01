@@ -62,6 +62,7 @@ export default function Settings() {
   }
 
   const items = [
+    { label: 'เทมเพลตเอกสาร', desc: 'แนบแบบฟอร์มสัญญา/ใบเสร็จ แล้วลากตัวแปรวาง', path: '/admin/document-templates' },
     { label: 'สร้างใบแจ้งหนี้', desc: 'สร้างและส่งบิลรายเดือน', path: '/admin/invoice-builder' },
     { label: 'รายงานรายได้', desc: 'สรุปรายได้และส่งออกข้อมูล', path: '/admin/reports' },
     ...(!isAdmin

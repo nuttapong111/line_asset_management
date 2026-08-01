@@ -29,6 +29,8 @@ import AdminMaintenanceDetail from './pages/admin/MaintenanceDetail'
 import OwnerManage from './pages/admin/OwnerManage'
 import SubscriptionPay from './pages/admin/SubscriptionPay'
 import SubscriptionReview from './pages/admin/SubscriptionReview'
+import DocumentTemplates from './pages/admin/DocumentTemplates'
+import DocumentTemplateEditor from './pages/admin/DocumentTemplateEditor'
 
 import TenantHome from './pages/tenant/TenantHome'
 import InvoiceDetail from './pages/tenant/InvoiceDetail'
@@ -146,6 +148,9 @@ function LiffApp() {
         <Route path="/admin/owners" element={<OwnerManage />} />
         <Route path="/admin/subscription" element={<SubscriptionPay />} />
         <Route path="/admin/subscriptions" element={<SubscriptionReview />} />
+        <Route path="/admin/document-templates" element={<DocumentTemplates />} />
+        <Route path="/admin/document-templates/new" element={<DocumentTemplateEditor />} />
+        <Route path="/admin/document-templates/:id" element={<DocumentTemplateEditor />} />
 
         <Route path="/owner/home" element={<Navigate to="/admin/portfolio" replace />} />
 

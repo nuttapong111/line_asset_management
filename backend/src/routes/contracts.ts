@@ -5,9 +5,9 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere } from '../lib/scope'
-import { generateContractPdf } from '../services/pdfService'
 import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
 import { moveOutByContractId } from '../services/tenantLifecycle'
+import { generateAndStoreContractPdf } from '../services/contractPdfService'
 
 const router = Router()
 router.use(authMiddleware, requireActiveSubscription)
@@ -28,31 +28,7 @@ function extForMime(mime: string) {
 }
 
 async function buildContractPdf(contract: NonNullable<Awaited<ReturnType<typeof loadContract>>>) {
-  const year = contract.startDate.getFullYear()
-  const seq = (await prisma.contract.count({ where: { createdAt: { lte: contract.createdAt } } })) || 1
-  const contractNo = `CTR-${year}-${String(seq).padStart(5, '0')}`
-
-  const pdf = await generateContractPdf({
-    contractNo,
-    landlordName: contract.unit.property.admin.name,
-    propertyName: contract.unit.property.name,
-    propertyAddress: contract.unit.property.address || '-',
-    roomNumber: contract.unit.roomNumber,
-    floor: contract.unit.floor,
-    tenantName: contract.tenant.name,
-    tenantIdCard: contract.tenant.idCardNumber,
-    tenantPhone: contract.tenant.phone,
-    rentAmount: Number(contract.rentAmount),
-    deposit: Number(contract.deposit),
-    dueDay: contract.dueDay,
-    lateFeePerDay: Number(contract.lateFeePerDay),
-    startDate: contract.startDate,
-    endDate: contract.endDate,
-    terms: contract.terms,
-  })
-  const stored = await uploadFile(`contracts/${contract.id}.pdf`, pdf, 'application/pdf')
-  await prisma.contract.update({ where: { id: contract.id }, data: { pdfUrl: stored } })
-  return { pdf, contractNo, stored }
+  return generateAndStoreContractPdf(contract)
 }
 
 const contractSchema = z.object({
@@ -112,7 +88,10 @@ async function loadContract(
 ) {
   const contract = await prisma.contract.findUnique({
     where: { id },
-    include: { tenant: true, unit: { include: { property: { include: { admin: true } } } } },
+    include: {
+      tenant: true,
+      unit: { include: { property: { include: { admin: true, owner: true } } } },
+    },
   })
   if (!contract) return null
   if (user.role === 'ADMIN' && contract.unit.property.adminId !== user.adminId) return null

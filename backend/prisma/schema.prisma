@@ -34,6 +34,7 @@ model Property {
   promptpayNumber String
   paymentQrUrl    String?
   units           Unit[]
+  documentTemplates DocumentTemplate[]
   createdAt       DateTime @default(now())
 }
 
@@ -58,11 +59,41 @@ model Owner {
   /// Avoid duplicate daily reminders: "YYYY-MM-DD:7"
   subscriptionReminderKey String?
   subscriptionPayments   SubscriptionPayment[]
+  documentTemplates      DocumentTemplate[]
   createdAt              DateTime               @default(now())
 
   @@index([lineUserId])
   @@index([expiresAt])
   @@index([subscriptionStatus])
+}
+
+enum DocumentTemplateType {
+  CONTRACT
+  RECEIPT
+}
+
+/// Owner-scoped document layout: background image + variable placements
+model DocumentTemplate {
+  id            String               @id @default(cuid())
+  ownerId       String
+  owner         Owner                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  /// Optional override for a specific property; null = owner-wide default candidate
+  propertyId    String?
+  property      Property?            @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  type          DocumentTemplateType
+  name          String
+  backgroundUrl String
+  /// Design canvas size in CSS pixels (from uploaded image)
+  pageWidth     Float
+  pageHeight    Float
+  /// [{ key, x, y, fontSize, align?, width?, color? }] — x/y/width are 0–1 fractions
+  placements    Json                 @default("[]")
+  isDefault     Boolean              @default(false)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([ownerId, type])
+  @@index([propertyId, type])
 }
 
 enum SubscriptionStatus {

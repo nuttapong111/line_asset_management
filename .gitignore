@@ -11,3 +11,4 @@ frontend/dist/
 backend/public/
 coverage/
 .railway/
+.tools/
