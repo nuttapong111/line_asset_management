@@ -22,7 +22,7 @@ type VarDef = { key: string; label: string; sample: string }
 
 type Step = 'upload' | 'place' | 'preview'
 
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const jwt = useAuthStore.getState().jwt
   return jwt ? { Authorization: `Bearer ${jwt}` } : {}
 }
