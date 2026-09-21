@@ -46,6 +46,11 @@ import MaintenanceForm from './pages/tenant/MaintenanceForm'
 import TenantMaintenanceDetail from './pages/tenant/MaintenanceDetail'
 import TenantProfile from './pages/tenant/Profile'
 import PdfViewer from './pages/PdfViewer'
+import Documents from './pages/tenant/Documents'
+import PayNow from './pages/tenant/PayNow'
+import CommunityFeed from './pages/community/CommunityFeed'
+import CommunityCompose from './pages/community/CommunityCompose'
+import CommunityDetail from './pages/community/CommunityDetail'
 
 function DevRoleSwitcher({ onPick }: { onPick: (r: Role) => void }) {
   if (LIFF_ID) return null
@@ -160,9 +165,11 @@ function LiffApp() {
         <Route path="/owner/home" element={<Navigate to="/admin/portfolio" replace />} />
 
         <Route path="/tenant/home" element={<TenantHome />} />
-        <Route path="/invoice" element={<TenantHome />} />
-        <Route path="/payment" element={<TenantHome />} />
-        <Route path="/receipt" element={<PaymentHistory />} />
+        <Route path="/pay" element={<PayNow />} />
+        <Route path="/payment" element={<PayNow />} />
+        <Route path="/documents" element={<Documents />} />
+        <Route path="/invoice" element={<Navigate to="/documents" replace />} />
+        <Route path="/receipt" element={<Navigate to="/documents" replace />} />
         <Route path="/contact" element={<TenantProfile />} />
         <Route path="/tenant/invoice/:id" element={<InvoiceDetail />} />
         <Route path="/payment/:invoiceId" element={<PaymentSelect />} />
@@ -171,6 +178,9 @@ function LiffApp() {
         <Route path="/tenant/history" element={<PaymentHistory />} />
         <Route path="/contract" element={<TenantContractView />} />
         <Route path="/contract/:id" element={<TenantContractView />} />
+        <Route path="/community" element={<CommunityFeed />} />
+        <Route path="/community/new" element={<CommunityCompose />} />
+        <Route path="/community/:id" element={<CommunityDetail />} />
         <Route path="/tenant/maintenance" element={<MaintenanceList />} />
         <Route path="/maintenance/new" element={<MaintenanceForm />} />
         <Route path="/tenant/maintenance/new" element={<MaintenanceForm />} />

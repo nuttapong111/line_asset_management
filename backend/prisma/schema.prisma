@@ -35,6 +35,7 @@ model Property {
   paymentQrUrl    String?
   units           Unit[]
   documentTemplates DocumentTemplate[]
+  communityPosts  CommunityPost[]
   createdAt       DateTime @default(now())
 }
 
@@ -60,6 +61,7 @@ model Owner {
   subscriptionReminderKey String?
   subscriptionPayments   SubscriptionPayment[]
   documentTemplates      DocumentTemplate[]
+  communityPosts         CommunityPost[]
   createdAt              DateTime               @default(now())
 
   @@index([lineUserId])
@@ -188,6 +190,7 @@ model Tenant {
   contracts    Contract[]
   payments     Payment[]
   chatMessages ChatMessage[]
+  communityPosts CommunityPost[]
   createdAt    DateTime      @default(now())
 }
 
@@ -385,6 +388,53 @@ model ChatMessage {
   senderRole String
   message    String
   createdAt  DateTime @default(now())
+}
+
+enum CommunityPostType {
+  ANNOUNCEMENT
+  DISCUSSION
+  MARKETPLACE
+}
+
+model CommunityPost {
+  id         String             @id @default(cuid())
+  ownerId    String
+  owner      Owner              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  propertyId String?
+  property   Property?          @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  type       CommunityPostType
+  title      String?
+  body       String
+  price      Decimal?
+  sold       Boolean            @default(false)
+  photoUrls  String[]
+  pinned     Boolean            @default(false)
+  hidden     Boolean            @default(false)
+  authorRole String
+  authorName String
+  tenantId   String?
+  tenant     Tenant?            @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  roomNumber String?
+  comments   CommunityComment[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([ownerId, createdAt])
+  @@index([ownerId, type])
+  @@index([propertyId])
+}
+
+model CommunityComment {
+  id         String         @id @default(cuid())
+  postId     String
+  post       CommunityPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorRole String
+  authorName String
+  tenantId   String?
+  message    String
+  createdAt  DateTime       @default(now())
+
+  @@index([postId])
 }
 
 model NotifSettings {

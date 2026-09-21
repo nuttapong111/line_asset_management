@@ -139,13 +139,21 @@ async function handleMessage(event: MessageEvent): Promise<void> {
           amount: Number(payment.invoice.total),
           date: payment.approvedAt?.toLocaleDateString('th-TH') || '-',
           receiptUrl: receiptPdfLiffUrl(payment.id),
-          historyUrl: liff('/receipt'),
+          historyUrl: liff('/documents'),
         })
       )
     }
     case 'ชำระเงิน':
     case 'จ่ายค่าเช่า':
-      return reply(replyToken, { type: 'text', text: `เปิดหน้าชำระเงิน: ${liff('/payment')}` })
+      return reply(replyToken, { type: 'text', text: `เปิดหน้าชำระเงิน: ${liff('/pay')}` })
+    case 'เอกสาร':
+    case 'ใบแจ้งหนี้':
+    case 'สัญญา':
+      return reply(replyToken, { type: 'text', text: `เปิดหน้าเอกสาร: ${liff('/documents')}` })
+    case 'ชุมชน':
+      return reply(replyToken, { type: 'text', text: `เปิดชุมชนลูกบ้าน: ${liff('/community')}` })
+    case 'หน้าหลัก':
+      return reply(replyToken, { type: 'text', text: `เปิดหน้าหลัก: ${liff('/tenant/home')}` })
     case 'แจ้งซ่อม':
       return reply(replyToken, { type: 'text', text: `แจ้งซ่อมได้ที่: ${liff('/maintenance/new')}` })
     default:

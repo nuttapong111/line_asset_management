@@ -66,6 +66,13 @@ export default function Portfolio() {
       </div>
 
       <div className="p-4 space-y-3">
+        <Card onClick={() => nav('/community')} className="flex items-center justify-between">
+          <div>
+            <div className="font-medium">ชุมชนลูกบ้าน</div>
+            <div className="text-xs text-gray-400">ประกาศ บอร์ดพูดคุย และตลาดมือสอง</div>
+          </div>
+          <span className="text-gray-300">›</span>
+        </Card>
         {queue && (
           <Card>
             <h2 className="font-semibold mb-3">งานวันนี้</h2>

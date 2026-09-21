@@ -29,10 +29,10 @@ export default function TenantHome() {
   const room = invoices[0]?.unit.roomNumber
 
   const quick = [
-    { label: 'ใบแจ้งหนี้', path: unpaid ? `/tenant/invoice/${unpaid.id}` : '/tenant/history', icon: '🧾' },
-    { label: 'ใบเสร็จ', path: '/tenant/history', icon: '✅' },
+    { label: 'ชำระเงิน', path: '/pay', icon: '฿' },
+    { label: 'เอกสาร', path: '/documents', icon: '📄' },
+    { label: 'ชุมชน', path: '/community', icon: '🏘️' },
     { label: 'แจ้งซ่อม', path: '/tenant/maintenance', icon: '🔧' },
-    { label: 'สัญญา', path: '/contract', icon: '📄' },
   ]
 
   return (

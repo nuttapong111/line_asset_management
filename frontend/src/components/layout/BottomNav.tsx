@@ -22,6 +22,8 @@ const ICONS = {
   settings: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 00-1.7-1L14.5 3h-5l-.3 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.5L3 11a7 7 0 000 2l-2 1.5 2 3.5 2.4-1a7 7 0 001.7 1L9.5 21h5l.3-2.5a7 7 0 001.7-1l2.4 1 2-3.5-2-1.5c.1-.3.1-.7.1-1z',
   wrench: 'M14 7a4 4 0 01-5 5l-6 6 2 2 6-6a4 4 0 015-5l-2 2-2-2 2-2z',
   user: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8z',
+  docs: 'M7 3h8l4 4v14H7V3zM15 3v4h4',
+  community: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
 }
 
 const adminNav: NavItem[] = [
@@ -33,9 +35,9 @@ const adminNav: NavItem[] = [
 
 const tenantNav: NavItem[] = [
   { label: 'หน้าหลัก', path: '/tenant/home', icon: <Icon d={ICONS.home} /> },
-  { label: 'บิล', path: '/tenant/history', icon: <Icon d={ICONS.bill} /> },
+  { label: 'เอกสาร', path: '/documents', icon: <Icon d={ICONS.docs} /> },
+  { label: 'ชุมชน', path: '/community', icon: <Icon d={ICONS.community} /> },
   { label: 'แจ้งซ่อม', path: '/tenant/maintenance', icon: <Icon d={ICONS.wrench} /> },
-  { label: 'โปรไฟล์', path: '/tenant/profile', icon: <Icon d={ICONS.user} /> },
 ]
 
 export function BottomNav({ role }: { role: 'ADMIN' | 'TENANT' }) {

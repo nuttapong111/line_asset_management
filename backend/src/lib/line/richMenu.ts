@@ -11,18 +11,21 @@ const liffAdmin = (p: string) => `${liffEntryUrl.replace(/\/$/, '')}${p.startsWi
 const RICHMENU_IMAGE = path.resolve(process.cwd(), 'assets', 'richmenu.png')
 const ADMIN_RICHMENU_IMAGE = path.resolve(process.cwd(), 'assets', 'richmenu-admin.png')
 
+const TENANT_MENU_NAME = 'PropFlow Tenant Menu v2'
+const TENANT_MENU_ALIASES = ['PropFlow Tenant Menu', TENANT_MENU_NAME]
+
 const richMenuObject: RichMenu = {
   size: { width: 2500, height: 843 },
   selected: true,
-  name: 'PropFlow Tenant Menu',
+  name: TENANT_MENU_NAME,
   chatBarText: 'เมนู',
   areas: [
-    { bounds: { x: 0, y: 0, width: 833, height: 421 }, action: { type: 'uri', uri: liff('/payment') } },
-    { bounds: { x: 833, y: 0, width: 834, height: 421 }, action: { type: 'uri', uri: liff('/receipt') } },
-    { bounds: { x: 1667, y: 0, width: 833, height: 421 }, action: { type: 'uri', uri: liff('/invoice') } },
+    { bounds: { x: 0, y: 0, width: 833, height: 421 }, action: { type: 'uri', uri: liff('/pay') } },
+    { bounds: { x: 833, y: 0, width: 834, height: 421 }, action: { type: 'uri', uri: liff('/documents') } },
+    { bounds: { x: 1667, y: 0, width: 833, height: 421 }, action: { type: 'uri', uri: liff('/community') } },
     { bounds: { x: 0, y: 421, width: 833, height: 422 }, action: { type: 'uri', uri: liff('/maintenance/new') } },
-    { bounds: { x: 833, y: 421, width: 834, height: 422 }, action: { type: 'uri', uri: liff('/contract') } },
-    { bounds: { x: 1667, y: 421, width: 833, height: 422 }, action: { type: 'uri', uri: liff('/contact') } },
+    { bounds: { x: 833, y: 421, width: 834, height: 422 }, action: { type: 'uri', uri: liff('/contact') } },
+    { bounds: { x: 1667, y: 421, width: 833, height: 422 }, action: { type: 'uri', uri: liff('/tenant/home') } },
   ],
 }
 
@@ -103,7 +106,7 @@ export async function setupRichMenu(): Promise<{ ok: boolean; richMenuId?: strin
     // remove old menus with the same names to avoid duplicates
     const list = await lineClient.getRichMenuList()
     for (const m of list) {
-      if (m.name === richMenuObject.name || m.name === adminRichMenuObject.name) {
+      if (m.name === richMenuObject.name || m.name === adminRichMenuObject.name || TENANT_MENU_ALIASES.includes(m.name)) {
         try {
           await lineClient.deleteRichMenu(m.richMenuId)
         } catch {
@@ -137,7 +140,7 @@ export async function teardownRichMenu(): Promise<{ ok: boolean; error?: string 
     }
     const list = await lineClient.getRichMenuList()
     for (const m of list) {
-      if (m.name === richMenuObject.name || m.name === adminRichMenuObject.name) {
+      if (m.name === richMenuObject.name || m.name === adminRichMenuObject.name || TENANT_MENU_ALIASES.includes(m.name)) {
         await lineClient.deleteRichMenu(m.richMenuId)
       }
     }

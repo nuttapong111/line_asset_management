@@ -124,7 +124,7 @@ export async function approvePayment(paymentId: string): Promise<void> {
       amount: Number(inv.total),
       date: new Date().toLocaleDateString('th-TH'),
       receiptUrl: receiptPdfLiffUrl(paymentId),
-      historyUrl: liff('/receipt'),
+      historyUrl: liff('/documents'),
     })
   }
 

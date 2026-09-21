@@ -27,6 +27,8 @@ import publicFilesRouter from './routes/publicFiles'
 import filesRouter from './routes/files'
 import subscriptionsRouter from './routes/subscriptions'
 import documentTemplatesRouter from './routes/documentTemplates'
+import communityRouter from './routes/community'
+import documentsRouter from './routes/documents'
 
 const app = express()
 
@@ -57,6 +59,8 @@ app.use('/api/files', filesRouter)
 app.use('/api/payments', paymentsRouter)
 app.use('/api/subscriptions', subscriptionsRouter)
 app.use('/api/document-templates', documentTemplatesRouter)
+app.use('/api/community', communityRouter)
+app.use('/api/documents', documentsRouter)
 app.use('/api/maintenance', maintenanceRouter)
 app.use('/api/notifications', notificationsRouter)
 app.use('/api/reports', reportsRouter)

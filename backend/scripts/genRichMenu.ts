@@ -2,7 +2,7 @@
  * Generates the PropFlow tenant Rich Menu image (2500x843, 2 rows x 3 cols).
  * Run: npx tsx scripts/genRichMenu.ts  →  assets/richmenu.png
  */
-import { createCanvas, GlobalFonts, SKRSContext2D } from '@napi-rs/canvas'
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
 import fs from 'fs'
 import path from 'path'
 
@@ -201,13 +201,62 @@ function iconChat(cx: number, cy: number) {
   })
 }
 
+function iconWrench(cx: number, cy: number) {
+  stroke(() => {
+    ctx.beginPath()
+    ctx.arc(cx - 22, cy - 18, 22, Math.PI * 0.15, Math.PI * 1.6)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(cx - 8, cy - 4)
+    ctx.lineTo(cx + 36, cy + 36)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(cx + 28, cy + 28)
+    ctx.lineTo(cx + 42, cy + 42)
+    ctx.stroke()
+  }, 10)
+}
+
+function iconPeople(cx: number, cy: number) {
+  stroke(() => {
+    ctx.beginPath()
+    ctx.arc(cx - 16, cy - 18, 16, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(cx - 16, cy + 38, 28, Math.PI * 1.15, Math.PI * 1.85)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(cx + 22, cy - 12, 13, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(cx + 22, cy + 38, 22, Math.PI * 1.1, Math.PI * 1.9)
+    ctx.stroke()
+  }, 9)
+}
+
+function iconHome(cx: number, cy: number) {
+  stroke(() => {
+    ctx.beginPath()
+    ctx.moveTo(cx, cy - 40)
+    ctx.lineTo(cx + 42, cy - 4)
+    ctx.lineTo(cx + 42, cy + 38)
+    ctx.lineTo(cx - 42, cy + 38)
+    ctx.lineTo(cx - 42, cy - 4)
+    ctx.closePath()
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.rect(cx - 12, cy + 10, 24, 28)
+    ctx.stroke()
+  })
+}
+
 const cells = [
   { label: 'ชำระเงิน', icon: iconMoney },
-  { label: 'ใบเสร็จ', icon: iconReceipt },
-  { label: 'ใบแจ้งหนี้', icon: iconBill },
-  { label: 'แจ้งซ่อม', icon: iconGear },
-  { label: 'สัญญา', icon: iconContract },
+  { label: 'เอกสาร', icon: iconReceipt },
+  { label: 'ชุมชน', icon: iconPeople },
+  { label: 'แจ้งซ่อม', icon: iconWrench },
   { label: 'ติดต่อ', icon: iconChat },
+  { label: 'หน้าหลัก', icon: iconHome },
 ]
 
 cells.forEach((cell, i) => {

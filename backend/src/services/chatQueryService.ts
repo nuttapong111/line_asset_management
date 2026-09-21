@@ -188,14 +188,14 @@ async function tenantContract(tenantId: string): Promise<ChatQueryResult> {
       : '⏳ ยังไม่ได้แนบสัญญาที่ลงนาม',
     expiryNote,
     '',
-    `เปิดดูเอกสาร: ${liff('/contract')}`,
+    `เปิดดูเอกสาร: ${liff('/documents')}`,
   ]
     .filter(Boolean)
     .join('\n')
 
   return {
     text,
-    followUp: liffBtn('/contract', 'เปิดสัญญาเต็ม', 'ดู/ดาวน์โหลดสัญญาเช่า'),
+    followUp: liffBtn('/documents', 'เปิดสัญญาเต็ม', 'ดู/ดาวน์โหลดสัญญาเช่า'),
   }
 }
 
@@ -218,8 +218,8 @@ async function tenantReceipts(tenantId: string): Promise<ChatQueryResult> {
   })
 
   return {
-    text: ['🧾 ประวัติการชำระ (5 รายการล่าสุด)', '', ...lines, '', `ดูทั้งหมด: ${liff('/receipt')}`].join('\n'),
-    followUp: liffBtn('/receipt', 'ดูใบเสร็จทั้งหมด'),
+    text: ['🧾 ประวัติการชำระ (5 รายการล่าสุด)', '', ...lines, '', `ดูทั้งหมด: ${liff('/documents')}`].join('\n'),
+    followUp: liffBtn('/documents', 'ดูเอกสารทั้งหมด'),
   }
 }
 
@@ -282,8 +282,8 @@ async function tenantContact(unitId: string): Promise<ChatQueryResult> {
 
 function tenantPay(): ChatQueryResult {
   return {
-    text: [`💳 ชำระค่าเช่า / ค่าน้ำไฟ`, '', `เปิดหน้าชำระเงิน: ${liff('/payment')}`, '', 'เลือกบิล → สแกน QR → แนบสลิป'].join('\n'),
-    followUp: liffBtn('/payment', 'เปิดหน้าชำระเงิน'),
+    text: [`💳 ชำระค่าเช่า / ค่าน้ำไฟ`, '', `เปิดหน้าชำระเงิน: ${liff('/pay')}`, '', 'เลือกบิล → สแกน QR → แนบสลิป'].join('\n'),
+    followUp: liffBtn('/pay', 'เปิดหน้าชำระเงิน'),
   }
 }
 
