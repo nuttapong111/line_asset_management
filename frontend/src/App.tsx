@@ -13,6 +13,7 @@ import Portfolio from './pages/admin/Portfolio'
 import PropertyDetail from './pages/admin/PropertyDetail'
 import AddProperty from './pages/admin/AddProperty'
 import AddUnit from './pages/admin/AddUnit'
+import EditUnit from './pages/admin/EditUnit'
 import AddTenant from './pages/admin/AddTenant'
 import ContractSetup from './pages/admin/ContractSetup'
 import InviteTenant from './pages/admin/InviteTenant'
@@ -25,6 +26,7 @@ import Reports from './pages/admin/Reports'
 import NotifSettings from './pages/admin/NotifSettings'
 import Settings from './pages/admin/Settings'
 import AdminContractView from './pages/admin/ContractView'
+import MoveOut from './pages/admin/MoveOut'
 import AdminMaintenanceDetail from './pages/admin/MaintenanceDetail'
 import OwnerManage from './pages/admin/OwnerManage'
 import SubscriptionPay from './pages/admin/SubscriptionPay'
@@ -132,6 +134,7 @@ function LiffApp() {
         <Route path="/admin/property/:id" element={<PropertyDetail />} />
         <Route path="/admin/property/new" element={<AddProperty />} />
         <Route path="/admin/property/:id/unit/new" element={<AddUnit />} />
+        <Route path="/admin/unit/:unitId" element={<EditUnit />} />
         <Route path="/admin/property/:id/tenant/new" element={<AddTenant />} />
         <Route path="/admin/tenant/:tenantId/contract" element={<ContractSetup />} />
         <Route path="/admin/tenant/:tenantId/invite" element={<InviteTenant />} />
@@ -144,6 +147,8 @@ function LiffApp() {
         <Route path="/admin/notifications" element={<NotifSettings />} />
         <Route path="/admin/settings" element={<Settings />} />
         <Route path="/admin/contract/:id" element={<AdminContractView />} />
+        <Route path="/admin/contract/:id/move-out" element={<MoveOut />} />
+        <Route path="/admin/invoice/:id" element={<InvoiceDetail />} />
         <Route path="/admin/maintenance/:id" element={<AdminMaintenanceDetail />} />
         <Route path="/admin/owners" element={<OwnerManage />} />
         <Route path="/admin/subscription" element={<SubscriptionPay />} />

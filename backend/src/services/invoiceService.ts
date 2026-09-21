@@ -26,6 +26,11 @@ function resolveDueDate(year: number, month: number, dueDay: number, contractSta
   return due
 }
 
+export interface ExtraLine {
+  label: string
+  amount: number
+}
+
 export interface InvoiceDraft {
   unitId: string
   type: InvoiceType
@@ -36,6 +41,8 @@ export interface InvoiceDraft {
   waterAmount: number
   commonFee: number
   lateFee: number
+  extraAmount: number
+  extraItems: ExtraLine[]
   total: number
   dueDate: Date
   meterReading?: {
@@ -65,7 +72,10 @@ export async function buildRentInvoiceDraft(unitId: string, month: number, year:
 
   const rentAmount = Number(unit.rentPrice)
   const commonFee = Number(unit.commonFee)
-  const total = rentAmount + commonFee
+  const fees = await prisma.recurringFee.findMany({ where: { unitId } })
+  const extraItems = fees.map((f) => ({ label: f.label, amount: Number(f.amount) }))
+  const extraAmount = extraItems.reduce((a, i) => a + i.amount, 0)
+  const total = rentAmount + commonFee + extraAmount
   const dueDay = contract.dueDay ?? 5
   const dueDate = resolveDueDate(year, month, dueDay, contract.startDate)
 
@@ -79,6 +89,8 @@ export async function buildRentInvoiceDraft(unitId: string, month: number, year:
     waterAmount: 0,
     commonFee,
     lateFee: 0,
+    extraAmount,
+    extraItems,
     total,
     dueDate,
   }
@@ -117,6 +129,8 @@ export async function buildUtilityInvoiceDraft(unitId: string, month: number, ye
     waterAmount,
     commonFee: 0,
     lateFee: 0,
+    extraAmount: 0,
+    extraItems: [],
     total,
     dueDate,
     meterReading: {
@@ -148,6 +162,8 @@ export async function buildInvoiceDraft(unitId: string, month: number, year: num
 }
 
 export async function createInvoiceFromDraft(draft: InvoiceDraft) {
+  const extraItems = draft.extraItems ?? []
+  const extraAmount = extraItems.reduce((a, i) => a + i.amount, 0)
   return prisma.invoice.create({
     data: {
       unitId: draft.unitId,
@@ -159,19 +175,24 @@ export async function createInvoiceFromDraft(draft: InvoiceDraft) {
       waterAmount: draft.waterAmount,
       commonFee: draft.commonFee,
       lateFee: draft.lateFee,
+      extraAmount,
       total: draft.total,
       dueDate: draft.dueDate,
       status: 'PENDING',
+      extraItems: { create: extraItems },
     },
+    include: { extraItems: true },
   })
 }
 
-function invoiceLineItems(invoice: {
+export function invoiceLineItems(invoice: {
   type: InvoiceType
   rentAmount: unknown
   electricAmount: unknown
   waterAmount: unknown
   commonFee: unknown
+  lateFee?: unknown
+  extraItems?: { label: string; amount: unknown }[]
 }) {
   const items: { label: string; amount: number }[] = []
   if (invoice.type === 'RENT') {
@@ -181,13 +202,36 @@ function invoiceLineItems(invoice: {
     if (Number(invoice.electricAmount) > 0) items.push({ label: 'ค่าไฟฟ้า', amount: Number(invoice.electricAmount) })
     if (Number(invoice.waterAmount) > 0) items.push({ label: 'ค่าน้ำ', amount: Number(invoice.waterAmount) })
   }
+  for (const extra of invoice.extraItems ?? []) {
+    const amount = Number(extra.amount)
+    if (amount > 0) items.push({ label: extra.label, amount })
+  }
+  if (Number(invoice.lateFee ?? 0) > 0) items.push({ label: 'ค่าปรับล่าช้า', amount: Number(invoice.lateFee) })
   return items
+}
+
+export function invoiceTotalFromParts(inv: {
+  rentAmount: unknown
+  electricAmount: unknown
+  waterAmount: unknown
+  commonFee: unknown
+  lateFee: unknown
+  extraAmount: unknown
+}) {
+  return (
+    Number(inv.rentAmount) +
+    Number(inv.electricAmount) +
+    Number(inv.waterAmount) +
+    Number(inv.commonFee) +
+    Number(inv.lateFee) +
+    Number(inv.extraAmount)
+  )
 }
 
 export async function sendInvoiceLine(invoiceId: string): Promise<boolean> {
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
-    include: { unit: { include: { tenants: { where: { isActive: true } } } } },
+    include: { extraItems: true, unit: { include: { tenants: { where: { isActive: true } } } } },
   })
   if (!invoice) return false
   const tenant = linkedTenant(invoice.unit.tenants)

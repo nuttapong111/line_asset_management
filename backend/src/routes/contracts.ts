@@ -6,8 +6,10 @@ import { authMiddleware, requireRole } from '../middleware/auth'
 import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere } from '../lib/scope'
 import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
-import { moveOutByContractId } from '../services/tenantLifecycle'
+import { moveOutByContractId, moveOutPreview } from '../services/tenantLifecycle'
 import { generateAndStoreContractPdf } from '../services/contractPdfService'
+import { notifyOwnersOfProperty } from '../services/ownerNotify'
+import { env } from '../lib/env'
 
 const router = Router()
 router.use(authMiddleware, requireActiveSubscription)
@@ -91,6 +93,7 @@ async function loadContract(
     include: {
       tenant: true,
       unit: { include: { property: { include: { admin: true, owner: true } } } },
+      moveOut: true,
     },
   })
   if (!contract) return null
@@ -181,23 +184,116 @@ router.post('/:id/pdf', async (req, res) => {
 router.put('/:id/renew', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   const contract = await loadContract(req.params.id, req.user!)
   if (!contract) return res.status(404).json({ error: 'Contract not found' })
-  const schema = z.object({ endDate: z.string() })
+  if (contract.status === 'TERMINATED') {
+    return res.status(400).json({ error: 'สัญญาถูกยกเลิกแล้ว ไม่สามารถต่อได้' })
+  }
+  const schema = z.object({
+    endDate: z.string(),
+    rentAmount: z.number().nonnegative().optional(),
+    deposit: z.number().nonnegative().optional(),
+  })
   const parse = schema.safeParse(req.body)
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
-  const updated = await prisma.contract.update({
-    where: { id: contract.id },
-    data: { endDate: new Date(parse.data.endDate), status: 'ACTIVE' },
+  const newEnd = new Date(parse.data.endDate)
+  if (Number.isNaN(newEnd.getTime()) || newEnd <= contract.startDate) {
+    return res.status(400).json({ error: 'วันสิ้นสุดสัญญาต้องอยู่หลังวันเริ่มสัญญา' })
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const next = await tx.contract.update({
+      where: { id: contract.id },
+      data: {
+        endDate: newEnd,
+        status: 'ACTIVE',
+        rentAmount: parse.data.rentAmount ?? contract.rentAmount,
+        deposit: parse.data.deposit ?? contract.deposit,
+        renewalRequestedAt: null,
+        renewalNote: null,
+      },
+    })
+    if (parse.data.rentAmount != null) {
+      await tx.unit.update({ where: { id: contract.unitId }, data: { rentPrice: parse.data.rentAmount } })
+    }
+    return next
   })
   res.json(updated)
 })
 
-// PUT /api/contracts/:id/terminate (manager) — tenant moves out
+// POST /api/contracts/:id/renew-request (tenant)
+router.post('/:id/renew-request', async (req, res) => {
+  if (req.user!.role !== 'TENANT') return res.status(403).json({ error: 'Forbidden' })
+  const contract = await loadContract(req.params.id, req.user!)
+  if (!contract) return res.status(404).json({ error: 'Contract not found' })
+  if (contract.status !== 'ACTIVE') return res.status(400).json({ error: 'สัญญาไม่พร้อมต่ออายุ' })
+  const schema = z.object({ note: z.string().max(500).optional() })
+  const parse = schema.safeParse(req.body ?? {})
+  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+
+  const updated = await prisma.contract.update({
+    where: { id: contract.id },
+    data: { renewalRequestedAt: new Date(), renewalNote: parse.data.note || contract.renewalNote },
+  })
+  const monthsLeft = Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  await notifyOwnersOfProperty(
+    contract.unit.property.id,
+    `ผู้เช่าขอต่อสัญญา\nห้อง ${contract.unit.roomNumber} · ${contract.tenant.name}\nหมดอายุในอีก ${monthsLeft} วัน\nตรวจสอบ: ${env.LIFF_BASE_URL}/admin/contract/${contract.id}`
+  )
+  res.json(updated)
+})
+
+// GET /api/contracts/:id/move-out-preview (manager)
+router.get('/:id/move-out-preview', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  const contract = await loadContract(req.params.id, req.user!)
+  if (!contract) return res.status(404).json({ error: 'Contract not found' })
+  try {
+    const preview = await moveOutPreview(contract.id)
+    res.json({
+      deposit: preview.deposit,
+      unpaidInvoices: preview.unpaidInvoices,
+      unpaidTotal: preview.unpaidTotal,
+      lastMeter: preview.lastMeter,
+      suggestedRefund: preview.suggestedRefund,
+      tenantName: preview.contract.tenant.name,
+      roomNumber: preview.contract.unit.roomNumber,
+    })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Preview failed'
+    res.status(400).json({ error: msg })
+  }
+})
+
+// POST /api/contracts/:id/move-out (manager) — settle deposit then terminate
+router.post('/:id/move-out', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  const contract = await loadContract(req.params.id, req.user!)
+  if (!contract) return res.status(404).json({ error: 'Contract not found' })
+  const schema = z.object({
+    deductions: z.array(z.object({ label: z.string().min(1), amount: z.number().nonnegative() })).optional(),
+    notes: z.string().max(1000).optional(),
+    finalElec: z.number().nonnegative().optional(),
+    finalWater: z.number().nonnegative().optional(),
+  })
+  const parse = schema.safeParse(req.body ?? {})
+  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+  try {
+    const result = await moveOutByContractId(contract.id, parse.data)
+    const updated = await prisma.contract.findUnique({
+      where: { id: contract.id },
+      include: { moveOut: true, tenant: true, unit: true },
+    })
+    res.json({ ...updated, settlement: result })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Move-out failed'
+    res.status(400).json({ error: msg })
+  }
+})
+
+// PUT /api/contracts/:id/terminate (manager) — tenant moves out (no extra deductions)
 router.put('/:id/terminate', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   const contract = await loadContract(req.params.id, req.user!)
   if (!contract) return res.status(404).json({ error: 'Contract not found' })
   try {
     await moveOutByContractId(contract.id)
-    const updated = await prisma.contract.findUnique({ where: { id: contract.id } })
+    const updated = await prisma.contract.findUnique({ where: { id: contract.id }, include: { moveOut: true } })
     res.json(updated)
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Terminate failed'

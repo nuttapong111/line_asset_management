@@ -39,6 +39,7 @@ export function receiptValues(input: {
   waterAmount: number
   commonFee: number
   lateFee: number
+  extraItems?: { label: string; amount: number }[]
   total: number
 }): Record<string, string> {
   const lines = [
@@ -46,6 +47,7 @@ export function receiptValues(input: {
     { label: 'ค่าไฟฟ้า', amount: input.electricAmount },
     { label: 'ค่าน้ำ', amount: input.waterAmount },
     { label: 'ค่าส่วนกลาง', amount: input.commonFee },
+    ...(input.extraItems ?? []),
   ]
   if (input.lateFee > 0) lines.push({ label: 'ค่าปรับล่าช้า', amount: input.lateFee })
 

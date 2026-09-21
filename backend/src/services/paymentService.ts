@@ -7,6 +7,7 @@ import { notifyOwnersPayment } from './ownerNotify'
 import { linkedTenant } from './tenantLifecycle'
 import { resolveDocumentTemplate, renderTemplatePdf } from './documentTemplateService'
 import { receiptValues } from './documentTemplateValues'
+import { invoiceLineItems } from './invoiceService'
 
 const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
 
@@ -26,7 +27,7 @@ export async function ensureReceiptPdf(paymentId: string): Promise<string> {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
-      invoice: { include: { unit: { include: { property: true, tenants: { where: { isActive: true } } } } } },
+      invoice: { include: { extraItems: true, unit: { include: { property: true, tenants: { where: { isActive: true } } } } } },
       tenant: true,
     },
   })
@@ -61,17 +62,12 @@ export async function ensureReceiptPdf(paymentId: string): Promise<string> {
         waterAmount: Number(inv.waterAmount),
         commonFee: Number(inv.commonFee),
         lateFee: Number(inv.lateFee),
+        extraItems: (inv.extraItems ?? []).map((i) => ({ label: i.label, amount: Number(i.amount) })),
         total: Number(inv.total),
       })
     )
   } else {
-    const items = [
-      { label: 'ค่าเช่า', amount: Number(inv.rentAmount) },
-      { label: 'ค่าไฟฟ้า', amount: Number(inv.electricAmount) },
-      { label: 'ค่าน้ำ', amount: Number(inv.waterAmount) },
-      { label: 'ค่าส่วนกลาง', amount: Number(inv.commonFee) },
-    ]
-    if (Number(inv.lateFee) > 0) items.push({ label: 'ค่าปรับล่าช้า', amount: Number(inv.lateFee) })
+    const items = invoiceLineItems(inv).filter((i) => i.amount > 0)
 
     pdf = await generateReceipt({
       receiptNo,
@@ -97,7 +93,7 @@ export async function approvePayment(paymentId: string): Promise<void> {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
-      invoice: { include: { unit: { include: { property: true, tenants: { where: { isActive: true } } } } } },
+      invoice: { include: { extraItems: true, unit: { include: { property: true, tenants: { where: { isActive: true } } } } } },
       tenant: true,
     },
   })

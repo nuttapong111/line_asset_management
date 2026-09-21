@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/axios'
 import { openPdfViewer } from '../../lib/pdfNav'
-import { Button, Card, Badge } from '../../components/ui'
+import { Button, Card, Badge, Input } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
 import { baht, thaiDate } from '../../lib/utils'
 
@@ -19,6 +19,8 @@ interface Contract {
   signedDocumentUrl?: string | null
   signedAt?: string | null
   terms?: string
+  renewalRequestedAt?: string | null
+  renewalNote?: string | null
   tenant: { name: string; phone: string }
   unit: { roomNumber: string; property: { id: string; name: string } }
 }
@@ -29,9 +31,18 @@ export default function ContractView() {
   const [contract, setContract] = useState<Contract>()
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string>()
-  const [movingOut, setMovingOut] = useState(false)
+  const [renewing, setRenewing] = useState(false)
+  const [renewEnd, setRenewEnd] = useState('')
+  const [renewRent, setRenewRent] = useState('')
+  const [renewDeposit, setRenewDeposit] = useState('')
 
-  const load = () => api.get(`/contracts/${id}`).then((r) => setContract(r.data))
+  const load = () =>
+    api.get(`/contracts/${id}`).then((r) => {
+      setContract(r.data)
+      setRenewEnd(r.data.endDate?.slice(0, 10))
+      setRenewRent(String(Number(r.data.rentAmount)))
+      setRenewDeposit(String(Number(r.data.deposit)))
+    })
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,18 +85,27 @@ export default function ContractView() {
     }
   }
 
-  async function moveOut() {
-    if (!confirm('ยืนยันผู้เช่าย้ายออก?\n\nระบบจะยกเลิกสัญญา ปิดบัญชีผู้เช่า และตั้งห้องเป็นว่าง — จากนั้นสามารถเพิ่มผู้เช่าใหม่ได้')) return
-    setMovingOut(true)
+  async function renew() {
+    if (!renewEnd) return
+    if (!confirm('ยืนยันต่อสัญญาตามวันที่และยอดที่แก้ไข?')) return
+    setRenewing(true)
     try {
-      await api.put(`/contracts/${id}/terminate`)
-      nav(`/admin/property/${contract!.unit.property.id}`, { replace: true })
+      await api.put(`/contracts/${id}/renew`, {
+        endDate: renewEnd,
+        rentAmount: Number(renewRent),
+        deposit: Number(renewDeposit),
+      })
+      await load()
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
-      alert(typeof msg === 'string' ? msg : 'ดำเนินการไม่สำเร็จ')
+      alert(typeof msg === 'string' ? msg : 'ต่อสัญญาไม่สำเร็จ')
     } finally {
-      setMovingOut(false)
+      setRenewing(false)
     }
+  }
+
+  async function moveOut() {
+    nav(`/admin/contract/${id}/move-out`)
   }
 
   const daysLeft = Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -121,6 +141,25 @@ export default function ContractView() {
         {daysLeft <= 60 && contract.status === 'ACTIVE' && (
           <Card className="border-amber bg-amber-50">
             <p className="text-amber-700 text-sm">สัญญาจะหมดอายุในอีก {daysLeft} วัน</p>
+          </Card>
+        )}
+
+        {contract.renewalRequestedAt && contract.status === 'ACTIVE' && (
+          <Card className="border-line bg-line-light">
+            <p className="text-line-dark text-sm font-medium">ผู้เช่าขอต่อสัญญาแล้ว</p>
+            {contract.renewalNote && <p className="text-sm text-gray-600 mt-1">{contract.renewalNote}</p>}
+          </Card>
+        )}
+
+        {contract.status === 'ACTIVE' && (
+          <Card className="space-y-3">
+            <h3 className="font-semibold">ต่อสัญญา</h3>
+            <Input label="วันสิ้นสุดใหม่" type="date" value={renewEnd} onChange={(e) => setRenewEnd(e.target.value)} />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="ค่าเช่าใหม่" type="number" value={renewRent} onChange={(e) => setRenewRent(e.target.value)} />
+              <Input label="เงินประกัน" type="number" value={renewDeposit} onChange={(e) => setRenewDeposit(e.target.value)} />
+            </div>
+            <Button onClick={renew} disabled={renewing}>{renewing ? 'กำลังบันทึก...' : 'บันทึกการต่อสัญญา'}</Button>
           </Card>
         )}
 
@@ -183,10 +222,10 @@ export default function ContractView() {
           <Card className="border-red-200 bg-red-50">
             <h3 className="font-semibold text-danger mb-1">ผู้เช่าย้ายออก</h3>
             <p className="text-sm text-gray-600 mb-3">
-              เมื่อผู้เช่าย้ายออก ให้กดปุ่มด้านล่างเพื่อยกเลิกสัญญาและปล่อยห้องว่าง จากนั้นกลับไปที่รายการห้องแล้วกด <strong>+ ผู้เช่า</strong> เพื่อรับผู้เช่าใหม่
+              ไปหน้าเคลียร์เงินประกัน — ระบบจะหักบิลค้าง ของเสีย แล้วคืนส่วนที่เหลือ จากนั้นยกเลิกสัญญาและปล่อยห้องว่าง
             </p>
-            <Button variant="danger" onClick={moveOut} disabled={movingOut}>
-              {movingOut ? 'กำลังดำเนินการ...' : 'ยกเลิกสัญญา / ผู้เช่าย้ายออก'}
+            <Button variant="danger" onClick={moveOut}>
+              เคลียร์ประกัน / ย้ายออก
             </Button>
           </Card>
         )}

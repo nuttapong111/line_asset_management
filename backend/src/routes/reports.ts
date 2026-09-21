@@ -57,6 +57,18 @@ router.get('/dashboard', async (req, res) => {
     },
   })
 
+  const unackedMaintenance = await prisma.maintenance.count({
+    where: { status: 'NEW', unit: { property: scope } },
+  })
+
+  const renewalRequests = await prisma.contract.count({
+    where: {
+      status: 'ACTIVE',
+      renewalRequestedAt: { not: null },
+      unit: { property: scope },
+    },
+  })
+
   const in30 = new Date()
   in30.setDate(in30.getDate() + 30)
   const in60 = new Date()
@@ -99,6 +111,31 @@ router.get('/dashboard', async (req, res) => {
     take: 8,
   })
 
+  const overdueInvoices = await prisma.invoice.findMany({
+    where: { status: 'OVERDUE', unit: { property: scope } },
+    include: { unit: { include: { property: true, tenants: { where: { isActive: true } } } } },
+    orderBy: { dueDate: 'asc' },
+    take: 8,
+  })
+
+  const newTickets = await prisma.maintenance.findMany({
+    where: { status: 'NEW', unit: { property: scope } },
+    include: { unit: { include: { property: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 8,
+  })
+
+  const pendingRenewals = await prisma.contract.findMany({
+    where: {
+      status: 'ACTIVE',
+      renewalRequestedAt: { not: null },
+      unit: { property: scope },
+    },
+    include: { tenant: true, unit: { include: { property: true } } },
+    orderBy: { renewalRequestedAt: 'desc' },
+    take: 8,
+  })
+
   res.json({
     summary: {
       total,
@@ -112,6 +149,8 @@ router.get('/dashboard', async (req, res) => {
       pendingSlips,
       contractsExpiring30,
       contractsExpiring60,
+      unackedMaintenance,
+      renewalRequests,
     },
     recentSlips: recentSlips.map((p) => ({
       id: p.id,
@@ -127,6 +166,32 @@ router.get('/dashboard', async (req, res) => {
       propertyName: c.unit.property.name,
       tenantName: c.tenant.name,
       endDate: c.endDate,
+      renewalRequestedAt: c.renewalRequestedAt,
+    })),
+    overdueInvoices: overdueInvoices.map((i) => ({
+      id: i.id,
+      roomNumber: i.unit.roomNumber,
+      propertyName: i.unit.property.name,
+      tenantName: i.unit.tenants[0]?.name || '-',
+      total: Number(i.total),
+      dueDate: i.dueDate,
+    })),
+    newTickets: newTickets.map((t) => ({
+      id: t.id,
+      ticketNo: t.ticketNo,
+      title: t.title,
+      roomNumber: t.unit.roomNumber,
+      propertyName: t.unit.property.name,
+      createdAt: t.createdAt,
+    })),
+    pendingRenewals: pendingRenewals.map((c) => ({
+      id: c.id,
+      roomNumber: c.unit.roomNumber,
+      propertyName: c.unit.property.name,
+      tenantName: c.tenant.name,
+      endDate: c.endDate,
+      renewalRequestedAt: c.renewalRequestedAt,
+      renewalNote: c.renewalNote,
     })),
   })
 })

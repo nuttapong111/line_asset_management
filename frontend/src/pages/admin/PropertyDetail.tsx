@@ -100,7 +100,10 @@ export default function PropertyDetail() {
               u.status === 'OCCUPIED' ? (overdue ? 'bg-danger' : 'bg-line') : u.status === 'MAINTENANCE' ? 'bg-amber' : 'bg-gray-300'
             return (
               <Card key={u.id} className="flex items-center gap-3 py-3">
-                <div className={cls('w-11 h-11 rounded-xl text-white flex items-center justify-center font-bold text-sm', statusColor)}>
+                <div
+                  className={cls('w-11 h-11 rounded-xl text-white flex items-center justify-center font-bold text-sm', statusColor)}
+                  onClick={() => nav(`/admin/unit/${u.id}`)}
+                >
                   {u.roomNumber}
                 </div>
                 <div className="flex-1">

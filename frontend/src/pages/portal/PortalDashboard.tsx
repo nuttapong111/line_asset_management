@@ -17,6 +17,8 @@ interface Dashboard {
     pendingSlips: number
     contractsExpiring30: number
     contractsExpiring60: number
+    unackedMaintenance: number
+    renewalRequests: number
   }
   recentSlips: {
     id: string
@@ -32,6 +34,28 @@ interface Dashboard {
     propertyName: string
     tenantName: string
     endDate: string
+  }[]
+  pendingRenewals?: {
+    id: string
+    roomNumber: string
+    propertyName: string
+    tenantName: string
+    endDate: string
+  }[]
+  overdueInvoices?: {
+    id: string
+    roomNumber: string
+    propertyName: string
+    tenantName: string
+    total: number
+    dueDate: string
+  }[]
+  newTickets?: {
+    id: string
+    ticketNo: string
+    title: string
+    roomNumber: string
+    propertyName: string
   }[]
 }
 
@@ -111,7 +135,7 @@ export default function PortalDashboard() {
         ))}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-3">
+      <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="bg-white rounded-xl border border-gray-100 p-4">
           <div className="text-2xl font-bold">{s.pendingSlips}</div>
           <div className="text-xs text-gray-400">สลิปรอตรวจ</div>
@@ -123,6 +147,14 @@ export default function PortalDashboard() {
         <div className="bg-white rounded-xl border border-gray-100 p-4">
           <div className="text-2xl font-bold">{s.contractsExpiring60}</div>
           <div className="text-xs text-gray-400">สัญญาหมดใน 60 วัน</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <div className="text-2xl font-bold">{s.renewalRequests ?? 0}</div>
+          <div className="text-xs text-gray-400">คำขอต่อสัญญา</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <div className="text-2xl font-bold">{s.unackedMaintenance ?? 0}</div>
+          <div className="text-xs text-gray-400">ซ่อมยังไม่รับเรื่อง</div>
         </div>
       </div>
 

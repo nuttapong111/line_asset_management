@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
       : invoiceWhere(req.user!)
   const invoices = await prisma.invoice.findMany({
     where,
-    include: { unit: true, payment: true },
+    include: { unit: true, payment: true, extraItems: true },
     orderBy: { createdAt: 'desc' },
   })
   res.json(invoices)
@@ -37,6 +37,7 @@ router.get('/:id', async (req, res) => {
     include: {
       unit: { include: { property: true, tenants: { where: { isActive: true } }, meterReadings: true } },
       payment: true,
+      extraItems: true,
     },
   })
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
@@ -125,5 +126,47 @@ async function sendAllHandler(req: import('express').Request, res: import('expre
 }
 router.post('/send-bulk', requireRole('ADMIN', 'OWNER'), sendAllHandler)
 router.post('/send-all', requireRole('ADMIN', 'OWNER'), sendAllHandler)
+
+const extraItemsSchema = z.object({
+  items: z.array(z.object({ label: z.string().min(1), amount: z.number() })),
+})
+
+// PUT /api/invoices/:id/extra-items — replace one-off + extra lines on a pending invoice
+router.put('/:id/extra-items', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  const parse = extraItemsSchema.safeParse(req.body)
+  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+  const invoice = await prisma.invoice.findFirst({
+    where: { id: req.params.id, unit: { property: propertyWhere(req.user!) } },
+    include: { extraItems: true },
+  })
+  if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
+  if (!['PENDING', 'OVERDUE'].includes(invoice.status)) {
+    return res.status(400).json({ error: 'แก้รายการได้เฉพาะบิลที่ยังไม่ชำระ' })
+  }
+
+  const extraAmount = parse.data.items.reduce((a, i) => a + i.amount, 0)
+  const total =
+    Number(invoice.rentAmount) +
+    Number(invoice.electricAmount) +
+    Number(invoice.waterAmount) +
+    Number(invoice.commonFee) +
+    Number(invoice.lateFee) +
+    extraAmount
+
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.invoiceItem.deleteMany({ where: { invoiceId: invoice.id } })
+    if (parse.data.items.length) {
+      await tx.invoiceItem.createMany({
+        data: parse.data.items.map((i) => ({ invoiceId: invoice.id, label: i.label, amount: i.amount })),
+      })
+    }
+    return tx.invoice.update({
+      where: { id: invoice.id },
+      data: { extraAmount, total },
+      include: { extraItems: true, unit: true, payment: true },
+    })
+  })
+  res.json(updated)
+})
 
 export default router

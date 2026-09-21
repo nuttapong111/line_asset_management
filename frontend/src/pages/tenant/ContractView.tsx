@@ -17,6 +17,7 @@ interface Contract {
   status: string
   pdfUrl?: string
   signedAt?: string | null
+  renewalRequestedAt?: string | null
   tenant: { name: string }
   unit: { roomNumber: string; property: { name: string } }
 }
@@ -26,6 +27,7 @@ export default function ContractView() {
   const nav = useNavigate()
   const [contract, setContract] = useState<Contract>()
   const [error, setError] = useState<string>()
+  const [requesting, setRequesting] = useState(false)
 
   const load = () => {
     const url = id ? `/contracts/${id}` : '/contracts/me'
@@ -50,6 +52,20 @@ export default function ContractView() {
   }
 
   const hasSigned = Boolean(contract.signedAt)
+  const daysLeft = Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+
+  async function requestRenew() {
+    setRequesting(true)
+    try {
+      await api.post(`/contracts/${contract!.id}/renew-request`)
+      await load()
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
+      alert(typeof msg === 'string' ? msg : 'ส่งคำขอไม่สำเร็จ')
+    } finally {
+      setRequesting(false)
+    }
+  }
 
   return (
     <div>
@@ -78,6 +94,17 @@ export default function ContractView() {
         </div>
         {hasSigned && (
           <Button onClick={viewSigned}>ดูสัญญาที่ลงนามแล้ว</Button>
+        )}
+        {contract.status === 'ACTIVE' && daysLeft <= 90 && (
+          contract.renewalRequestedAt ? (
+            <Card className="bg-line-light">
+              <p className="text-sm text-line-dark font-medium">ส่งคำขอต่อสัญญาแล้ว รอเจ้าของยืนยัน</p>
+            </Card>
+          ) : (
+            <Button onClick={requestRenew} disabled={requesting}>
+              {requesting ? 'กำลังส่ง...' : 'ขอต่อสัญญา'}
+            </Button>
+          )
         )}
       </div>
     </div>

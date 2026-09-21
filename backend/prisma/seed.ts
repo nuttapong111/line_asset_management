@@ -56,6 +56,7 @@ async function main() {
         electricRate: 5,
         waterRate: 18,
         commonFee: 50,
+      recurringFees: { create: [{ label: 'ค่าจอดรถ', amount: 500 }] },
       },
     })
     units.push(unit)

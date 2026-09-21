@@ -49,6 +49,8 @@ export default function BillingOverview() {
       nav(`/admin/slip/${inv.payment.id}`)
     } else if (inv.status === 'PAID' && inv.payment) {
       nav(`/admin/receipt/${inv.payment.id}`)
+    } else {
+      nav(`/admin/invoice/${inv.id}`)
     }
   }
 

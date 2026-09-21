@@ -145,11 +145,24 @@ model Unit {
   inviteToken   String         @unique @default(cuid())
   inviteExpiry  DateTime?
   tenants       Tenant[]
-  invoices      Invoice[]
-  meterReadings MeterReading[]
-  maintenances  Maintenance[]
-  contracts     Contract[]
-  createdAt     DateTime       @default(now())
+  invoices       Invoice[]
+  meterReadings  MeterReading[]
+  maintenances   Maintenance[]
+  contracts      Contract[]
+  recurringFees  RecurringFee[]
+  createdAt      DateTime       @default(now())
+}
+
+/// Monthly extra charges on a unit (parking, wifi, furniture, etc.)
+model RecurringFee {
+  id        String   @id @default(cuid())
+  unitId    String
+  unit      Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  label     String
+  amount    Decimal
+  createdAt DateTime @default(now())
+
+  @@index([unitId])
 }
 
 enum UnitStatus {
@@ -195,7 +208,26 @@ model Contract {
   signedDocumentUrl  String?
   signedAt           DateTime?
   status             ContractStatus @default(ACTIVE)
+  renewalRequestedAt DateTime?
+  renewalNote        String?
+  moveOut            MoveOut?
   createdAt          DateTime       @default(now())
+}
+
+/// Deposit settlement recorded when a tenant moves out
+model MoveOut {
+  id           String   @id @default(cuid())
+  contractId   String   @unique
+  contract     Contract @relation(fields: [contractId], references: [id])
+  deposit      Decimal
+  unpaidTotal  Decimal
+  /// [{ label, amount }]
+  deductions   Json     @default("[]")
+  refundAmount Decimal
+  notes        String?
+  finalElec    Decimal?
+  finalWater   Decimal?
+  completedAt  DateTime @default(now())
 }
 
 enum ContractStatus {
@@ -216,14 +248,27 @@ model Invoice {
   waterAmount    Decimal
   commonFee      Decimal
   lateFee        Decimal       @default(0)
+  extraAmount    Decimal       @default(0)
   total          Decimal
   dueDate        DateTime
   status         InvoiceStatus @default(PENDING)
   sentAt         DateTime?
   payment        Payment?
+  extraItems     InvoiceItem[]
   createdAt      DateTime      @default(now())
 
   @@unique([unitId, month, year, type])
+}
+
+/// Extra invoice lines (recurring unit fees + one-off charges)
+model InvoiceItem {
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  label     String
+  amount    Decimal
+
+  @@index([invoiceId])
 }
 
 enum InvoiceType {

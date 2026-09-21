@@ -43,7 +43,7 @@ router.get('/properties/:id/units', ...guard, async (req, res) => {
   if (!prop) return res.status(404).json({ error: 'Property not found' })
   const units = await prisma.unit.findMany({
     where: { propertyId: prop.id },
-    include: { tenants: { where: { isActive: true } } },
+    include: { tenants: { where: { isActive: true } }, recurringFees: true },
     orderBy: { roomNumber: 'asc' },
   })
   res.json(units)
@@ -83,6 +83,49 @@ router.get('/units/:id/invite-link', ...guard, async (req, res) => {
     inviteUrl: inviteUrl(updated.inviteToken, 'tenant'),
     expiresAt: expiry,
   })
+})
+
+// GET /api/units/:id
+router.get('/units/:id', ...guard, async (req, res) => {
+  const unit = await prisma.unit.findFirst({
+    where: { id: req.params.id, property: propertyWhere(req.user!) },
+    include: {
+      recurringFees: { orderBy: { createdAt: 'asc' } },
+      property: true,
+      tenants: { where: { isActive: true } },
+    },
+  })
+  if (!unit) return res.status(404).json({ error: 'Unit not found' })
+  res.json(unit)
+})
+
+const feeSchema = z.object({
+  label: z.string().min(1),
+  amount: z.number().positive(),
+})
+
+// POST /api/units/:id/fees
+router.post('/units/:id/fees', ...guard, async (req, res) => {
+  const unit = await ownsUnit(req.user!, req.params.id)
+  if (!unit) return res.status(404).json({ error: 'Unit not found' })
+  const parse = feeSchema.safeParse(req.body)
+  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+  const fee = await prisma.recurringFee.create({
+    data: { unitId: unit.id, label: parse.data.label, amount: parse.data.amount },
+  })
+  res.status(201).json(fee)
+})
+
+// DELETE /api/units/:id/fees/:feeId
+router.delete('/units/:id/fees/:feeId', ...guard, async (req, res) => {
+  const unit = await ownsUnit(req.user!, req.params.id)
+  if (!unit) return res.status(404).json({ error: 'Unit not found' })
+  const fee = await prisma.recurringFee.findFirst({
+    where: { id: req.params.feeId, unitId: unit.id },
+  })
+  if (!fee) return res.status(404).json({ error: 'Fee not found' })
+  await prisma.recurringFee.delete({ where: { id: fee.id } })
+  res.json({ ok: true })
 })
 
 export default router

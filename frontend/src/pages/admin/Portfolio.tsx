@@ -13,16 +13,32 @@ interface PropertyStats {
   stats: { total: number; occupied: number; tenants: number; overdue: number; monthlyRevenue: number }
 }
 
+interface Queue {
+  summary: {
+    pendingSlips: number
+    overdue: number
+    contractsExpiring30: number
+    unackedMaintenance: number
+    renewalRequests: number
+  }
+  recentSlips: { id: string; roomNumber: string; tenantName: string; amount: number }[]
+  overdueInvoices: { id: string; roomNumber: string; tenantName: string; total: number }[]
+  pendingRenewals: { id: string; roomNumber: string; tenantName: string }[]
+  newTickets: { id: string; ticketNo: string; title: string; roomNumber: string }[]
+  expiringContracts: { id: string; roomNumber: string; tenantName: string }[]
+}
+
 export default function Portfolio() {
   const nav = useNavigate()
   const [props, setProps] = useState<PropertyStats[]>([])
+  const [queue, setQueue] = useState<Queue>()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/properties').then((r) => {
-      setProps(r.data)
-      setLoading(false)
-    }).catch(() => setLoading(false))
+    Promise.all([
+      api.get('/properties').then((r) => setProps(r.data)).catch(() => {}),
+      api.get('/reports/dashboard').then((r) => setQueue(r.data)).catch(() => {}),
+    ]).finally(() => setLoading(false))
   }, [])
 
   const totalRooms = props.reduce((a, p) => a + p.stats.total, 0)
@@ -50,6 +66,51 @@ export default function Portfolio() {
       </div>
 
       <div className="p-4 space-y-3">
+        {queue && (
+          <Card>
+            <h2 className="font-semibold mb-3">งานวันนี้</h2>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <QueueStat label="สลิปรอตรวจ" value={queue.summary.pendingSlips} onClick={() => nav('/admin/billing')} />
+              <QueueStat label="ค้างชำระ" value={queue.overdueInvoices?.length ?? 0} onClick={() => nav('/admin/billing')} />
+              <QueueStat label="ขอต่อสัญญา" value={queue.summary.renewalRequests} />
+              <QueueStat label="ซ่อมยังไม่รับ" value={queue.summary.unackedMaintenance} />
+            </div>
+            {queue.recentSlips.slice(0, 3).map((p) => (
+              <button
+                key={p.id}
+                className="w-full text-left text-sm py-2 border-t border-gray-50 flex justify-between"
+                onClick={() => nav(`/admin/slip/${p.id}`)}
+              >
+                <span>สลิป ห้อง {p.roomNumber} · {p.tenantName}</span>
+                <span className="text-line font-medium">{baht(p.amount)}</span>
+              </button>
+            ))}
+            {queue.pendingRenewals?.slice(0, 3).map((c) => (
+              <button
+                key={c.id}
+                className="w-full text-left text-sm py-2 border-t border-gray-50"
+                onClick={() => nav(`/admin/contract/${c.id}`)}
+              >
+                ขอต่อสัญญา ห้อง {c.roomNumber} · {c.tenantName}
+              </button>
+            ))}
+            {queue.newTickets?.slice(0, 3).map((t) => (
+              <button
+                key={t.id}
+                className="w-full text-left text-sm py-2 border-t border-gray-50"
+                onClick={() => nav(`/admin/maintenance/${t.id}`)}
+              >
+                ซ่อม {t.ticketNo} ห้อง {t.roomNumber}
+              </button>
+            ))}
+            {queue.summary.pendingSlips === 0 &&
+              !queue.pendingRenewals?.length &&
+              !queue.newTickets?.length &&
+              !queue.overdueInvoices?.length && (
+                <p className="text-sm text-gray-400">ไม่มีงานค้าง</p>
+              )}
+          </Card>
+        )}
         {loading && <p className="text-center text-gray-400 py-8">กำลังโหลด...</p>}
         {!loading && props.length === 0 && (
           <p className="text-center text-gray-400 py-8">ยังไม่มีอสังหาฯ เริ่มเพิ่มได้เลย</p>
@@ -92,6 +153,19 @@ export default function Portfolio() {
       </div>
       <BottomNav role="ADMIN" />
     </div>
+  )
+}
+
+function QueueStat({ label, value, onClick }: { label: string; value: number; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="bg-gray-50 rounded-xl py-2 text-center"
+    >
+      <div className={`font-semibold text-sm ${value ? 'text-amber-700' : 'text-gray-800'}`}>{value}</div>
+      <div className="text-[10px] text-gray-400">{label}</div>
+    </button>
   )
 }
 

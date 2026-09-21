@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../../lib/axios'
-import { Button, Card } from '../../components/ui'
+import { Button, Card, Input } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
 import { baht, thaiDate, thaiMonth } from '../../lib/utils'
+import { useAuthStore } from '../../store/authStore'
 
+interface ExtraItem { id?: string; label: string; amount: string | number }
 interface Invoice {
   id: string
+  type?: string
   month: number
   year: number
   rentAmount: string
@@ -14,9 +17,11 @@ interface Invoice {
   waterAmount: string
   commonFee: string
   lateFee: string
+  extraAmount?: string
   total: string
   dueDate: string
   status: string
+  extraItems?: ExtraItem[]
   unit: { roomNumber: string; electricRate: string; waterRate: string }
   meterReading?: { prevElec: string; currElec: string; prevWater: string; currWater: string }
 }
@@ -24,16 +29,37 @@ interface Invoice {
 export default function InvoiceDetail() {
   const { id } = useParams()
   const nav = useNavigate()
+  const role = useAuthStore((s) => s.role)
   const [inv, setInv] = useState<Invoice>()
+  const [newLabel, setNewLabel] = useState('')
+  const [newAmount, setNewAmount] = useState('')
+  const [savingExtra, setSavingExtra] = useState(false)
 
+  const load = () => api.get(`/invoices/${id}`).then((r) => setInv(r.data))
   useEffect(() => {
-    api.get(`/invoices/${id}`).then((r) => setInv(r.data))
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   if (!inv) return <div className="p-6 text-center text-gray-400">กำลังโหลด...</div>
   const m = inv.meterReading
   const usedElec = m ? Number(m.currElec) - Number(m.prevElec) : 0
   const usedWater = m ? Number(m.currWater) - Number(m.prevWater) : 0
+  const extras = inv.extraItems ?? []
+  const canEditExtras = (role === 'ADMIN' || role === 'OWNER') && ['PENDING', 'OVERDUE'].includes(inv.status)
+  const isRent = inv.type !== 'UTILITY'
+
+  async function saveExtras(items: { label: string; amount: number }[]) {
+    setSavingExtra(true)
+    try {
+      await api.put(`/invoices/${id}/extra-items`, { items })
+      await load()
+      setNewLabel('')
+      setNewAmount('')
+    } finally {
+      setSavingExtra(false)
+    }
+  }
 
   return (
     <div>
@@ -47,15 +73,57 @@ export default function InvoiceDetail() {
 
         <Card>
           <h4 className="font-semibold mb-2">รายการ</h4>
-          <Row label="ค่าเช่า" value={baht(inv.rentAmount)} />
-          <Row label={`ค่าไฟ (${usedElec} หน่วย × ${baht(inv.unit.electricRate)})`} value={baht(inv.electricAmount)} />
-          <Row label={`ค่าน้ำ (${usedWater} หน่วย × ${baht(inv.unit.waterRate)})`} value={baht(inv.waterAmount)} />
-          <Row label="ค่าส่วนกลาง" value={baht(inv.commonFee)} />
+          {isRent && <Row label="ค่าเช่า" value={baht(inv.rentAmount)} />}
+          {Number(inv.electricAmount) > 0 && (
+            <Row label={`ค่าไฟ (${usedElec} หน่วย × ${baht(inv.unit.electricRate)})`} value={baht(inv.electricAmount)} />
+          )}
+          {Number(inv.waterAmount) > 0 && (
+            <Row label={`ค่าน้ำ (${usedWater} หน่วย × ${baht(inv.unit.waterRate)})`} value={baht(inv.waterAmount)} />
+          )}
+          {isRent && Number(inv.commonFee) > 0 && <Row label="ค่าส่วนกลาง" value={baht(inv.commonFee)} />}
+          {extras.map((x) => (
+            <Row key={x.id || x.label} label={x.label} value={baht(x.amount)} />
+          ))}
           {Number(inv.lateFee) > 0 && <Row label="ค่าปรับล่าช้า" value={baht(inv.lateFee)} />}
           <div className="flex justify-between font-bold text-line border-t border-gray-100 pt-2 mt-1">
             <span>รวม</span><span>{baht(inv.total)}</span>
           </div>
         </Card>
+
+        {canEditExtras && (
+          <Card className="space-y-3">
+            <h4 className="font-semibold">เพิ่มรายการในบิลนี้</h4>
+            {extras.map((x) => (
+              <div key={x.id || x.label} className="flex justify-between text-sm">
+                <span>{x.label}</span>
+                <button
+                  className="text-danger text-xs"
+                  onClick={() =>
+                    saveExtras(extras.filter((i) => i !== x).map((i) => ({ label: i.label, amount: Number(i.amount) })))
+                  }
+                >
+                  ลบ
+                </button>
+              </div>
+            ))}
+            <div className="grid grid-cols-[1fr_90px] gap-2">
+              <Input placeholder="เช่น ค่าเน็ต" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+              <Input type="number" placeholder="ยอด" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} />
+            </div>
+            <Button
+              className="py-2"
+              disabled={savingExtra || !newLabel || !newAmount}
+              onClick={() =>
+                saveExtras([
+                  ...extras.map((i) => ({ label: i.label, amount: Number(i.amount) })),
+                  { label: newLabel.trim(), amount: Number(newAmount) },
+                ])
+              }
+            >
+              {savingExtra ? 'กำลังบันทึก...' : 'เพิ่มรายการ'}
+            </Button>
+          </Card>
+        )}
 
         {m && (
           <Card>
