@@ -57,9 +57,10 @@ export const env = {
     .filter((n) => !Number.isNaN(n)),
   SUBSCRIPTION_REMIND_TIME: process.env.SUBSCRIPTION_REMIND_TIME || '09:00',
 
-  // Slip verification provider (rough OCR to assist manual approval).
-  // 'easyslip' uses developer.easyslip.com; anything else falls back to mock.
-  SLIP_VERIFY_PROVIDER: (process.env.SLIP_VERIFY_PROVIDER || 'mock').trim().toLowerCase(),
+  // Slip OCR (advisory only — manager still approves).
+  // tesseract = local free OCR (default, slip image stays on server)
+  // easyslip  = external API when EASYSLIP_API_KEY is set
+  SLIP_VERIFY_PROVIDER: (process.env.SLIP_VERIFY_PROVIDER || 'tesseract').trim().toLowerCase(),
   EASYSLIP_API_KEY: (process.env.EASYSLIP_API_KEY || '').trim(),
 }
 

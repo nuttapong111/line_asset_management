@@ -308,10 +308,17 @@ model Payment {
   gatewayRef     String?
   slipUrl        String?
   slipUploadedAt DateTime?
-  ocrAmount      Decimal?
-  ocrDate        DateTime?
-  ocrMatched     Boolean?
-  status         PaymentStatus   @default(WAITING_SLIP)
+  ocrAmount          Decimal?
+  ocrDate            DateTime?
+  /// Amount on slip matches invoice total (advisory)
+  ocrMatched         Boolean?
+  /// Destination account/PromptPay matches property (null = not checked)
+  ocrAccountMatched  Boolean?
+  /// Digits parsed from slip as likely destination account
+  ocrParsedAccount   String?
+  /// Human-readable advisory note from OCR
+  ocrNote            String?
+  status             PaymentStatus   @default(WAITING_SLIP)
   approvedAt     DateTime?
   rejectedAt     DateTime?
   rejectReason   String?

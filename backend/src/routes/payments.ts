@@ -69,7 +69,26 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
 
   const key = `slips/${invoice.id}/${Date.now()}.jpg`
   const slipUrl = await uploadFile(key, req.file.buffer, req.file.mimetype)
-  const ocr = await ocrSlip(slipUrl, Number(invoice.total), req.file.buffer)
+  const prop = invoice.unit.property
+  const ocr = await ocrSlip(
+    slipUrl,
+    {
+      expectedAmount: Number(invoice.total),
+      expectedAccounts: [prop.promptpayNumber, prop.bankAccount, env.DEFAULT_PROMPTPAY_NUMBER].filter(
+        (v): v is string => Boolean(v && String(v).trim())
+      ),
+    },
+    req.file.buffer
+  )
+
+  const ocrData = {
+    ocrAmount: ocr.amount ?? undefined,
+    ocrDate: ocr.date ?? undefined,
+    ocrMatched: ocr.amountMatched,
+    ocrAccountMatched: ocr.accountMatched,
+    ocrParsedAccount: ocr.parsedAccount ?? undefined,
+    ocrNote: ocr.note ?? undefined,
+  }
 
   const payment = await prisma.payment.upsert({
     where: { invoiceId: invoice.id },
@@ -78,17 +97,13 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
       tenantId: tenant.id,
       slipUrl,
       slipUploadedAt: new Date(),
-      ocrAmount: ocr.amount ?? undefined,
-      ocrDate: ocr.date ?? undefined,
-      ocrMatched: ocr.matched,
+      ...ocrData,
       status: 'UNDER_REVIEW',
     },
     update: {
       slipUrl,
       slipUploadedAt: new Date(),
-      ocrAmount: ocr.amount ?? undefined,
-      ocrDate: ocr.date ?? undefined,
-      ocrMatched: ocr.matched,
+      ...ocrData,
       status: 'UNDER_REVIEW',
       rejectReason: null,
       rejectedAt: null,
@@ -205,20 +220,40 @@ router.post('/:paymentId/reocr', requireRole('ADMIN', 'OWNER'), async (req, res)
     return res.status(404).json({ error: 'Payment not found' })
   const payment = await prisma.payment.findUnique({
     where: { id: req.params.paymentId },
-    include: { invoice: true },
+    include: { invoice: { include: { unit: { include: { property: true } } } } },
   })
   if (!payment?.slipUrl) return res.status(400).json({ error: 'No slip uploaded' })
   const file = await readFile(extractStorageKey(payment.slipUrl))
-  const ocr = await ocrSlip(payment.slipUrl, Number(payment.invoice.total), file.body)
+  const prop = payment.invoice.unit.property
+  const ocr = await ocrSlip(
+    payment.slipUrl,
+    {
+      expectedAmount: Number(payment.invoice.total),
+      expectedAccounts: [prop.promptpayNumber, prop.bankAccount, env.DEFAULT_PROMPTPAY_NUMBER].filter(
+        (v): v is string => Boolean(v && String(v).trim())
+      ),
+    },
+    file.body
+  )
   const updated = await prisma.payment.update({
     where: { id: payment.id },
     data: {
       ocrAmount: ocr.amount ?? undefined,
       ocrDate: ocr.date ?? undefined,
-      ocrMatched: ocr.matched,
+      ocrMatched: ocr.amountMatched,
+      ocrAccountMatched: ocr.accountMatched,
+      ocrParsedAccount: ocr.parsedAccount ?? undefined,
+      ocrNote: ocr.note ?? undefined,
     },
   })
-  res.json({ ...updated, ocrNote: ocr.note, ocrProvider: ocr.provider })
+  res.json({
+    ...updated,
+    ocrNote: ocr.note,
+    ocrProvider: ocr.provider,
+    amountMatched: ocr.amountMatched,
+    accountMatched: ocr.accountMatched,
+    matched: ocr.matched,
+  })
 })
 
 // GET /api/payments/:paymentId  (detail for review)
@@ -226,10 +261,13 @@ router.get('/:paymentId', async (req, res) => {
   const payment = await visiblePayment(req, req.params.paymentId)
   if (!payment) return res.status(404).json({ error: 'Payment not found' })
   const { slipUrl, receiptUrl, receiptPdfUrl, ...rest } = payment
+  const prop = payment.invoice.unit.property
   res.json({
     ...rest,
     hasSlip: !!slipUrl,
     hasReceipt: !!(receiptPdfUrl || receiptUrl),
+    expectedPromptpay: prop.promptpayNumber || env.DEFAULT_PROMPTPAY_NUMBER || null,
+    expectedBankAccount: prop.bankAccount || null,
   })
 })
 
