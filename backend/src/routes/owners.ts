@@ -10,7 +10,9 @@ import {
   isValidUsername,
   normalizeUsername,
 } from '../services/passwordService'
-import { trialExpiresAt } from '../services/subscriptionService'
+import { activateOwnerTrial, grantPlanFields, OwnerPlanType } from '../services/subscriptionService'
+
+const OWNER_PLANS = ['TRIAL', 'MONTHLY', 'YEARLY', 'PERMANENT'] as const
 
 const router = Router()
 
@@ -26,6 +28,7 @@ router.post('/owners', ...adminOnly, async (req, res) => {
     phone: z.string().optional(),
     username: z.string().min(3),
     password: z.string().min(6).optional(),
+    plan: z.enum(OWNER_PLANS).optional().default('TRIAL'),
   })
   const parse = schema.safeParse(req.body)
   if (!parse.success) return res.status(400).json({ error: 'กรุณากรอกชื่อและ Username (อย่างน้อย 3 ตัว)' })
@@ -42,6 +45,8 @@ router.post('/owners', ...adminOnly, async (req, res) => {
   const tempPassword = parse.data.password || generateTempPassword()
   const passwordHash = await hashPassword(tempPassword)
   const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  const plan = parse.data.plan as OwnerPlanType
+  const planFields = grantPlanFields(plan)
 
   const owner = await prisma.owner.create({
     data: {
@@ -52,8 +57,7 @@ router.post('/owners', ...adminOnly, async (req, res) => {
       mustChangePassword: true,
       adminId: req.user!.adminId!,
       inviteExpiry: expiry,
-      subscriptionStatus: 'TRIAL',
-      expiresAt: trialExpiresAt(),
+      ...planFields,
     },
   })
 
@@ -62,6 +66,9 @@ router.post('/owners', ...adminOnly, async (req, res) => {
     name: owner.name,
     phone: owner.phone,
     username: owner.username,
+    plan: owner.plan,
+    subscriptionStatus: owner.subscriptionStatus,
+    expiresAt: owner.expiresAt,
     mustChangePassword: owner.mustChangePassword,
     inviteUrl: ownerInviteUrl(owner.inviteToken),
     temporaryPassword: tempPassword,
@@ -80,6 +87,9 @@ router.get('/owners', ...adminOnly, async (req, res) => {
       name: o.name,
       phone: o.phone,
       username: o.username,
+      plan: o.plan,
+      subscriptionStatus: o.subscriptionStatus,
+      expiresAt: o.expiresAt,
       hasPassword: Boolean(o.passwordHash),
       mustChangePassword: o.mustChangePassword,
       linkedAt: o.linkedAt,
@@ -103,10 +113,22 @@ router.get('/owners/:id', ...adminOnly, async (req, res) => {
 router.put('/owners/:id', ...adminOnly, async (req, res) => {
   const owner = await prisma.owner.findFirst({ where: { id: req.params.id, adminId: req.user!.adminId! } })
   if (!owner) return res.status(404).json({ error: 'Owner not found' })
-  const schema = z.object({ name: z.string().min(1).optional(), phone: z.string().optional() })
+  const schema = z.object({
+    name: z.string().min(1).optional(),
+    phone: z.string().optional(),
+    plan: z.enum(OWNER_PLANS).optional(),
+  })
   const parse = schema.safeParse(req.body)
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
-  const updated = await prisma.owner.update({ where: { id: owner.id }, data: parse.data })
+
+  const data: Record<string, unknown> = {}
+  if (parse.data.name !== undefined) data.name = parse.data.name
+  if (parse.data.phone !== undefined) data.phone = parse.data.phone
+  if (parse.data.plan && parse.data.plan !== owner.plan) {
+    Object.assign(data, grantPlanFields(parse.data.plan as OwnerPlanType))
+  }
+
+  const updated = await prisma.owner.update({ where: { id: owner.id }, data })
   const { passwordHash: _, ...safe } = updated
   res.json(safe)
 })
@@ -176,8 +198,9 @@ router.post('/owners/link', authMiddleware, async (req, res) => {
 
   const updated = await prisma.owner.update({
     where: { id: owner.id },
-    data: { lineUserId, linkedAt: new Date() },
+    data: { lineUserId, linkedAt: owner.linkedAt ?? new Date() },
   })
+  const started = !owner.trialStartedAt ? await activateOwnerTrial(owner.id) : updated
   setAdminRichMenu(lineUserId).catch(() => {})
   const token = signToken({
     lineUserId,
@@ -185,7 +208,7 @@ router.post('/owners/link', authMiddleware, async (req, res) => {
     ownerId: updated.id,
     mustChangePassword: updated.mustChangePassword,
   })
-  res.json({ ok: true, token, role: 'OWNER', owner: { ...updated, passwordHash: undefined } })
+  res.json({ ok: true, token, role: 'OWNER', owner: { ...(started || updated), passwordHash: undefined } })
 })
 
 export default router

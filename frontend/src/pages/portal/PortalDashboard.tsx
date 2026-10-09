@@ -63,7 +63,12 @@ export default function PortalDashboard() {
   const role = useAuthStore((s) => s.role)
   const [data, setData] = useState<Dashboard>()
   const [error, setError] = useState<string>()
-  const [subBanner, setSubBanner] = useState<{ status: string; daysLeft: number | null; expiresAt?: string }>()
+  const [subBanner, setSubBanner] = useState<{
+    status: string
+    daysLeft: number | null
+    expiresAt?: string
+    permanent?: boolean
+  }>()
 
   useEffect(() => {
     api
@@ -78,6 +83,7 @@ export default function PortalDashboard() {
             status: r.data.owner.subscriptionStatus,
             daysLeft: r.data.owner.daysLeft,
             expiresAt: r.data.owner.expiresAt,
+            permanent: Boolean(r.data.owner.permanent || r.data.owner.plan === 'PERMANENT'),
           })
         )
         .catch(() => {})
@@ -97,6 +103,7 @@ export default function PortalDashboard() {
 
   const showSubWarn =
     subBanner &&
+    !subBanner.permanent &&
     (subBanner.status === 'GRACE' ||
       subBanner.status === 'SUSPENDED' ||
       (subBanner.daysLeft !== null && subBanner.daysLeft <= 7))

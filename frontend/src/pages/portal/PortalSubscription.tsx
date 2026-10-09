@@ -3,9 +3,12 @@ import api from '../../lib/axios'
 import { baht, thaiDate } from '../../lib/utils'
 import { Button } from '../../components/ui'
 import { QRCodeSVG } from 'qrcode.react'
+import { OWNER_PLAN_LABEL, OwnerPlan } from '../../lib/ownerPlan'
 
 interface SubSummary {
   owner: {
+    plan?: OwnerPlan
+    permanent?: boolean
     subscriptionStatus: string
     expiresAt?: string
     daysLeft: number | null
@@ -18,7 +21,7 @@ interface SubSummary {
     periodDays: number
     status: string
     rejectReason?: string
-  }
+  } | null
   payment: {
     promptpayNumber: string | null
     qrPayload: string | null
@@ -56,7 +59,7 @@ export default function PortalSubscription() {
   }, [])
 
   async function onUpload(file: File) {
-    if (!data) return
+    if (!data?.bill) return
     setUploading(true)
     setMsg(undefined)
     setError(undefined)
@@ -77,25 +80,38 @@ export default function PortalSubscription() {
   if (!data) return <p className="text-gray-400">กำลังโหลด...</p>
 
   const { owner, bill, payment } = data
-  const canUpload = bill.status === 'PENDING_SLIP' || bill.status === 'REJECTED'
+  const permanent = owner.permanent || owner.plan === 'PERMANENT'
+  const canUpload = Boolean(bill && (bill.status === 'PENDING_SLIP' || bill.status === 'REJECTED'))
 
   return (
     <div className="space-y-6 max-w-xl">
       <div>
         <h1 className="text-2xl font-bold">ค่าบริการ PropFlow</h1>
-        <p className="text-sm text-gray-500 mt-1">ชำระเพื่อต่ออายุการใช้งานระบบ</p>
+        <p className="text-sm text-gray-500 mt-1">
+          {permanent ? 'บัญชีถาวร — ไม่ต้องชำระค่าบริการ' : 'ชำระเพื่อต่ออายุการใช้งานระบบ'}
+        </p>
       </div>
 
       <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-400">ประเภท</span>
+          <span className="font-semibold">{OWNER_PLAN_LABEL[(owner.plan || 'TRIAL') as OwnerPlan]}</span>
+        </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">สถานะ</span>
           <span className="font-semibold">{STATUS_LABEL[owner.subscriptionStatus] || owner.subscriptionStatus}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">หมดอายุ</span>
-          <span>{thaiDate(owner.expiresAt)}</span>
+          <span>
+            {permanent
+              ? 'ไม่มีวันหมดอายุ'
+              : owner.expiresAt
+                ? thaiDate(owner.expiresAt)
+                : 'ยังไม่เริ่มทดลองใช้'}
+          </span>
         </div>
-        {owner.daysLeft !== null && (
+        {!permanent && owner.daysLeft !== null && (
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">เหลือ</span>
             <span className={owner.daysLeft <= 3 ? 'text-danger font-semibold' : ''}>
@@ -110,55 +126,61 @@ export default function PortalSubscription() {
         )}
       </section>
 
-      <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
-        <h2 className="font-semibold">ใบแจ้งหนี้ {bill.billNo}</h2>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">ยอดชำระ</span>
-          <span className="text-xl font-bold text-line">{baht(bill.amount)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">ระยะเวลา</span>
-          <span>{bill.periodDays} วัน</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">สถานะบิล</span>
-          <span>{STATUS_LABEL[bill.status] || bill.status}</span>
-        </div>
-        {bill.rejectReason && <p className="text-sm text-danger">เหตุผล: {bill.rejectReason}</p>}
-
-        {payment.qrPayload && canUpload && (
-          <div className="flex flex-col items-center gap-2 py-3">
-            <QRCodeSVG value={payment.qrPayload} size={180} />
-            <p className="text-xs text-gray-400">PromptPay {payment.promptpayNumber}</p>
+      {permanent ? (
+        <section className="bg-line-light border border-line/20 rounded-xl p-4 text-sm text-line-dark">
+          บัญชีนี้ตั้งเป็นแบบถาวร (เช่น บ้านเช่าของตนเอง) จึงไม่มีการออกบิลค่าบริการ
+        </section>
+      ) : bill ? (
+        <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
+          <h2 className="font-semibold">ใบแจ้งหนี้ {bill.billNo}</h2>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">ยอดชำระ</span>
+            <span className="text-xl font-bold text-line">{baht(bill.amount)}</span>
           </div>
-        )}
-        {!payment.promptpayNumber && canUpload && (
-          <p className="text-sm text-amber-600">ยังไม่ได้ตั้งเลข PromptPay ของแพลตฟอร์ม — ติดต่อแอดมิน</p>
-        )}
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">ระยะเวลา</span>
+            <span>{bill.periodDays} วัน</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">สถานะบิล</span>
+            <span>{STATUS_LABEL[bill.status] || bill.status}</span>
+          </div>
+          {bill.rejectReason && <p className="text-sm text-danger">เหตุผล: {bill.rejectReason}</p>}
 
-        {canUpload && (
-          <>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) void onUpload(f)
-              }}
-            />
-            <Button onClick={() => fileRef.current?.click()} disabled={uploading}>
-              {uploading ? 'กำลังอัปโหลด...' : 'แนบสลิปการชำระ'}
-            </Button>
-          </>
-        )}
-        {bill.status === 'UNDER_REVIEW' && (
-          <p className="text-sm text-amber-600 text-center">รอแอดมินตรวจสอบสลิป</p>
-        )}
-        {msg && <p className="text-sm text-line text-center">{msg}</p>}
-        {error && <p className="text-sm text-danger text-center">{error}</p>}
-      </section>
+          {payment.qrPayload && canUpload && (
+            <div className="flex flex-col items-center gap-2 py-3">
+              <QRCodeSVG value={payment.qrPayload} size={180} />
+              <p className="text-xs text-gray-400">PromptPay {payment.promptpayNumber}</p>
+            </div>
+          )}
+          {!payment.promptpayNumber && canUpload && (
+            <p className="text-sm text-amber-600">ยังไม่ได้ตั้งเลข PromptPay ของแพลตฟอร์ม — ติดต่อแอดมิน</p>
+          )}
+
+          {canUpload && (
+            <>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void onUpload(f)
+                }}
+              />
+              <Button onClick={() => fileRef.current?.click()} disabled={uploading}>
+                {uploading ? 'กำลังอัปโหลด...' : 'แนบสลิปการชำระ'}
+              </Button>
+            </>
+          )}
+          {bill.status === 'UNDER_REVIEW' && (
+            <p className="text-sm text-amber-600 text-center">รอแอดมินตรวจสอบสลิป</p>
+          )}
+          {msg && <p className="text-sm text-line text-center">{msg}</p>}
+          {error && <p className="text-sm text-danger text-center">{error}</p>}
+        </section>
+      ) : null}
     </div>
   )
 }

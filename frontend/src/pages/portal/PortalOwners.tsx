@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import api from '../../lib/axios'
 import { Button, Input } from '../../components/ui'
+import { OWNER_PLAN_LABEL, OWNER_PLAN_OPTIONS, OwnerPlan } from '../../lib/ownerPlan'
+import { thaiDate } from '../../lib/utils'
 
 interface OwnerProp {
   id: string
@@ -11,6 +13,9 @@ interface Owner {
   name: string
   phone?: string
   username?: string
+  plan?: OwnerPlan
+  subscriptionStatus?: string
+  expiresAt?: string | null
   linkedAt?: string
   properties: OwnerProp[]
   inviteUrl: string
@@ -28,6 +33,7 @@ export default function PortalOwners() {
   const [phone, setPhone] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [plan, setPlan] = useState<OwnerPlan>('TRIAL')
   const [saving, setSaving] = useState(false)
   const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string; inviteUrl: string }>()
   const [error, setError] = useState<string>()
@@ -55,6 +61,7 @@ export default function PortalOwners() {
         phone: phone.trim() || undefined,
         username: username.trim(),
         password: password.trim() || undefined,
+        plan,
       })
       setCreatedCreds({
         username: data.username,
@@ -65,6 +72,7 @@ export default function PortalOwners() {
       setPhone('')
       setUsername('')
       setPassword('')
+      setPlan('TRIAL')
       await load()
     } catch (e: any) {
       setError(e.response?.data?.error || 'สร้างไม่สำเร็จ')
@@ -109,6 +117,13 @@ export default function PortalOwners() {
 
   async function unassign(o: Owner, propertyId: string) {
     await api.delete(`/owners/${o.id}/properties/${propertyId}`)
+    await load()
+  }
+
+  async function changePlan(o: Owner, next: OwnerPlan) {
+    if (!next || next === o.plan) return
+    if (!confirm(`เปลี่ยนประเภทบัญชีของ ${o.name} เป็น "${OWNER_PLAN_LABEL[next]}" ?`)) return
+    await api.put(`/owners/${o.id}`, { plan: next })
     await load()
   }
 
@@ -163,6 +178,21 @@ export default function PortalOwners() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <label className="block">
+          <span className="block text-sm font-medium text-gray-600 mb-1">ประเภทบัญชี</span>
+          <select
+            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm"
+            value={plan}
+            onChange={(e) => setPlan(e.target.value as OwnerPlan)}
+          >
+            {OWNER_PLAN_OPTIONS.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-400 mt-1">{OWNER_PLAN_OPTIONS.find((p) => p.value === plan)?.hint}</p>
+        </label>
         {error && <p className="text-sm text-danger">{error}</p>}
         <Button onClick={add} disabled={saving || !name.trim() || !username.trim()}>
           {saving ? 'กำลังสร้าง...' : 'สร้างบัญชี'}
@@ -178,8 +208,27 @@ export default function PortalOwners() {
                 <div className="text-xs text-gray-400">
                   @{o.username || '—'} · {o.phone || 'ไม่มีเบอร์'} · {o.linkedAt ? 'ผูก LINE แล้ว' : 'ยังไม่ผูก LINE'}
                 </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {OWNER_PLAN_LABEL[(o.plan || 'TRIAL') as OwnerPlan]}
+                  {o.plan === 'PERMANENT'
+                    ? ' · ไม่มีวันหมดอายุ'
+                    : o.expiresAt
+                      ? ` · หมดอายุ ${thaiDate(o.expiresAt)}`
+                      : ' · ยังไม่เริ่มนับวัน'}
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                <select
+                  className="border rounded-lg px-2 py-1.5 text-sm"
+                  value={o.plan || 'TRIAL'}
+                  onChange={(e) => changePlan(o, e.target.value as OwnerPlan)}
+                >
+                  {OWNER_PLAN_OPTIONS.map((p) => (
+                    <option key={p.value} value={p.value}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
                 <Button variant="secondary" className="!w-auto text-sm py-1.5 px-3" onClick={() => copyInvite(o)}>
                   คัดลอกลิงก์ LINE
                 </Button>

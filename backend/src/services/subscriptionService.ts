@@ -19,8 +19,90 @@ function addDays(d: Date, days: number): Date {
   return r
 }
 
+export type OwnerPlanType = 'TRIAL' | 'MONTHLY' | 'YEARLY' | 'PERMANENT'
+
 export function trialExpiresAt(from = new Date()): Date {
   return addDays(from, env.SUBSCRIPTION_TRIAL_DAYS)
+}
+
+export function planPeriodDays(plan: OwnerPlanType): number | null {
+  if (plan === 'PERMANENT') return null
+  if (plan === 'MONTHLY') return env.SUBSCRIPTION_PERIOD_DAYS
+  if (plan === 'YEARLY') return env.SUBSCRIPTION_YEARLY_DAYS
+  return env.SUBSCRIPTION_TRIAL_DAYS
+}
+
+/** Fields to apply when admin grants a plan (create or change). */
+export function grantPlanFields(plan: OwnerPlanType, from = new Date()) {
+  if (plan === 'PERMANENT') {
+    return {
+      plan: 'PERMANENT' as const,
+      subscriptionStatus: 'ACTIVE' as const,
+      trialStartedAt: from,
+      expiresAt: null as Date | null,
+      subscriptionReminderKey: null as string | null,
+    }
+  }
+  if (plan === 'MONTHLY' || plan === 'YEARLY') {
+    const days = planPeriodDays(plan)!
+    return {
+      plan,
+      subscriptionStatus: 'ACTIVE' as const,
+      trialStartedAt: from,
+      expiresAt: addDays(from, days),
+      subscriptionReminderKey: null as string | null,
+    }
+  }
+  // TRIAL — clock starts on first login / LINE link
+  return {
+    plan: 'TRIAL' as const,
+    subscriptionStatus: 'TRIAL' as const,
+    trialStartedAt: null as Date | null,
+    expiresAt: null as Date | null,
+    subscriptionReminderKey: null as string | null,
+  }
+}
+
+/** Start the trial clock on first portal login or LINE link — not when admin creates the account. */
+export async function activateOwnerTrial(ownerId: string) {
+  const owner = await prisma.owner.findUnique({ where: { id: ownerId } })
+  if (!owner) return null
+
+  if (owner.plan === 'PERMANENT') {
+    return prisma.owner.update({
+      where: { id: ownerId },
+      data: {
+        trialStartedAt: owner.trialStartedAt ?? new Date(),
+        expiresAt: null,
+        subscriptionStatus: 'ACTIVE',
+        subscriptionReminderKey: null,
+      },
+    })
+  }
+
+  const paid = await prisma.subscriptionPayment.findFirst({
+    where: { ownerId, status: 'APPROVED' },
+  })
+  if (paid) return refreshOwnerSubscriptionStatus(ownerId)
+  if (owner.trialStartedAt) return refreshOwnerSubscriptionStatus(ownerId)
+
+  const now = new Date()
+  if (owner.plan === 'MONTHLY' || owner.plan === 'YEARLY') {
+    return prisma.owner.update({
+      where: { id: ownerId },
+      data: grantPlanFields(owner.plan, now),
+    })
+  }
+
+  return prisma.owner.update({
+    where: { id: ownerId },
+    data: {
+      trialStartedAt: now,
+      expiresAt: trialExpiresAt(now),
+      subscriptionStatus: 'TRIAL',
+      subscriptionReminderKey: null,
+    },
+  })
 }
 
 export function daysUntil(date: Date | null | undefined, from = new Date()): number | null {
@@ -38,16 +120,28 @@ export async function refreshOwnerSubscriptionStatus(ownerId: string) {
   const owner = await prisma.owner.findUnique({ where: { id: ownerId } })
   if (!owner) return null
 
+  if (owner.plan === 'PERMANENT') {
+    if (owner.subscriptionStatus !== 'ACTIVE' || owner.expiresAt != null) {
+      return prisma.owner.update({
+        where: { id: ownerId },
+        data: {
+          subscriptionStatus: 'ACTIVE',
+          expiresAt: null,
+          trialStartedAt: owner.trialStartedAt ?? new Date(),
+          subscriptionReminderKey: null,
+        },
+      })
+    }
+    return owner
+  }
+
   const now = new Date()
   let status = owner.subscriptionStatus
   const expiresAt = owner.expiresAt
 
-  if (!expiresAt) {
-    // No expiry set — treat as trial starting now
-    return prisma.owner.update({
-      where: { id: ownerId },
-      data: { expiresAt: trialExpiresAt(now), subscriptionStatus: 'TRIAL' },
-    })
+  if (!expiresAt || !owner.trialStartedAt) {
+    // Not activated yet — do not start or expire the trial from cron / other reads
+    return owner
   }
 
   if (expiresAt >= startOfDay(now)) {
@@ -83,8 +177,11 @@ async function nextBillNo(): Promise<string> {
   return `SUB-${year}-${String(count + 1).padStart(5, '0')}`
 }
 
-/** Open bill for renewal (create or reuse pending/rejected). */
+/** Open bill for renewal (create or reuse pending/rejected). Permanent owners never get bills. */
 export async function ensureSubscriptionBill(ownerId: string) {
+  const owner = await prisma.owner.findUnique({ where: { id: ownerId } })
+  if (!owner || owner.plan === 'PERMANENT') return null
+
   const open = await prisma.subscriptionPayment.findFirst({
     where: {
       ownerId,
@@ -98,12 +195,15 @@ export async function ensureSubscriptionBill(ownerId: string) {
     /* fall through to create */
   }
 
+  const periodDays =
+    owner.plan === 'YEARLY' ? env.SUBSCRIPTION_YEARLY_DAYS : env.SUBSCRIPTION_PERIOD_DAYS
+
   return prisma.subscriptionPayment.create({
     data: {
       ownerId,
       billNo: await nextBillNo(),
       amount: env.SUBSCRIPTION_PRICE,
-      periodDays: env.SUBSCRIPTION_PERIOD_DAYS,
+      periodDays,
       status: 'PENDING_SLIP',
     },
   })
@@ -114,27 +214,31 @@ export async function getSubscriptionSummary(ownerId: string) {
   if (!owner) return null
   const bill = await ensureSubscriptionBill(ownerId)
   const promptpay = env.PLATFORM_PROMPTPAY_NUMBER || env.DEFAULT_PROMPTPAY_NUMBER
-  const amount = Number(bill.amount)
-  const qrPayload = promptpay ? generatePromptPayPayload(promptpay, amount) : null
-  const daysLeft = daysUntil(owner.expiresAt)
+  const amount = bill ? Number(bill.amount) : 0
+  const qrPayload = bill && promptpay ? generatePromptPayPayload(promptpay, amount) : null
+  const daysLeft = owner.plan === 'PERMANENT' ? null : daysUntil(owner.expiresAt)
   return {
     owner: {
       id: owner.id,
       name: owner.name,
+      plan: owner.plan,
       subscriptionStatus: owner.subscriptionStatus,
       expiresAt: owner.expiresAt,
       daysLeft,
       writeBlocked: isOwnerWriteBlocked(owner.subscriptionStatus),
+      permanent: owner.plan === 'PERMANENT',
     },
-    bill: {
-      id: bill.id,
-      billNo: bill.billNo,
-      amount,
-      periodDays: bill.periodDays,
-      status: bill.status,
-      rejectReason: bill.rejectReason,
-      slipUploadedAt: bill.slipUploadedAt,
-    },
+    bill: bill
+      ? {
+          id: bill.id,
+          billNo: bill.billNo,
+          amount,
+          periodDays: bill.periodDays,
+          status: bill.status,
+          rejectReason: bill.rejectReason,
+          slipUploadedAt: bill.slipUploadedAt,
+        }
+      : null,
     payment: {
       promptpayNumber: promptpay || null,
       qrPayload,
@@ -211,8 +315,15 @@ export async function approveSubscriptionPayment(paymentId: string, adminId: str
     prisma.owner.update({
       where: { id: payment.ownerId },
       data: {
+        plan:
+          payment.periodDays >= env.SUBSCRIPTION_YEARLY_DAYS
+            ? 'YEARLY'
+            : payment.owner.plan === 'PERMANENT'
+              ? 'PERMANENT'
+              : 'MONTHLY',
         expiresAt: extendsTo,
         subscriptionStatus: 'ACTIVE',
+        trialStartedAt: payment.owner.trialStartedAt ?? new Date(),
         subscriptionReminderKey: null,
       },
     }),
@@ -291,6 +402,7 @@ export async function tickSubscriptionJobs(HH_mm: string): Promise<void> {
     const next = addDays(target, 1)
     const due = await prisma.owner.findMany({
       where: {
+        plan: { not: 'PERMANENT' },
         expiresAt: { gte: target, lt: next },
         subscriptionStatus: { in: ['TRIAL', 'ACTIVE', 'GRACE'] },
         lineUserId: { not: null },
@@ -303,6 +415,7 @@ export async function tickSubscriptionJobs(HH_mm: string): Promise<void> {
       if (owner.subscriptionReminderKey === key) continue
 
       const bill = await ensureSubscriptionBill(owner.id)
+      if (!bill) continue
       await pushSubscriptionReminder(owner.lineUserId, {
         ownerName: owner.name,
         daysLeft: daysAhead,
@@ -330,7 +443,7 @@ export async function tickSubscriptionJobs(HH_mm: string): Promise<void> {
   })
   // Already covered by daysAhead 0 if in list — add 0 to remind days via GRACE push
   const graceOwners = await prisma.owner.findMany({
-    where: { subscriptionStatus: 'GRACE', lineUserId: { not: null } },
+    where: { plan: { not: 'PERMANENT' }, subscriptionStatus: 'GRACE', lineUserId: { not: null } },
   })
   for (const owner of graceOwners) {
     if (!owner.lineUserId || !owner.expiresAt) continue
@@ -339,6 +452,7 @@ export async function tickSubscriptionJobs(HH_mm: string): Promise<void> {
     if (owner.subscriptionReminderKey === key) continue
     // Remind once per calendar day while in grace
     const bill = await ensureSubscriptionBill(owner.id)
+    if (!bill) continue
     await pushSubscriptionReminder(owner.lineUserId, {
       ownerName: owner.name,
       daysLeft: -daysOver,
@@ -353,7 +467,7 @@ export async function tickSubscriptionJobs(HH_mm: string): Promise<void> {
 
   // Notify newly suspended
   const suspended = await prisma.owner.findMany({
-    where: { subscriptionStatus: 'SUSPENDED', lineUserId: { not: null } },
+    where: { plan: { not: 'PERMANENT' }, subscriptionStatus: 'SUSPENDED', lineUserId: { not: null } },
   })
   for (const owner of suspended) {
     if (!owner.lineUserId || !owner.expiresAt) continue

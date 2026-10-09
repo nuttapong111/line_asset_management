@@ -11,6 +11,7 @@ import {
   normalizeUsername,
   isValidUsername,
 } from '../services/passwordService'
+import { activateOwnerTrial } from '../services/subscriptionService'
 
 const router = Router()
 
@@ -132,6 +133,7 @@ router.post('/line', async (req, res) => {
       username = a?.username || null
       hasPassword = Boolean(a?.passwordHash)
     } else if (payload.role === 'OWNER' && payload.ownerId) {
+      await activateOwnerTrial(payload.ownerId)
       const o = await prisma.owner.findUnique({ where: { id: payload.ownerId } })
       username = o?.username || null
       hasPassword = Boolean(o?.passwordHash)
@@ -186,6 +188,7 @@ router.post('/login', async (req, res) => {
   if (owner?.passwordHash) {
     const ok = await verifyPassword(password, owner.passwordHash)
     if (!ok) return res.status(401).json({ error: 'Username หรือ Password ไม่ถูกต้อง' })
+    await activateOwnerTrial(owner.id)
     const payload: JwtPayload = {
       lineUserId: owner.lineUserId || undefined,
       role: 'OWNER',

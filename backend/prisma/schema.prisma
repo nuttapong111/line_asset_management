@@ -55,7 +55,11 @@ model Owner {
   inviteToken            String                 @unique @default(cuid())
   inviteExpiry           DateTime?
   linkedAt               DateTime?
+  /// Billing / access type chosen by admin when creating the account
+  plan                   OwnerPlan              @default(TRIAL)
   subscriptionStatus     SubscriptionStatus     @default(TRIAL)
+  /// When the owner first logged in or linked LINE. Trial days count from here, not from account creation.
+  trialStartedAt         DateTime?
   expiresAt              DateTime?
   /// Avoid duplicate daily reminders: "YYYY-MM-DD:7"
   subscriptionReminderKey String?
@@ -96,6 +100,13 @@ model DocumentTemplate {
 
   @@index([ownerId, type])
   @@index([propertyId, type])
+}
+
+enum OwnerPlan {
+  TRIAL
+  MONTHLY
+  YEARLY
+  PERMANENT
 }
 
 enum SubscriptionStatus {

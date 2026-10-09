@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import api from '../../lib/axios'
 import { Button, Card, Badge, Input } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
+import { OWNER_PLAN_LABEL, OWNER_PLAN_OPTIONS, OwnerPlan } from '../../lib/ownerPlan'
+import { thaiDate } from '../../lib/utils'
 
 interface OwnerProp {
   id: string
@@ -12,6 +14,8 @@ interface Owner {
   name: string
   phone?: string
   username?: string
+  plan?: OwnerPlan
+  expiresAt?: string | null
   linkedAt?: string
   properties: OwnerProp[]
   inviteUrl: string
@@ -29,6 +33,7 @@ export default function OwnerManage() {
   const [phone, setPhone] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [plan, setPlan] = useState<OwnerPlan>('TRIAL')
   const [saving, setSaving] = useState(false)
   const [copiedId, setCopiedId] = useState<string>()
   const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string; inviteUrl: string }>()
@@ -57,6 +62,7 @@ export default function OwnerManage() {
         phone: phone.trim() || undefined,
         username: username.trim(),
         password: password.trim() || undefined,
+        plan,
       })
       setCreatedCreds({
         username: data.username,
@@ -67,6 +73,7 @@ export default function OwnerManage() {
       setPhone('')
       setUsername('')
       setPassword('')
+      setPlan('TRIAL')
       await load()
     } catch (e: any) {
       setError(e.response?.data?.error || 'สร้างไม่สำเร็จ')
@@ -112,6 +119,13 @@ export default function OwnerManage() {
 
   async function unassign(o: Owner, propertyId: string) {
     await api.delete(`/owners/${o.id}/properties/${propertyId}`)
+    await load()
+  }
+
+  async function changePlan(o: Owner, next: OwnerPlan) {
+    if (!next || next === o.plan) return
+    if (!confirm(`เปลี่ยนประเภทบัญชีของ ${o.name} เป็น "${OWNER_PLAN_LABEL[next]}" ?`)) return
+    await api.put(`/owners/${o.id}`, { plan: next })
     await load()
   }
 
@@ -163,6 +177,21 @@ export default function OwnerManage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-600 mb-1">ประเภทบัญชี</span>
+              <select
+                className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm"
+                value={plan}
+                onChange={(e) => setPlan(e.target.value as OwnerPlan)}
+              >
+                {OWNER_PLAN_OPTIONS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">{OWNER_PLAN_OPTIONS.find((p) => p.value === plan)?.hint}</p>
+            </label>
             {error && <p className="text-danger text-sm">{error}</p>}
             <Button onClick={add} disabled={saving || !name.trim() || !username.trim()}>
               {saving ? 'กำลังบันทึก...' : 'สร้างบัญชี'}
@@ -178,9 +207,29 @@ export default function OwnerManage() {
                 <div>
                   <p className="font-medium">{o.name}</p>
                   <p className="text-xs text-gray-400">@{o.username || '—'}{o.phone ? ` · ${o.phone}` : ''}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {OWNER_PLAN_LABEL[(o.plan || 'TRIAL') as OwnerPlan]}
+                    {o.plan === 'PERMANENT'
+                      ? ' · ไม่หมดอายุ'
+                      : o.expiresAt
+                        ? ` · หมดอายุ ${thaiDate(o.expiresAt)}`
+                        : ' · ยังไม่เริ่มนับวัน'}
+                  </p>
                 </div>
                 {o.linkedAt ? <Badge kind="paid">ผูก LINE แล้ว</Badge> : <Badge kind="pending">รอผูก LINE</Badge>}
               </div>
+
+              <select
+                className="mb-2 w-full border rounded-lg p-2 text-sm"
+                value={o.plan || 'TRIAL'}
+                onChange={(e) => changePlan(o, e.target.value as OwnerPlan)}
+              >
+                {OWNER_PLAN_OPTIONS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
 
               <div className="mb-2">
                 <p className="text-xs text-gray-400 mb-1">ทรัพย์สินที่มอบหมาย</p>
