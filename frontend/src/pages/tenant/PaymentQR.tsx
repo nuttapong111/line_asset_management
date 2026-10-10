@@ -4,12 +4,19 @@ import { QRCodeSVG } from 'qrcode.react'
 import api from '../../lib/axios'
 import { Button, Card } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
+import { AuthImage } from '../../components/AuthImage'
 import { baht } from '../../lib/utils'
 
 export default function PaymentQR() {
   const { invoiceId } = useParams()
   const nav = useNavigate()
-  const [qr, setQr] = useState<{ payload: string; amount: number; promptpayNumber: string; paymentQrUrl?: string | null }>()
+  const [qr, setQr] = useState<{
+    payload: string
+    amount: number
+    promptpayNumber: string
+    hasPaymentQr?: boolean
+    paymentQrUrl?: string | null
+  }>()
   const [seconds, setSeconds] = useState(30 * 60)
   const [file, setFile] = useState<File>()
   const [preview, setPreview] = useState<string>()
@@ -61,14 +68,18 @@ export default function PaymentQR() {
           {qr ? (
             <>
               <div className="bg-white inline-block p-3 rounded-xl border border-gray-100">
-                {qr.paymentQrUrl ? (
-                  <img src={qr.paymentQrUrl} alt="QR รับเงิน" className="w-[200px] h-[200px] object-contain" />
+                {qr.hasPaymentQr || qr.paymentQrUrl ? (
+                  <AuthImage
+                    path={`/payments/${invoiceId}/payment-qr`}
+                    alt="QR รับเงิน"
+                    className="w-[200px] h-[200px] object-contain"
+                  />
                 ) : (
                   <QRCodeSVG value={qr.payload} size={200} />
                 )}
               </div>
               <div className="text-2xl font-bold text-line mt-3">{baht(qr.amount)}</div>
-              {qr.paymentQrUrl ? (
+              {qr.hasPaymentQr || qr.paymentQrUrl ? (
                 <p className="text-sm text-gray-400">สแกน QR แล้วโอนยอดตามจำนวนด้านบน</p>
               ) : (
                 <p className="text-sm text-gray-400">พร้อมเพย์ {qr.promptpayNumber}</p>

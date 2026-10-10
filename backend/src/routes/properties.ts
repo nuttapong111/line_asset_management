@@ -5,7 +5,7 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere, resolveAdminId } from '../lib/scope'
-import { uploadFile } from '../services/storageService'
+import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
 
 const router = Router()
 // Both admins and owners manage properties (owners are scoped to their own)
@@ -124,6 +124,20 @@ router.delete('/:id', async (req, res) => {
   res.json({ ok: true })
 })
 
+// GET /api/properties/:id/payment-qr — stream stored QR image (private storage)
+router.get('/:id/payment-qr', async (req, res) => {
+  const property = await prisma.property.findFirst({ where: { id: req.params.id, ...propertyWhere(req.user!) } })
+  if (!property?.paymentQrUrl) return res.status(404).json({ error: 'QR not found' })
+  try {
+    const file = await readFile(extractStorageKey(property.paymentQrUrl))
+    res.setHeader('Content-Type', file.contentType)
+    res.setHeader('Cache-Control', 'private, max-age=300')
+    res.send(file.body)
+  } catch {
+    res.status(404).json({ error: 'QR file missing' })
+  }
+})
+
 // POST /api/properties/:id/payment-qr — upload a static QR image for transfers
 router.post('/:id/payment-qr', upload.single('file'), async (req, res) => {
   const property = await prisma.property.findFirst({ where: { id: req.params.id, ...propertyWhere(req.user!) } })
@@ -132,7 +146,7 @@ router.post('/:id/payment-qr', upload.single('file'), async (req, res) => {
   const key = `payment-qr/${property.id}/${Date.now()}.${req.file.mimetype === 'image/png' ? 'png' : 'jpg'}`
   const url = await uploadFile(key, req.file.buffer, req.file.mimetype)
   const updated = await prisma.property.update({ where: { id: property.id }, data: { paymentQrUrl: url } })
-  res.json({ paymentQrUrl: updated.paymentQrUrl })
+  res.json({ ok: true, hasPaymentQr: Boolean(updated.paymentQrUrl) })
 })
 
 // DELETE /api/properties/:id/payment-qr — remove the static QR image

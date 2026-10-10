@@ -23,6 +23,8 @@ export function AuthImage({ path, className, alt = '' }: { path: string; classNa
     }
   }, [path])
 
-  if (!url) return <div className={className} />
+  if (!url) {
+    return <div className={`${className || ''} bg-gray-50 animate-pulse`.trim()} aria-hidden />
+  }
   return <img src={url} alt={alt} className={className} />
 }

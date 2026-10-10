@@ -4,6 +4,7 @@ import api from '../../lib/axios'
 import { baht, cls } from '../../lib/utils'
 import { Card, Badge, Chip, Button } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
+import { AuthImage } from '../../components/AuthImage'
 
 interface Unit {
   id: string
@@ -149,7 +150,11 @@ export default function PropertyDetail() {
             </p>
             {prop.paymentQrUrl ? (
               <div className="space-y-2">
-                <img src={prop.paymentQrUrl} alt="QR" className="w-40 h-40 object-contain border rounded-lg mx-auto" />
+                <AuthImage
+                  path={`/properties/${id}/payment-qr`}
+                  alt="QR"
+                  className="w-40 h-40 object-contain border rounded-lg mx-auto bg-white"
+                />
                 <Button variant="danger" className="text-sm py-2" onClick={removeQr}>ลบรูป QR</Button>
               </div>
             ) : (

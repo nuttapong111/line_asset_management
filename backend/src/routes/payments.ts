@@ -5,7 +5,7 @@ import { prisma } from '../lib/prisma'
 import { env, liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { requireActiveSubscription } from '../middleware/subscriptionGuard'
-import { propertyWhere } from '../lib/scope'
+import { invoiceWhere, propertyWhere } from '../lib/scope'
 import { generatePromptPayPayload } from '../services/qrService'
 import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
 import { ocrSlip } from '../services/ocrService'
@@ -46,10 +46,38 @@ router.get('/:invoiceId/qr', async (req, res) => {
     payload,
     amount,
     promptpayNumber,
-    // Static QR image uploaded by the manager (used instead of generating one)
-    paymentQrUrl: invoice.unit.property.paymentQrUrl || null,
+    // Static QR image uploaded by the manager (served via authenticated stream, not raw storage URL)
+    hasPaymentQr: Boolean(invoice.unit.property.paymentQrUrl),
     expiresAt: new Date(Date.now() + 30 * 60 * 1000),
   })
+})
+
+// GET /api/payments/:invoiceId/payment-qr — stream property static QR for this invoice
+router.get('/:invoiceId/payment-qr', async (req, res) => {
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: req.params.invoiceId },
+    include: { unit: { include: { property: true } } },
+  })
+  if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
+  if (req.user!.role === 'TENANT' && invoice.unitId !== req.user!.unitId) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  if (req.user!.role === 'ADMIN' || req.user!.role === 'OWNER') {
+    const scoped = await prisma.invoice.findFirst({
+      where: { id: invoice.id, ...invoiceWhere(req.user!) },
+    })
+    if (!scoped) return res.status(403).json({ error: 'Forbidden' })
+  }
+  const stored = invoice.unit.property.paymentQrUrl
+  if (!stored) return res.status(404).json({ error: 'QR not found' })
+  try {
+    const file = await readFile(extractStorageKey(stored))
+    res.setHeader('Content-Type', file.contentType)
+    res.setHeader('Cache-Control', 'private, max-age=300')
+    res.send(file.body)
+  } catch {
+    res.status(404).json({ error: 'QR file missing' })
+  }
 })
 
 // POST /api/payments/:invoiceId/slip
