@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma'
 import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
 import { setAdminRichMenu } from '../lib/line/richMenu'
+import { pushText, pushEntry } from '../lib/line/lineService'
 import {
   generateTempPassword,
   hashPassword,
@@ -201,7 +202,16 @@ router.post('/owners/link', authMiddleware, async (req, res) => {
     data: { lineUserId, linkedAt: owner.linkedAt ?? new Date() },
   })
   const started = !owner.trialStartedAt ? await activateOwnerTrial(owner.id) : updated
-  setAdminRichMenu(lineUserId).catch(() => {})
+  await setAdminRichMenu(lineUserId)
+  try {
+    await pushText(
+      lineUserId,
+      `สวัสดีครับ คุณ${updated.name} 👋\nผูกบัญชีเจ้าของสำเร็จแล้ว\nใช้เมนูผู้ดูแลด้านล่างเพื่อจัดการอาคาร บิล และชุมชนลูกบ้าน`
+    )
+    await pushEntry(lineUserId, 'แตะเพื่อเปิดระบบจัดการ', 'เปิดระบบจัดการ')
+  } catch (err) {
+    console.error('[LINE] owner welcome after link failed', err)
+  }
   const token = signToken({
     lineUserId,
     role: 'OWNER',

@@ -30,13 +30,11 @@ export default function OwnerManage() {
   const [owners, setOwners] = useState<Owner[]>([])
   const [properties, setProperties] = useState<Property[]>([])
   const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
   const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
   const [plan, setPlan] = useState<OwnerPlan>('TRIAL')
   const [saving, setSaving] = useState(false)
   const [copiedId, setCopiedId] = useState<string>()
-  const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string; inviteUrl: string }>()
+  const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string; inviteUrl: string; name: string }>()
   const [error, setError] = useState<string>()
 
   const load = () =>
@@ -59,20 +57,17 @@ export default function OwnerManage() {
     try {
       const { data } = await api.post('/owners', {
         name: name.trim(),
-        phone: phone.trim() || undefined,
         username: username.trim(),
-        password: password.trim() || undefined,
         plan,
       })
       setCreatedCreds({
         username: data.username,
         password: data.temporaryPassword,
         inviteUrl: data.inviteUrl,
+        name: name.trim(),
       })
       setName('')
-      setPhone('')
       setUsername('')
-      setPassword('')
       setPlan('TRIAL')
       await load()
     } catch (e: any) {
@@ -82,16 +77,45 @@ export default function OwnerManage() {
     }
   }
 
-  async function copy(o: Owner) {
-    let url = o.inviteUrl
+  async function inviteUrlFor(o: Owner) {
     try {
       const { data } = await api.get(`/owners/${o.id}/invite-link`)
-      url = data.inviteUrl
+      return data.inviteUrl as string
     } catch {
-      /* fall back */
+      return o.inviteUrl
     }
-    navigator.clipboard.writeText(url)
+  }
+
+  async function shareInvite(o: Owner) {
+    const url = await inviteUrlFor(o)
+    const text = `คำเชิญเจ้าของ PropFlow — ${o.name}\nกดลิงก์ใน LINE เพื่อผูกบัญชีและเปิดเมนูผู้ดูแล`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'คำเชิญเจ้าของ', text, url })
+        return
+      } catch {
+        /* cancelled */
+      }
+    }
+    await navigator.clipboard.writeText(url)
     setCopiedId(o.id)
+    setTimeout(() => setCopiedId(undefined), 1500)
+  }
+
+  async function shareCreated() {
+    if (!createdCreds) return
+    const portalUrl = `${window.location.origin}/portal/login`
+    const text = `PropFlow — บัญชีเจ้าของ\nPortal: ${portalUrl}\nUsername: ${createdCreds.username}\nPassword: ${createdCreds.password}\n\nลิงก์ผูก LINE (กดใน LINE):\n${createdCreds.inviteUrl}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'บัญชีเจ้าของ', text })
+        return
+      } catch {
+        /* cancelled */
+      }
+    }
+    await navigator.clipboard.writeText(text)
+    setCopiedId('created')
     setTimeout(() => setCopiedId(undefined), 1500)
   }
 
@@ -102,11 +126,12 @@ export default function OwnerManage() {
       username: data.username,
       password: data.temporaryPassword,
       inviteUrl: o.inviteUrl,
+      name: o.name,
     })
   }
 
   async function remove(o: Owner) {
-    if (!confirm(`ลบเจ้าของ "${o.name}" ? ทรัพย์สินที่มอบหมายจะถูกปลดออก`)) return
+    if (!confirm(`ลบเจ้าของ "${o.name}" ?`)) return
     await api.delete(`/owners/${o.id}`)
     await load()
   }
@@ -124,155 +149,138 @@ export default function OwnerManage() {
 
   async function changePlan(o: Owner, next: OwnerPlan) {
     if (!next || next === o.plan) return
-    if (!confirm(`เปลี่ยนประเภทบัญชีของ ${o.name} เป็น "${OWNER_PLAN_LABEL[next]}" ?`)) return
+    if (!confirm(`เปลี่ยนเป็น "${OWNER_PLAN_LABEL[next]}" ?`)) return
     await api.put(`/owners/${o.id}`, { plan: next })
     await load()
   }
 
   const unassigned = properties.filter((p) => !p.ownerId)
-  const portalUrl = `${window.location.origin}/portal/login`
 
   return (
     <div>
       <TopBar title="จัดการเจ้าของ" />
-      <div className="p-4 space-y-4">
-        <div className="bg-line-light rounded-xl p-3 text-sm text-line-dark">
-          สร้าง Username/Password สำหรับเข้าเว็บ Portal และส่งลิงก์ผูก LINE แยก — อย่าส่งรหัสผ่านในแชทกลุ่ม
-        </div>
-
+      <div className="p-4 space-y-3">
         {createdCreds && (
-          <Card className="bg-white space-y-2 text-sm">
-            <p className="font-semibold text-line-dark">ส่งให้เจ้าของ</p>
-            <p>
-              Portal: <span className="break-all">{portalUrl}</span>
+          <Card className="space-y-3 text-center">
+            <Badge kind="paid">สร้างแล้ว</Badge>
+            <div>
+              <p className="font-semibold">{createdCreds.name}</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {createdCreds.username} · {createdCreds.password}
+              </p>
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              ส่งลิงก์ผูก LINE ให้เจ้าของ — กดแล้วเปิดเมนูผู้ดูแลอัตโนมัติ
             </p>
-            <p>
-              Username: <code>{createdCreds.username}</code>
-            </p>
-            <p>
-              Password: <code>{createdCreds.password}</code>
-            </p>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                navigator.clipboard.writeText(
-                  `Portal: ${portalUrl}\nUsername: ${createdCreds.username}\nPassword: ${createdCreds.password}\nลิงก์ผูก LINE: ${createdCreds.inviteUrl}`
-                )
-              }
-            >
-              คัดลอกข้อความทั้งหมด
+            <Button onClick={shareCreated}>
+              {copiedId === 'created' ? 'คัดลอกแล้ว' : 'ส่งลิงก์ + รหัสให้เจ้าของ'}
             </Button>
+            <button type="button" className="text-xs text-gray-400" onClick={() => setCreatedCreds(undefined)}>
+              ปิด
+            </button>
           </Card>
         )}
 
-        <Card>
-          <h3 className="font-semibold mb-2">เพิ่มเจ้าของ</h3>
-          <div className="space-y-2">
-            <Input label="ชื่อเจ้าของ" value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น คุณสมชาย" />
-            <Input label="เบอร์โทร (ไม่บังคับ)" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="somchai" />
-            <Input
-              label="Password (ว่าง = สุ่ม)"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <label className="block">
-              <span className="block text-sm font-medium text-gray-600 mb-1">ประเภทบัญชี</span>
-              <select
-                className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm"
-                value={plan}
-                onChange={(e) => setPlan(e.target.value as OwnerPlan)}
-              >
-                {OWNER_PLAN_OPTIONS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-400 mt-1">{OWNER_PLAN_OPTIONS.find((p) => p.value === plan)?.hint}</p>
-            </label>
-            {error && <p className="text-danger text-sm">{error}</p>}
-            <Button onClick={add} disabled={saving || !name.trim() || !username.trim()}>
-              {saving ? 'กำลังบันทึก...' : 'สร้างบัญชี'}
-            </Button>
-          </div>
+        <Card className="space-y-3">
+          <h3 className="font-semibold">เพิ่มเจ้าของ</h3>
+          <Input label="ชื่อ" value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น คุณสมชาย" />
+          <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="somchai" />
+          <label className="block">
+            <span className="block text-sm font-medium text-gray-600 mb-1">ประเภทบัญชี</span>
+            <select
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm"
+              value={plan}
+              onChange={(e) => setPlan(e.target.value as OwnerPlan)}
+            >
+              {OWNER_PLAN_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {error && <p className="text-danger text-sm">{error}</p>}
+          <Button onClick={add} disabled={saving || !name.trim() || !username.trim()}>
+            {saving ? 'กำลังสร้าง...' : 'สร้างบัญชี'}
+          </Button>
         </Card>
 
         <div className="space-y-2">
-          {owners.length === 0 && <p className="text-center text-gray-400 text-sm py-4">ยังไม่มีเจ้าของ</p>}
+          {owners.length === 0 && <p className="text-center text-gray-400 text-sm py-6">ยังไม่มีเจ้าของ</p>}
           {owners.map((o) => (
-            <Card key={o.id}>
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <p className="font-medium">{o.name}</p>
-                  <p className="text-xs text-gray-400">@{o.username || '—'}{o.phone ? ` · ${o.phone}` : ''}</p>
+            <Card key={o.id} className="space-y-3">
+              <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{o.name}</p>
+                  <p className="text-xs text-gray-400">@{o.username || '—'}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {OWNER_PLAN_LABEL[(o.plan || 'TRIAL') as OwnerPlan]}
                     {o.plan === 'PERMANENT'
-                      ? ' · ไม่หมดอายุ'
+                      ? ''
                       : o.expiresAt
-                        ? ` · หมดอายุ ${thaiDate(o.expiresAt)}`
-                        : ' · ยังไม่เริ่มนับวัน'}
+                        ? ` · ${thaiDate(o.expiresAt)}`
+                        : ' · ยังไม่เริ่ม'}
                   </p>
                 </div>
-                {o.linkedAt ? <Badge kind="paid">ผูก LINE แล้ว</Badge> : <Badge kind="pending">รอผูก LINE</Badge>}
+                {o.linkedAt ? <Badge kind="paid">ผูกแล้ว</Badge> : <Badge kind="pending">รอผูก LINE</Badge>}
               </div>
 
-              <select
-                className="mb-2 w-full border rounded-lg p-2 text-sm"
-                value={o.plan || 'TRIAL'}
-                onChange={(e) => changePlan(o, e.target.value as OwnerPlan)}
-              >
-                {OWNER_PLAN_OPTIONS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
+              {!o.linkedAt && (
+                <Button onClick={() => shareInvite(o)}>
+                  {copiedId === o.id ? 'คัดลอกแล้ว' : 'ส่งลิงก์เชิญ'}
+                </Button>
+              )}
 
-              <div className="mb-2">
-                <p className="text-xs text-gray-400 mb-1">ทรัพย์สินที่มอบหมาย</p>
-                {o.properties.length === 0 && <p className="text-xs text-gray-400">— ยังไม่มี —</p>}
-                <div className="flex flex-wrap gap-1">
-                  {o.properties.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => unassign(o, p.id)}
-                      className="text-xs bg-gray-100 rounded-full px-2 py-1"
-                      title="แตะเพื่อปลดออก"
-                    >
-                      {p.name} ✕
-                    </button>
-                  ))}
-                </div>
-                {unassigned.length > 0 && (
-                  <select
-                    className="mt-2 w-full border rounded-lg p-2 text-sm"
-                    value=""
-                    onChange={(e) => assign(o, e.target.value)}
+              <div className="flex flex-wrap gap-1">
+                {o.properties.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => unassign(o, p.id)}
+                    className="text-xs bg-gray-100 rounded-full px-2.5 py-1"
                   >
-                    <option value="">+ มอบหมายทรัพย์สิน...</option>
-                    {unassigned.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
+                    {p.name} ✕
+                  </button>
+                ))}
+              </div>
+              {unassigned.length > 0 && (
+                <select
+                  className="w-full border rounded-xl p-2.5 text-sm"
+                  value=""
+                  onChange={(e) => assign(o, e.target.value)}
+                >
+                  <option value="">+ มอบหมายอาคาร</option>
+                  {unassigned.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <details className="text-sm">
+                <summary className="text-gray-400 cursor-pointer py-1">จัดการเพิ่มเติม</summary>
+                <div className="space-y-2 mt-2">
+                  <select
+                    className="w-full border rounded-xl p-2 text-sm"
+                    value={o.plan || 'TRIAL'}
+                    onChange={(e) => changePlan(o, e.target.value as OwnerPlan)}
+                  >
+                    {OWNER_PLAN_OPTIONS.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
                       </option>
                     ))}
                   </select>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="secondary" className="text-sm py-2" onClick={() => copy(o)}>
-                  {copiedId === o.id ? 'คัดลอกแล้ว ✓' : 'ลิงก์ผูก LINE'}
-                </Button>
-                <Button variant="secondary" className="text-sm py-2" onClick={() => resetPassword(o)}>
-                  รีเซ็ตรหัส
-                </Button>
-                <Button variant="danger" className="text-sm py-2 col-span-2" onClick={() => remove(o)}>
-                  ลบ
-                </Button>
-              </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="secondary" className="text-sm py-2" onClick={() => resetPassword(o)}>
+                      รีเซ็ตรหัส
+                    </Button>
+                    <Button variant="danger" className="text-sm py-2" onClick={() => remove(o)}>
+                      ลบ
+                    </Button>
+                  </div>
+                </div>
+              </details>
             </Card>
           ))}
         </div>

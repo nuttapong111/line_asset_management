@@ -42,9 +42,14 @@ export default function AddTenant() {
         <Card className="space-y-4">
           <Input label="ชื่อ-นามสกุล *" value={form.name} onChange={set('name')} />
           <Input label="เบอร์โทร *" value={form.phone} onChange={set('phone')} placeholder="08xxxxxxxx" />
-          <Input label="LINE ID" value={form.lineId} onChange={set('lineId')} />
-          <Input label="เลขบัตรประชาชน" value={form.idCardNumber} onChange={set('idCardNumber')} />
           <Input label="วันเริ่มเช่า" type="date" value={form.startDate} onChange={set('startDate')} />
+          <details className="text-sm">
+            <summary className="text-gray-400 cursor-pointer select-none py-1">ข้อมูลเพิ่มเติม (ไม่บังคับ)</summary>
+            <div className="space-y-3 mt-3">
+              <Input label="LINE ID" value={form.lineId} onChange={set('lineId')} />
+              <Input label="เลขบัตรประชาชน" value={form.idCardNumber} onChange={set('idCardNumber')} />
+            </div>
+          </details>
           {error && <p className="text-danger text-sm">{error}</p>}
           <Button onClick={next} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'ถัดไป'}</Button>
         </Card>

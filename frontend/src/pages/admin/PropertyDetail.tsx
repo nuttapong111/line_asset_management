@@ -115,31 +115,25 @@ export default function PropertyDetail() {
                   <Button variant="ghost" className="w-auto px-3 py-1.5 text-sm" onClick={() => nav(`/admin/property/${id}/tenant/new?unitId=${u.id}`)}>
                     + ผู้เช่า
                   </Button>
+                ) : tenant && !tenant.linkedAt ? (
+                  <Button
+                    className="w-auto px-3 py-1.5 text-sm"
+                    onClick={() => nav(`/admin/tenant/${tenant.id}/invite`)}
+                  >
+                    ส่งลิงก์เชิญ
+                  </Button>
                 ) : (
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-2">
-                      {u.contracts[0] && (
-                        <Button
-                          variant="ghost"
-                          className="w-auto px-2 py-1 text-xs"
-                          onClick={() => nav(`/admin/contract/${u.contracts[0].id}`)}
-                        >
-                          สัญญา{u.contracts[0].signedAt ? '' : ' · รอลงนาม'}
-                        </Button>
-                      )}
-                      <Badge kind={tenant?.linkedAt ? (overdue ? 'overdue' : 'paid') : 'pending'}>
-                        {tenant?.linkedAt ? (overdue ? 'ค้างชำระ' : 'ปกติ') : 'รอผูก LINE'}
-                      </Badge>
-                    </div>
-                    {tenant && !tenant.linkedAt && (
+                  <div className="flex items-center gap-2">
+                    {u.contracts[0] && (
                       <Button
                         variant="ghost"
-                        className="w-auto px-2 py-1 text-xs text-line"
-                        onClick={() => nav(`/admin/tenant/${tenant.id}/invite`)}
+                        className="w-auto px-2 py-1 text-xs"
+                        onClick={() => nav(`/admin/contract/${u.contracts[0].id}`)}
                       >
-                        ลิงก์เชิญ
+                        สัญญา{u.contracts[0].signedAt ? '' : ' · รอลงนาม'}
                       </Button>
                     )}
+                    <Badge kind={overdue ? 'overdue' : 'paid'}>{overdue ? 'ค้างชำระ' : 'ปกติ'}</Badge>
                   </div>
                 )}
               </Card>

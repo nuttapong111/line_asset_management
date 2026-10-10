@@ -72,7 +72,7 @@ export default function CommunityFeed() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const navRole = role === 'TENANT' ? 'TENANT' : 'ADMIN'
+  const navRole = role === 'TENANT' ? 'TENANT' : role === 'OWNER' ? 'OWNER' : 'ADMIN'
 
   return (
     <div className="pb-24 min-h-screen bg-[#f3f4f6]">

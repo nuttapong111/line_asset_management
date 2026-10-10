@@ -1,9 +1,13 @@
-import { useState } from 'react'
-import { useSearchParams, useNavigate, Link } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import api from '../lib/axios'
 import { useAuthStore } from '../store/authStore'
-import { Button, Card } from '../components/ui'
+import { Button } from '../components/ui'
 
+/**
+ * Fallback when a NEW LINE user opens the OA/LIFF without an invite token.
+ * With a token, redirects to /link for auto-connect.
+ */
 export default function LinkRoom() {
   const [params] = useSearchParams()
   const token = params.get('token') || ''
@@ -12,11 +16,14 @@ export default function LinkRoom() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>()
 
-  async function link() {
-    if (!token) {
-      setError('ไม่พบรหัสคำเชิญ กรุณาเปิดลิงก์จากคำเชิญที่ได้รับ')
-      return
+  useEffect(() => {
+    if (token) {
+      nav(`/link?token=${encodeURIComponent(token)}`, { replace: true })
     }
+  }, [token, nav])
+
+  async function link() {
+    if (!token) return
     setLoading(true)
     setError(undefined)
     try {
@@ -32,26 +39,37 @@ export default function LinkRoom() {
     }
   }
 
+  if (token) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-line text-white">
+        <p className="text-white/80 text-sm">{loading ? 'กำลังเชื่อมบัญชี...' : 'กำลังเปิดลิงก์เชิญ...'}</p>
+        {error && (
+          <div className="mt-4 text-center space-y-3">
+            <p className="text-sm text-white/90">{error}</p>
+            <Button className="bg-white text-line" onClick={link}>
+              ลองอีกครั้ง
+            </Button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-line">
-      <Card className="w-full max-w-sm text-center">
-        <div className="w-16 h-16 rounded-2xl bg-line-light flex items-center justify-center mx-auto mb-4">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#06C755" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-line text-white">
+      <div className="w-full max-w-xs text-center">
+        <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-5">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 12l9-9 9 9M5 10v10h14V10" />
           </svg>
         </div>
-        <h1 className="text-xl font-bold mb-1">ยืนยันการเป็นผู้เช่า</h1>
-        <p className="text-gray-500 text-sm mb-5">
-          กดปุ่มด้านล่างเพื่อผูกบัญชี LINE ของคุณกับห้องพัก คุณจะได้รับใบแจ้งหนี้และข่าวสารผ่าน LINE
+        <h1 className="text-2xl font-bold">PropFlow</h1>
+        <p className="text-white/80 text-sm mt-3 leading-relaxed">
+          ยังไม่ได้ผูกห้องพัก
+          <br />
+          กรุณาเปิดลิงก์คำเชิญจากเจ้าของห้อง
         </p>
-        {error && <p className="text-danger text-sm mb-3">{error}</p>}
-        <Button onClick={link} disabled={loading}>
-          {loading ? 'กำลังผูกบัญชี...' : 'ยืนยันและผูก LINE'}
-        </Button>
-        <Link to="/link-admin" className="block text-xs text-gray-400 mt-4">
-          เป็นผู้ดูแลระบบ? ลงทะเบียนที่นี่
-        </Link>
-      </Card>
+      </div>
     </div>
   )
 }

@@ -29,15 +29,20 @@ const richMenuObject: RichMenu = {
   ],
 }
 
+/** Admin + Owner share this menu (เมนูผู้ดูแล) — 2×2 including community. */
+const ADMIN_MENU_NAME = 'PropFlow Admin Menu v2'
+const ADMIN_MENU_ALIASES = ['PropFlow Admin Menu', ADMIN_MENU_NAME]
+
 const adminRichMenuObject: RichMenu = {
   size: { width: 2500, height: 843 },
   selected: true,
-  name: 'PropFlow Admin Menu',
+  name: ADMIN_MENU_NAME,
   chatBarText: 'เมนูผู้ดูแล',
   areas: [
-    { bounds: { x: 0, y: 0, width: 833, height: 843 }, action: { type: 'uri', uri: liffAdmin('/admin/portfolio') } },
-    { bounds: { x: 833, y: 0, width: 834, height: 843 }, action: { type: 'uri', uri: liffAdmin('/admin/billing') } },
-    { bounds: { x: 1667, y: 0, width: 833, height: 843 }, action: { type: 'uri', uri: liffAdmin('/admin/settings') } },
+    { bounds: { x: 0, y: 0, width: 1250, height: 421 }, action: { type: 'uri', uri: liffAdmin('/admin/portfolio') } },
+    { bounds: { x: 1250, y: 0, width: 1250, height: 421 }, action: { type: 'uri', uri: liffAdmin('/admin/billing') } },
+    { bounds: { x: 0, y: 421, width: 1250, height: 422 }, action: { type: 'uri', uri: liffAdmin('/community') } },
+    { bounds: { x: 1250, y: 421, width: 1250, height: 422 }, action: { type: 'uri', uri: liffAdmin('/admin/settings') } },
   ],
 }
 
@@ -106,7 +111,11 @@ export async function setupRichMenu(): Promise<{ ok: boolean; richMenuId?: strin
     // remove old menus with the same names to avoid duplicates
     const list = await lineClient.getRichMenuList()
     for (const m of list) {
-      if (m.name === richMenuObject.name || m.name === adminRichMenuObject.name || TENANT_MENU_ALIASES.includes(m.name)) {
+      if (
+        m.name === richMenuObject.name ||
+        TENANT_MENU_ALIASES.includes(m.name) ||
+        ADMIN_MENU_ALIASES.includes(m.name)
+      ) {
         try {
           await lineClient.deleteRichMenu(m.richMenuId)
         } catch {
@@ -140,7 +149,11 @@ export async function teardownRichMenu(): Promise<{ ok: boolean; error?: string 
     }
     const list = await lineClient.getRichMenuList()
     for (const m of list) {
-      if (m.name === richMenuObject.name || m.name === adminRichMenuObject.name || TENANT_MENU_ALIASES.includes(m.name)) {
+      if (
+        m.name === richMenuObject.name ||
+        TENANT_MENU_ALIASES.includes(m.name) ||
+        ADMIN_MENU_ALIASES.includes(m.name)
+      ) {
         await lineClient.deleteRichMenu(m.richMenuId)
       }
     }

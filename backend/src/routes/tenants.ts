@@ -8,7 +8,7 @@ import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere } from '../lib/scope'
 import { sendSms } from '../services/smsService'
 import { setTenantRichMenu } from '../lib/line/richMenu'
-import { pushInvite, pushLinked } from '../lib/line/lineService'
+import { pushInvite, pushLinked, pushText, pushEntry } from '../lib/line/lineService'
 import { linkedTenant } from '../services/tenantLifecycle'
 
 const router = Router()
@@ -125,6 +125,17 @@ router.post('/link', authMiddleware, async (req, res) => {
   await prisma.unit.update({ where: { id: unit.id }, data: { status: 'OCCUPIED' } })
 
   await setTenantRichMenu(lineUserId)
+
+  // OA greets the tenant right after linking (so one invite link = chat + connect)
+  try {
+    await pushText(
+      lineUserId,
+      `สวัสดีครับ คุณ${updated.name} 🏠\nผูกห้อง ${unit.property.name} ห้อง ${unit.roomNumber} สำเร็จแล้ว\nใช้เมนูด้านล่างเพื่อชำระเงิน ดูเอกสาร หรือแจ้งซ่อมได้เลย`
+    )
+    await pushEntry(lineUserId, 'แตะเพื่อเปิดหน้าหลักผู้เช่า', 'เปิดหน้าหลัก')
+  } catch (err) {
+    console.error('[LINE] tenant welcome after link failed', err)
+  }
 
   // Notify the property manager (owner if present, otherwise the admin)
   const managerLineId = unit.property.owner?.lineUserId || unit.property.admin.lineUserId

@@ -76,4 +76,39 @@ router.post('/richmenu/remove', ...adminGuard, async (_req, res) => {
   res.json(result)
 })
 
+/**
+ * POST /api/admin/factory-reset
+ * Wipe all business data; keep Admin (+ NotifSettings) for a fresh test.
+ * Body: { confirm: "RESET" }
+ */
+router.post('/factory-reset', ...adminGuard, async (req, res) => {
+  if (req.body?.confirm !== 'RESET') {
+    return res.status(400).json({ error: 'ส่ง confirm: "RESET" เพื่อยืนยัน' })
+  }
+  const kept = await prisma.admin.count()
+  await prisma.$executeRawUnsafe(`
+    TRUNCATE TABLE
+      "CommunityComment",
+      "CommunityPost",
+      "ChatMessage",
+      "MaintenanceMessage",
+      "Maintenance",
+      "MeterReading",
+      "Payment",
+      "SubscriptionPayment",
+      "InvoiceItem",
+      "Invoice",
+      "MoveOut",
+      "Contract",
+      "Tenant",
+      "RecurringFee",
+      "Unit",
+      "DocumentTemplate",
+      "Property",
+      "Owner"
+    RESTART IDENTITY CASCADE
+  `)
+  res.json({ ok: true, keptAdmins: kept })
+})
+
 export default router

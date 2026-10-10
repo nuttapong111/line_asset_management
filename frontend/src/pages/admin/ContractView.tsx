@@ -164,15 +164,13 @@ export default function ContractView() {
         )}
 
         <Card>
-          <h3 className="font-semibold mb-2">ขั้นตอนลงนามสัญญา</h3>
-          <ol className="text-sm text-gray-600 space-y-2 mb-4 list-decimal list-inside">
-            <li>ปริ้น PDF สัญญาจากระบบ (ปุ่มด้านล่าง)</li>
-            <li>ให้ผู้เช่าและเจ้าของลงนามบนเอกสารจริง</li>
-            <li>ถ่ายรูปหรือสแกนแล้วแนบกลับเป็นหลักฐานในระบบ</li>
-          </ol>
+          <h3 className="font-semibold mb-1">ลงนามสัญญา</h3>
+          <p className="text-xs text-gray-400 mb-3">
+            ยังไม่มี e-sign ในระบบ — ปริ้นเซ็นแล้วแนบไฟล์กลับเป็นหลักฐาน
+          </p>
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <Button variant="secondary" onClick={() => viewPdf()}>ดู PDF แบบร่าง</Button>
-            <Button variant="secondary" onClick={() => viewPdf(true)}>ปริ้น PDF</Button>
+            <Button variant="secondary" onClick={() => viewPdf()}>ดู PDF</Button>
+            <Button variant="secondary" onClick={() => viewPdf(true)}>ปริ้น</Button>
           </div>
 
           {hasSigned ? (
