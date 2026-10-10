@@ -62,7 +62,9 @@ router.get('/', async (req, res) => {
       (acc, u) => acc + u.invoices.filter((i) => i.status === 'OVERDUE').length,
       0
     )
-    const monthlyRevenue = p.units.reduce((acc, u) => acc + Number(u.rentPrice), 0)
+    const monthlyRevenue = p.units
+      .filter((u) => u.status === 'OCCUPIED')
+      .reduce((acc, u) => acc + Number(u.rentPrice), 0)
     return {
       id: p.id,
       name: p.name,

@@ -45,6 +45,7 @@ export default function AddUnit() {
             <Input label="ชั้น" type="number" value={form.floor} onChange={set('floor')} />
           </div>
           <Input label="ราคาเช่า/เดือน *" type="number" value={form.rentPrice} onChange={set('rentPrice')} />
+          <p className="text-[11px] text-gray-400 -mt-2">ใช้เป็นค่าเริ่มต้นตอนตั้งสัญญา — แก้ได้อีกครั้งตอนเพิ่มผู้เช่า</p>
           <div className="grid grid-cols-2 gap-3">
             <Input label="ค่าไฟ/หน่วย" type="number" value={form.electricRate} onChange={set('electricRate')} />
             <Input label="ค่าน้ำ/หน่วย" type="number" value={form.waterRate} onChange={set('waterRate')} />

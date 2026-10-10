@@ -303,7 +303,7 @@ async function maybeSendCatchUpRentReminder(invoiceId: string): Promise<void> {
   })
 }
 
-async function applyDraftToInvoice(invoiceId: string, draft: InvoiceDraft) {
+export async function applyDraftToInvoice(invoiceId: string, draft: InvoiceDraft) {
   const extraItems = draft.extraItems ?? []
   const extraAmount = extraItems.reduce((a, i) => a + i.amount, 0)
   return prisma.$transaction(async (tx) => {

@@ -52,20 +52,10 @@ router.post('/', ...managerGuard, async (req, res) => {
     })
   }
 
-  // Legacy create — prefer POST /tenants/onboard (tenant + contract together).
-  // Does NOT mark OCCUPIED until a contract exists (avoids orphan tenants / ฿0 bills).
-  const tenant = await prisma.tenant.create({
-    data: {
-      name: parse.data.name,
-      phone: parse.data.phone,
-      lineId: parse.data.lineId,
-      idCardNumber: parse.data.idCardNumber,
-      unitId: parse.data.unitId,
-      startDate: new Date(parse.data.startDate),
-      endDate: parse.data.endDate ? new Date(parse.data.endDate) : null,
-    },
+  // Legacy endpoint — UI uses POST /tenants/onboard. Kept only for resume-contract orphans.
+  return res.status(400).json({
+    error: 'กรุณาสร้างผู้เช่าพร้อมสัญญาผ่านขั้นตอนเพิ่มผู้เช่า (onboard) เพื่อไม่ให้เกิดห้องไม่มีสัญญา',
   })
-  res.status(201).json(tenant)
 })
 
 const onboardSchema = z.object({

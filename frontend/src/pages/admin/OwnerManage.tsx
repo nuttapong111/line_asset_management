@@ -123,10 +123,17 @@ export default function OwnerManage() {
   async function resetPassword(o: Owner) {
     if (!confirm(`รีเซ็ตรหัสผ่านของ ${o.name}?`)) return
     const { data } = await api.post(`/owners/${o.id}/reset-password`)
+    let inviteUrl = o.inviteUrl
+    try {
+      const link = await api.get(`/owners/${o.id}/invite-link`)
+      inviteUrl = link.data.inviteUrl
+    } catch {
+      /* keep prior url */
+    }
     setCreatedCreds({
       username: data.username,
       password: data.temporaryPassword,
-      inviteUrl: o.inviteUrl,
+      inviteUrl,
       name: o.name,
     })
   }
@@ -159,7 +166,7 @@ export default function OwnerManage() {
 
   return (
     <div className="pb-20">
-      <TopBar title="จัดการเจ้าของ" back={false} />
+      <TopBar title="จัดการเจ้าของ" />
       <div className="p-4 space-y-3">
         {createdCreds && (
           <Card className="space-y-3 text-center">

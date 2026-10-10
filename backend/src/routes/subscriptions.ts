@@ -31,9 +31,9 @@ router.get('/me', requireRole('OWNER'), async (req, res) => {
   res.json(summary)
 })
 
-// POST /api/subscriptions/me/bill — ensure open bill
+// POST /api/subscriptions/me/bill — ensure open bill (force create even mid-trial if owner chooses to pay)
 router.post('/me/bill', requireRole('OWNER'), async (req, res) => {
-  const bill = await ensureSubscriptionBill(req.user!.ownerId!)
+  const bill = await ensureSubscriptionBill(req.user!.ownerId!, { force: true })
   if (!bill) return res.status(400).json({ error: 'บัญชีถาวรไม่ต้องชำระค่าบริการ' })
   res.json(bill)
 })

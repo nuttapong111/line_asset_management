@@ -43,9 +43,10 @@ export default function BillingOverview() {
     api.get('/invoices').then((r) => setInvoices(r.data))
   }, [])
 
-  const collected = invoices.filter((i) => i.status === 'PAID').reduce((a, i) => a + Number(i.total), 0)
-  const pending = invoices.filter((i) => ['PENDING', 'SLIP_UPLOADED'].includes(i.status)).reduce((a, i) => a + Number(i.total), 0)
-  const overdue = invoices.filter((i) => i.status === 'OVERDUE').reduce((a, i) => a + Number(i.total), 0)
+  const activeInvoices = invoices.filter((i) => i.status !== 'CANCELLED')
+  const collected = activeInvoices.filter((i) => i.status === 'PAID').reduce((a, i) => a + Number(i.total), 0)
+  const pending = activeInvoices.filter((i) => ['PENDING', 'SLIP_UPLOADED'].includes(i.status)).reduce((a, i) => a + Number(i.total), 0)
+  const overdue = activeInvoices.filter((i) => i.status === 'OVERDUE').reduce((a, i) => a + Number(i.total), 0)
 
   function openInvoice(inv: Invoice) {
     if (inv.payment && (inv.status === 'SLIP_UPLOADED' || inv.payment.status === 'UNDER_REVIEW')) {
@@ -68,7 +69,7 @@ export default function BillingOverview() {
         </div>
 
         <div className="space-y-2">
-          {invoices.map((inv) => (
+          {activeInvoices.map((inv) => (
             <Card key={inv.id} className="flex items-center justify-between py-3" onClick={() => openInvoice(inv)}>
               <div>
                 <div className="font-medium">ห้อง {inv.unit.roomNumber}</div>
@@ -77,7 +78,7 @@ export default function BillingOverview() {
               <Badge kind={statusKind[inv.status] || 'pending'}>{statusText[inv.status] || inv.status}</Badge>
             </Card>
           ))}
-          {invoices.length === 0 && <p className="text-center text-gray-400 py-8">ยังไม่มีใบแจ้งหนี้</p>}
+          {activeInvoices.length === 0 && <p className="text-center text-gray-400 py-8">ยังไม่มีใบแจ้งหนี้</p>}
         </div>
 
         <button onClick={() => nav('/admin/invoice-builder')} className="w-full border-2 border-dashed border-gray-300 rounded-2xl py-4 text-gray-500 font-medium">

@@ -177,8 +177,12 @@ async function nextBillNo(): Promise<string> {
   return `SUB-${year}-${String(count + 1).padStart(5, '0')}`
 }
 
-/** Open bill for renewal (create or reuse pending/rejected). Permanent owners never get bills. */
-export async function ensureSubscriptionBill(ownerId: string) {
+/**
+ * Open bill for renewal (create or reuse pending/rejected).
+ * Permanent owners never get bills.
+ * By default does NOT create during active trial / far-from-expiry — pass force to create now.
+ */
+export async function ensureSubscriptionBill(ownerId: string, opts?: { force?: boolean }) {
   const owner = await prisma.owner.findUnique({ where: { id: ownerId } })
   if (!owner || owner.plan === 'PERMANENT') return null
 
@@ -190,10 +194,16 @@ export async function ensureSubscriptionBill(ownerId: string) {
     orderBy: { createdAt: 'desc' },
   })
   if (open && open.status !== 'REJECTED') return open
-  // Rejected → allow new bill
-  if (open?.status === 'REJECTED') {
-    /* fall through to create */
-  }
+
+  const daysLeft = daysUntil(owner.expiresAt)
+  const remindHorizon = Math.max(7, ...(env.SUBSCRIPTION_REMIND_DAYS.length ? env.SUBSCRIPTION_REMIND_DAYS : [7]))
+  const needsBill =
+    opts?.force ||
+    owner.subscriptionStatus === 'GRACE' ||
+    owner.subscriptionStatus === 'SUSPENDED' ||
+    (daysLeft !== null && daysLeft <= remindHorizon)
+
+  if (!needsBill) return null
 
   const periodDays =
     owner.plan === 'YEARLY' ? env.SUBSCRIPTION_YEARLY_DAYS : env.SUBSCRIPTION_PERIOD_DAYS

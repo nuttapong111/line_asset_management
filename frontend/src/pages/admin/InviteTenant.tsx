@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/axios'
 import { Button, Badge } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
+import { Stepper } from './_Stepper'
 
 interface Tenant {
   id: string
@@ -93,8 +94,11 @@ export default function InviteTenant() {
   return (
     <div>
       <TopBar title="ลิงก์เชิญ" />
-      <div className="p-6 flex flex-col min-h-[70vh]">
-        <div className="flex-1 flex flex-col items-center text-center pt-6">
+      <div className="p-4">
+        <Stepper step={3} />
+      </div>
+      <div className="px-6 pb-6 flex flex-col min-h-[60vh]">
+        <div className="flex-1 flex flex-col items-center text-center pt-4">
           <Badge kind="pending">รอผูก LINE</Badge>
           <h2 className="text-xl font-semibold mt-4">{tenant.name}</h2>
           <p className="text-sm text-gray-500 mt-1">

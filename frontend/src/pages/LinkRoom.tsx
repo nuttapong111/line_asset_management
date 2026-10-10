@@ -28,8 +28,12 @@ export default function LinkRoom() {
     setError(undefined)
     try {
       const { data } = await api.post('/tenants/link', { inviteToken: token })
-      if (data.token && user) {
-        setAuth(data.token, 'TENANT', user, { unitId: data.tenant?.unitId })
+      if (data.token) {
+        const authUser = user || {
+          lineUserId: data.tenant?.lineUserId || '',
+          name: data.tenant?.name || 'ผู้เช่า',
+        }
+        setAuth(data.token, 'TENANT', authUser, { unitId: data.tenant?.unitId })
       }
       nav('/tenant/home', { replace: true })
     } catch (e: any) {

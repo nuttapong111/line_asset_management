@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/axios'
 import { Button, Card } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
@@ -14,6 +14,7 @@ interface Unit {
 
 export default function MeterRecording() {
   const { id } = useParams()
+  const nav = useNavigate()
   const [units, setUnits] = useState<Unit[]>([])
   const [unitId, setUnitId] = useState('')
   const [prevElec, setPrevElec] = useState('0')
@@ -21,6 +22,8 @@ export default function MeterRecording() {
   const [prevWater, setPrevWater] = useState('0')
   const [currWater, setCurrWater] = useState('')
   const [status, setStatus] = useState<string>()
+  const [savedMonth, setSavedMonth] = useState<{ month: number; year: number }>()
+  const [billing, setBilling] = useState(false)
 
   useEffect(() => {
     api.get(`/properties/${id}/units`).then((r) => {
@@ -31,6 +34,7 @@ export default function MeterRecording() {
 
   useEffect(() => {
     if (!unitId) return
+    setSavedMonth(undefined)
     api.get(`/meters/${unitId}/latest`).then((r) => {
       if (r.data) {
         setPrevElec(String(r.data.currElec))
@@ -54,21 +58,45 @@ export default function MeterRecording() {
       return
     }
     const now = new Date()
+    const month = now.getMonth() + 1
+    const year = now.getFullYear()
     try {
       await api.post('/meters', {
         unitId,
-        month: now.getMonth() + 1,
-        year: now.getFullYear(),
+        month,
+        year,
         prevElec: Number(prevElec),
         currElec: Number(currElec),
         prevWater: Number(prevWater),
         currWater: Number(currWater),
       })
-      setStatus('บันทึกมิเตอร์สำเร็จ ✓')
+      setStatus('บันทึกมิเตอร์สำเร็จ')
+      setSavedMonth({ month, year })
       setCurrElec('')
       setCurrWater('')
     } catch (e: any) {
       setStatus(e.response?.data?.error || 'บันทึกไม่สำเร็จ')
+      setSavedMonth(undefined)
+    }
+  }
+
+  async function createUtilityBill() {
+    if (!savedMonth || !unitId) return
+    setBilling(true)
+    try {
+      const { data: inv } = await api.post('/invoices', {
+        unitId,
+        month: savedMonth.month,
+        year: savedMonth.year,
+        type: 'UTILITY',
+      })
+      await api.post(`/invoices/${inv.id}/send`)
+      setStatus('สร้างและส่งบิลค่าน้ำ/ค่าไฟแล้ว')
+      setSavedMonth(undefined)
+    } catch (e: any) {
+      setStatus(e.response?.data?.error || 'สร้างบิลไม่สำเร็จ — ลองที่หน้าสร้างใบแจ้งหนี้')
+    } finally {
+      setBilling(false)
     }
   }
 
@@ -80,32 +108,36 @@ export default function MeterRecording() {
           <label className="block text-sm font-medium text-gray-600 mb-1">เลือกห้อง</label>
           <select value={unitId} onChange={(e) => setUnitId(e.target.value)} className="w-full rounded-xl border border-gray-300 px-3 py-2.5">
             {units.map((u) => (
-              <option key={u.id} value={u.id}>ห้อง {u.roomNumber}</option>
+              <option key={u.id} value={u.id}>
+                ห้อง {u.roomNumber}
+              </option>
             ))}
           </select>
         </Card>
 
         <div className="grid grid-cols-2 gap-3">
-          <MeterBox
-            title="⚡ ไฟฟ้า"
-            prev={prevElec}
-            curr={currElec}
-            onCurr={setCurrElec}
-            used={usedElec}
-            cost={elecCost}
-          />
-          <MeterBox
-            title="💧 น้ำ"
-            prev={prevWater}
-            curr={currWater}
-            onCurr={setCurrWater}
-            used={usedWater}
-            cost={waterCost}
-          />
+          <MeterBox title="ไฟฟ้า" prev={prevElec} curr={currElec} onCurr={setCurrElec} used={usedElec} cost={elecCost} />
+          <MeterBox title="น้ำ" prev={prevWater} curr={currWater} onCurr={setCurrWater} used={usedWater} cost={waterCost} />
         </div>
 
         {status && <p className="text-center text-sm text-gray-600">{status}</p>}
         <Button onClick={save}>บันทึกมิเตอร์</Button>
+
+        {savedMonth && (
+          <Card className="space-y-2">
+            <p className="text-sm text-gray-600">บันทึกแล้ว — สร้างบิลค่าน้ำ/ค่าไฟเดือนนี้ได้เลย</p>
+            <Button onClick={createUtilityBill} disabled={billing}>
+              {billing ? 'กำลังสร้างบิล...' : 'สร้างและส่งบิลค่าน้ำ/ไฟ'}
+            </Button>
+            <button
+              type="button"
+              className="w-full text-sm text-gray-400 py-1"
+              onClick={() => nav('/admin/invoice-builder')}
+            >
+              หรือไปหน้าสร้างบิลรวม
+            </button>
+          </Card>
+        )}
       </div>
     </div>
   )

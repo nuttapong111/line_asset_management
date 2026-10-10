@@ -189,7 +189,7 @@ export default function DocumentTemplates() {
           <p className="text-xs text-amber-700 text-center">เลือก Owner ก่อนเพื่อเพิ่มเทมเพลต</p>
         )}
       </div>
-      <BottomNav role="ADMIN" />
+      <BottomNav role={role === 'OWNER' ? 'OWNER' : 'ADMIN'} />
     </div>
   )
 }

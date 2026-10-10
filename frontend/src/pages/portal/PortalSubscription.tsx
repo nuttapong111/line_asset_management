@@ -58,6 +58,19 @@ export default function PortalSubscription() {
     load()
   }, [])
 
+  async function createBill() {
+    setUploading(true)
+    setError(undefined)
+    try {
+      await api.post('/subscriptions/me/bill')
+      load()
+    } catch (e: any) {
+      setError(e.response?.data?.error || 'สร้างบิลไม่สำเร็จ')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   async function onUpload(file: File) {
     if (!data?.bill) return
     setUploading(true)
@@ -180,7 +193,17 @@ export default function PortalSubscription() {
           {msg && <p className="text-sm text-line text-center">{msg}</p>}
           {error && <p className="text-sm text-danger text-center">{error}</p>}
         </section>
-      ) : null}
+      ) : (
+        <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
+          <p className="text-sm text-gray-600">
+            ยังไม่มีบิลค่าบริการ — ระบบจะออกบิลเมื่อใกล้หมดอายุหรือหมดช่วงทดลองใช้
+          </p>
+          <Button variant="secondary" onClick={createBill} disabled={uploading}>
+            {uploading ? 'กำลังสร้าง...' : 'สร้างบิลชำระล่วงหน้า'}
+          </Button>
+          {error && <p className="text-sm text-danger text-center">{error}</p>}
+        </section>
+      )}
     </div>
   )
 }

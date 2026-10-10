@@ -8,6 +8,7 @@ import {
   buildRentInvoiceDraft,
   buildUtilityInvoiceDraft,
   createInvoiceFromDraft,
+  applyDraftToInvoice,
   sendInvoiceLine,
   buildAndSendRentForProperty,
   buildAndSendUtilityForProperty,
@@ -77,9 +78,31 @@ router.post('/', requireRole('ADMIN', 'OWNER'), async (req, res) => {
     where: { id: parse.data.unitId, property: propertyWhere(req.user!) },
   })
   if (!unit) return res.status(404).json({ error: 'Unit not found' })
-  const draft = await buildDraft(parse.data.unitId, parse.data.month, parse.data.year, parse.data.type)
-  const invoice = await createInvoiceFromDraft(draft)
-  res.status(201).json(invoice)
+  try {
+    const existing = await prisma.invoice.findFirst({
+      where: {
+        unitId: parse.data.unitId,
+        month: parse.data.month,
+        year: parse.data.year,
+        type: parse.data.type,
+      },
+    })
+    if (existing && !['PENDING', 'OVERDUE', 'CANCELLED'].includes(existing.status)) {
+      return res.status(400).json({ error: 'บิลเดือนนี้มีอยู่แล้วและกำลังชำระ/ชำระแล้ว' })
+    }
+    const draft = await buildDraft(parse.data.unitId, parse.data.month, parse.data.year, parse.data.type)
+    if (existing) {
+      const invoice = await applyDraftToInvoice(existing.id, draft)
+      if (existing.status === 'CANCELLED' || existing.status === 'OVERDUE') {
+        await prisma.invoice.update({ where: { id: invoice.id }, data: { status: 'PENDING' } })
+      }
+      return res.status(200).json(invoice)
+    }
+    const invoice = await createInvoiceFromDraft(draft)
+    res.status(201).json(invoice)
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message || 'สร้างบิลไม่สำเร็จ' })
+  }
 })
 
 // POST /api/invoices/build-preview (manager)

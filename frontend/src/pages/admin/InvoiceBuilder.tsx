@@ -18,9 +18,10 @@ export default function InvoiceBuilder() {
   const [units, setUnits] = useState<Unit[]>([])
   const [previews, setPreviews] = useState<Record<string, Preview>>({})
   const [month, setMonth] = useState(now.getMonth() + 1)
-  const [year] = useState(now.getFullYear())
+  const [year, setYear] = useState(now.getFullYear())
   const [result, setResult] = useState<{ sent: number; failed: number } | null>(null)
   const [sending, setSending] = useState(false)
+  const yearOptions = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1]
 
   useEffect(() => {
     api.get('/properties').then((r) => {
@@ -88,11 +89,27 @@ export default function InvoiceBuilder() {
               {properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">เดือน</label>
-            <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="w-full rounded-xl border border-gray-300 px-3 py-2.5">
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{thaiMonth(m)} {year}</option>)}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">เดือน</label>
+              <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="w-full rounded-xl border border-gray-300 px-3 py-2.5">
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>
+                    {thaiMonth(m)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">ปี</label>
+              <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="w-full rounded-xl border border-gray-300 px-3 py-2.5">
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </Card>
 
