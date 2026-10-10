@@ -70,7 +70,8 @@ export async function buildRentInvoiceDraft(unitId: string, month: number, year:
   const contract = await activeContract(unitId)
   if (!contract) throw new Error('ไม่มีสัญญาเช่าที่ใช้งานอยู่')
 
-  const rentAmount = Number(unit.rentPrice)
+  // Prefer contract rent (source of truth); fall back to unit price
+  const rentAmount = Number(contract.rentAmount) || Number(unit.rentPrice)
   const commonFee = Number(unit.commonFee)
   const fees = await prisma.recurringFee.findMany({ where: { unitId } })
   const extraItems = fees.map((f) => ({ label: f.label, amount: Number(f.amount) }))

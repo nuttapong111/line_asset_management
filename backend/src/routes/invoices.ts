@@ -90,8 +90,12 @@ router.post('/build-preview', requireRole('ADMIN', 'OWNER'), async (req, res) =>
     where: { id: parse.data.unitId, property: propertyWhere(req.user!) },
   })
   if (!unit) return res.status(404).json({ error: 'Unit not found' })
-  const draft = await buildDraft(parse.data.unitId, parse.data.month, parse.data.year, parse.data.type)
-  res.json(draft)
+  try {
+    const draft = await buildDraft(parse.data.unitId, parse.data.month, parse.data.year, parse.data.type)
+    res.json(draft)
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message || 'สร้างตัวอย่างบิลไม่สำเร็จ' })
+  }
 })
 
 // POST /api/invoices/:id/send (manager)

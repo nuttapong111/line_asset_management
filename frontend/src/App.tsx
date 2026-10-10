@@ -142,6 +142,7 @@ function LiffApp() {
         <Route path="/admin/property/:id/unit/new" element={<AddUnit />} />
         <Route path="/admin/unit/:unitId" element={<EditUnit />} />
         <Route path="/admin/property/:id/tenant/new" element={<AddTenant />} />
+        <Route path="/admin/unit/:unitId/onboard" element={<ContractSetup />} />
         <Route path="/admin/tenant/:tenantId/contract" element={<ContractSetup />} />
         <Route path="/admin/tenant/:tenantId/invite" element={<InviteTenant />} />
         <Route path="/admin/property/:id/meter" element={<MeterRecording />} />

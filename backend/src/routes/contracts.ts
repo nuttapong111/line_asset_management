@@ -54,18 +54,33 @@ router.post('/', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   })
   if (!unit) return res.status(404).json({ error: 'Unit not found' })
 
-  const contract = await prisma.contract.create({
-    data: {
-      tenantId: parse.data.tenantId,
-      unitId: parse.data.unitId,
-      startDate: new Date(parse.data.startDate),
-      endDate: new Date(parse.data.endDate),
-      rentAmount: parse.data.rentAmount,
-      deposit: parse.data.deposit,
-      lateFeePerDay: parse.data.lateFeePerDay ?? 30,
-      dueDay: parse.data.dueDay ?? 5,
-      terms: parse.data.terms,
-    },
+  const contract = await prisma.$transaction(async (tx) => {
+    const created = await tx.contract.create({
+      data: {
+        tenantId: parse.data.tenantId,
+        unitId: parse.data.unitId,
+        startDate: new Date(parse.data.startDate),
+        endDate: new Date(parse.data.endDate),
+        rentAmount: parse.data.rentAmount,
+        deposit: parse.data.deposit,
+        lateFeePerDay: parse.data.lateFeePerDay ?? 30,
+        dueDay: parse.data.dueDay ?? 5,
+        terms: parse.data.terms,
+      },
+    })
+    await tx.unit.update({
+      where: { id: parse.data.unitId },
+      data: { status: 'OCCUPIED', rentPrice: parse.data.rentAmount },
+    })
+    await tx.tenant.update({
+      where: { id: parse.data.tenantId },
+      data: {
+        startDate: new Date(parse.data.startDate),
+        endDate: new Date(parse.data.endDate),
+        isActive: true,
+      },
+    })
+    return created
   })
   res.status(201).json(contract)
 })

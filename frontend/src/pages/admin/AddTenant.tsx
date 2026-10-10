@@ -1,22 +1,29 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import api from '../../lib/axios'
 import { Button, Card, Input } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
 import { Stepper } from './_Stepper'
 
+export type TenantDraft = {
+  name: string
+  phone: string
+  lineId: string
+  idCardNumber: string
+}
+
+/** Step 1 — draft only (not saved). Tenant is created with the contract in step 2. */
 export default function AddTenant() {
   const nav = useNavigate()
   const [params] = useSearchParams()
   const unitId = params.get('unitId') || ''
-  const [form, setForm] = useState({ name: '', phone: '', lineId: '', idCardNumber: '', startDate: new Date().toISOString().slice(0, 10) })
+  const [form, setForm] = useState<TenantDraft>({ name: '', phone: '', lineId: '', idCardNumber: '' })
   const [error, setError] = useState<string>()
-  const [saving, setSaving] = useState(false)
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value })
+  const set = (k: keyof TenantDraft) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [k]: e.target.value })
 
-  async function next() {
-    if (!form.name || !form.phone) {
+  function next() {
+    if (!form.name.trim() || !form.phone.trim()) {
       setError('กรุณากรอกชื่อและเบอร์โทร')
       return
     }
@@ -24,14 +31,14 @@ export default function AddTenant() {
       setError('ไม่พบห้องที่เลือก')
       return
     }
-    setSaving(true)
-    try {
-      const { data } = await api.post('/tenants', { ...form, unitId })
-      nav(`/admin/tenant/${data.id}/contract?unitId=${unitId}`)
-    } catch (e: any) {
-      setError(e.response?.data?.error || 'บันทึกไม่สำเร็จ')
-      setSaving(false)
-    }
+    nav(`/admin/unit/${unitId}/onboard`, {
+      state: {
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        lineId: form.lineId.trim() || undefined,
+        idCardNumber: form.idCardNumber.trim() || undefined,
+      },
+    })
   }
 
   return (
@@ -40,9 +47,9 @@ export default function AddTenant() {
       <div className="p-4 space-y-4">
         <Stepper step={1} />
         <Card className="space-y-4">
+          <p className="text-xs text-gray-400">ยังไม่บันทึก — กดกลับได้โดยไม่ผูกผู้เช่า</p>
           <Input label="ชื่อ-นามสกุล *" value={form.name} onChange={set('name')} />
           <Input label="เบอร์โทร *" value={form.phone} onChange={set('phone')} placeholder="08xxxxxxxx" />
-          <Input label="วันเริ่มเช่า" type="date" value={form.startDate} onChange={set('startDate')} />
           <details className="text-sm">
             <summary className="text-gray-400 cursor-pointer select-none py-1">ข้อมูลเพิ่มเติม (ไม่บังคับ)</summary>
             <div className="space-y-3 mt-3">
@@ -51,7 +58,7 @@ export default function AddTenant() {
             </div>
           </details>
           {error && <p className="text-danger text-sm">{error}</p>}
-          <Button onClick={next} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'ถัดไป'}</Button>
+          <Button onClick={next}>ถัดไป — ตั้งค่าสัญญา</Button>
         </Card>
       </div>
     </div>

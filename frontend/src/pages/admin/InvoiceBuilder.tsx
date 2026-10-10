@@ -8,7 +8,7 @@ type BillType = 'RENT' | 'UTILITY'
 
 interface Property { id: string; name: string }
 interface Unit { id: string; roomNumber: string; status: string; tenants: { name: string }[] }
-interface Preview { unitId: string; total: number }
+interface Preview { unitId: string; total: number; error?: string }
 
 export default function InvoiceBuilder() {
   const now = new Date()
@@ -39,8 +39,12 @@ export default function InvoiceBuilder() {
         try {
           const { data } = await api.post('/invoices/build-preview', { unitId: u.id, month, year, type: billType })
           map[u.id] = { unitId: u.id, total: data.total }
-        } catch {
-          map[u.id] = { unitId: u.id, total: 0 }
+        } catch (e: any) {
+          map[u.id] = {
+            unitId: u.id,
+            total: 0,
+            error: e.response?.data?.error || (billType === 'RENT' ? 'ไม่มีสัญญา' : 'ยังไม่มีมิเตอร์'),
+          }
         }
       }
       setPreviews(map)
@@ -99,8 +103,13 @@ export default function InvoiceBuilder() {
                 <div className="font-medium">ห้อง {u.roomNumber}</div>
                 <div className="text-xs text-gray-400">{u.tenants[0]?.name || '-'}</div>
               </div>
-              <div className={`font-semibold ${previews[u.id]?.total ? 'text-line' : 'text-gray-300'}`}>
-                {previews[u.id]?.total ? baht(previews[u.id].total) : isRent ? baht(0) : 'ยังไม่มีมิเตอร์'}
+              <div className="text-right">
+                <div className={`font-semibold ${previews[u.id]?.total ? 'text-line' : 'text-gray-300'}`}>
+                  {previews[u.id]?.total ? baht(previews[u.id].total) : baht(0)}
+                </div>
+                {previews[u.id]?.error && (
+                  <div className="text-[10px] text-amber-600 mt-0.5">{previews[u.id].error}</div>
+                )}
               </div>
             </Card>
           ))}

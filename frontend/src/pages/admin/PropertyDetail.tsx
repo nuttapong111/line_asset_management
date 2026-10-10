@@ -96,9 +96,18 @@ export default function PropertyDetail() {
         <div className="space-y-2">
           {units.map((u) => {
             const tenant = u.tenants[0]
+            const hasContract = Boolean(u.contracts[0])
             const overdue = u.invoices[0]?.status === 'OVERDUE'
             const statusColor =
-              u.status === 'OCCUPIED' ? (overdue ? 'bg-danger' : 'bg-line') : u.status === 'MAINTENANCE' ? 'bg-amber' : 'bg-gray-300'
+              u.status === 'OCCUPIED'
+                ? !hasContract
+                  ? 'bg-amber'
+                  : overdue
+                    ? 'bg-danger'
+                    : 'bg-line'
+                : u.status === 'MAINTENANCE'
+                  ? 'bg-amber'
+                  : 'bg-gray-300'
             return (
               <Card key={u.id} className="flex items-center gap-3 py-3">
                 <div
@@ -111,11 +120,18 @@ export default function PropertyDetail() {
                   <div className="font-medium">{tenant ? tenant.name : <span className="text-gray-400">ว่าง</span>}</div>
                   <div className="text-xs text-gray-400">{baht(u.rentPrice)}/เดือน</div>
                 </div>
-                {u.status === 'VACANT' ? (
+                {!tenant ? (
                   <Button variant="ghost" className="w-auto px-3 py-1.5 text-sm" onClick={() => nav(`/admin/property/${id}/tenant/new?unitId=${u.id}`)}>
                     + ผู้เช่า
                   </Button>
-                ) : tenant && !tenant.linkedAt ? (
+                ) : !hasContract ? (
+                  <Button
+                    className="w-auto px-3 py-1.5 text-sm"
+                    onClick={() => nav(`/admin/tenant/${tenant.id}/contract?unitId=${u.id}`)}
+                  >
+                    ตั้งสัญญา
+                  </Button>
+                ) : !tenant.linkedAt ? (
                   <Button
                     className="w-auto px-3 py-1.5 text-sm"
                     onClick={() => nav(`/admin/tenant/${tenant.id}/invite`)}
@@ -124,15 +140,13 @@ export default function PropertyDetail() {
                   </Button>
                 ) : (
                   <div className="flex items-center gap-2">
-                    {u.contracts[0] && (
-                      <Button
-                        variant="ghost"
-                        className="w-auto px-2 py-1 text-xs"
-                        onClick={() => nav(`/admin/contract/${u.contracts[0].id}`)}
-                      >
-                        สัญญา{u.contracts[0].signedAt ? '' : ' · รอลงนาม'}
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      className="w-auto px-2 py-1 text-xs"
+                      onClick={() => nav(`/admin/contract/${u.contracts[0].id}`)}
+                    >
+                      สัญญา{u.contracts[0].signedAt ? '' : ' · รอลงนาม'}
+                    </Button>
                     <Badge kind={overdue ? 'overdue' : 'paid'}>{overdue ? 'ค้างชำระ' : 'ปกติ'}</Badge>
                   </div>
                 )}

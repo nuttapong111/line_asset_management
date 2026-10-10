@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom'
 import api from '../../lib/axios'
 import { Button, Card, Input, Textarea, Chip } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
@@ -11,11 +11,27 @@ const DURATIONS = [
   { label: '2 ปี', months: 24 },
 ]
 
+type Draft = {
+  name?: string
+  phone?: string
+  lineId?: string
+  idCardNumber?: string
+}
+
+/**
+ * Step 2 — create contract.
+ * - New flow: /admin/unit/:unitId/onboard + location.state (tenant draft) → POST /tenants/onboard
+ * - Resume: /admin/tenant/:tenantId/contract?unitId= → POST /contracts (orphan without contract)
+ */
 export default function ContractSetup() {
   const nav = useNavigate()
-  const { tenantId } = useParams()
+  const { tenantId, unitId: unitIdParam } = useParams()
   const [params] = useSearchParams()
-  const unitId = params.get('unitId') || ''
+  const location = useLocation()
+  const draft = (location.state || {}) as Draft
+
+  const unitId = unitIdParam || params.get('unitId') || ''
+  const isOnboard = Boolean(draft.name && draft.phone && unitId && !tenantId)
 
   const today = new Date().toISOString().slice(0, 10)
   const [form, setForm] = useState({
@@ -29,6 +45,19 @@ export default function ContractSetup() {
   })
   const [error, setError] = useState<string>()
   const [saving, setSaving] = useState(false)
+  const [roomLabel, setRoomLabel] = useState('')
+
+  useEffect(() => {
+    if (!unitId) return
+    api.get(`/units/${unitId}`).then((r) => {
+      const u = r.data
+      setRoomLabel(`ห้อง ${u.roomNumber}`)
+      if (!form.rentAmount && u.rentPrice != null) {
+        setForm((f) => ({ ...f, rentAmount: String(Number(u.rentPrice) || '') }))
+      }
+    }).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unitId])
 
   function endDate(): string {
     const d = new Date(form.startDate)
@@ -41,24 +70,68 @@ export default function ContractSetup() {
       setError('กรุณากรอกค่าเช่าและเงินประกัน')
       return
     }
+    if (!unitId) {
+      setError('ไม่พบห้อง')
+      return
+    }
+    if (isOnboard && (!draft.name || !draft.phone)) {
+      setError('ไม่พบข้อมูลผู้เช่า — กลับไปกรอกชื่อ/เบอร์ใหม่')
+      return
+    }
+    if (!isOnboard && !tenantId) {
+      setError('ไม่พบผู้เช่า')
+      return
+    }
+
     setSaving(true)
+    setError(undefined)
     try {
-      await api.post('/contracts', {
-        tenantId,
-        unitId,
-        startDate: form.startDate,
-        endDate: endDate(),
-        rentAmount: Number(form.rentAmount),
-        deposit: Number(form.deposit),
-        dueDay: Number(form.dueDay),
-        lateFeePerDay: Number(form.lateFeePerDay),
-        terms: form.terms || undefined,
-      })
-      nav(`/admin/tenant/${tenantId}/invite`)
+      if (isOnboard) {
+        const { data } = await api.post('/tenants/onboard', {
+          name: draft.name,
+          phone: draft.phone,
+          lineId: draft.lineId,
+          idCardNumber: draft.idCardNumber,
+          unitId,
+          startDate: form.startDate,
+          endDate: endDate(),
+          rentAmount: Number(form.rentAmount),
+          deposit: Number(form.deposit),
+          dueDay: Number(form.dueDay),
+          lateFeePerDay: Number(form.lateFeePerDay),
+          terms: form.terms || undefined,
+        })
+        nav(`/admin/tenant/${data.tenant.id}/invite`, { replace: true })
+      } else {
+        await api.post('/contracts', {
+          tenantId,
+          unitId,
+          startDate: form.startDate,
+          endDate: endDate(),
+          rentAmount: Number(form.rentAmount),
+          deposit: Number(form.deposit),
+          dueDay: Number(form.dueDay),
+          lateFeePerDay: Number(form.lateFeePerDay),
+          terms: form.terms || undefined,
+        })
+        nav(`/admin/tenant/${tenantId}/invite`, { replace: true })
+      }
     } catch (e: any) {
       setError(e.response?.data?.error || 'บันทึกไม่สำเร็จ')
       setSaving(false)
     }
+  }
+
+  if (isOnboard === false && !tenantId && !draft.name) {
+    return (
+      <div>
+        <TopBar title="ตั้งค่าสัญญา" />
+        <div className="p-6 text-center text-sm text-gray-500 space-y-3">
+          <p>ไม่พบข้อมูลผู้เช่า</p>
+          <Button onClick={() => nav(-1)}>กลับ</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -67,7 +140,18 @@ export default function ContractSetup() {
       <div className="p-4 space-y-4">
         <Stepper step={2} />
         <Card className="space-y-4">
-          <Input label="วันเริ่มเช่า" type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+          {(draft.name || roomLabel) && (
+            <div className="text-sm text-gray-600">
+              {draft.name && <div className="font-medium text-gray-800">{draft.name}</div>}
+              {roomLabel && <div className="text-xs text-gray-400">{roomLabel}</div>}
+            </div>
+          )}
+          <Input
+            label="วันเริ่มเช่า *"
+            type="date"
+            value={form.startDate}
+            onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+          />
           <div>
             <span className="block text-sm font-medium text-gray-600 mb-2">ระยะสัญญา</span>
             <div className="flex gap-2">
@@ -80,16 +164,33 @@ export default function ContractSetup() {
             <p className="text-xs text-gray-400 mt-2">สิ้นสุด: {endDate()}</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Input label="ค่าเช่า *" type="number" value={form.rentAmount} onChange={(e) => setForm({ ...form, rentAmount: e.target.value })} />
-            <Input label="เงินประกัน *" type="number" value={form.deposit} onChange={(e) => setForm({ ...form, deposit: e.target.value })} />
+            <Input
+              label="ค่าเช่า/เดือน *"
+              type="number"
+              value={form.rentAmount}
+              onChange={(e) => setForm({ ...form, rentAmount: e.target.value })}
+            />
+            <Input
+              label="เงินประกัน *"
+              type="number"
+              value={form.deposit}
+              onChange={(e) => setForm({ ...form, deposit: e.target.value })}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Input label="วันครบกำหนด" type="number" value={form.dueDay} onChange={(e) => setForm({ ...form, dueDay: e.target.value })} />
-            <Input label="ค่าปรับ/วัน" type="number" value={form.lateFeePerDay} onChange={(e) => setForm({ ...form, lateFeePerDay: e.target.value })} />
+            <Input
+              label="ค่าปรับ/วัน"
+              type="number"
+              value={form.lateFeePerDay}
+              onChange={(e) => setForm({ ...form, lateFeePerDay: e.target.value })}
+            />
           </div>
           <Textarea label="เงื่อนไขเพิ่มเติม" rows={3} value={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.value })} />
           {error && <p className="text-danger text-sm">{error}</p>}
-          <Button onClick={next} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'ถัดไป'}</Button>
+          <Button onClick={next} disabled={saving}>
+            {saving ? 'กำลังบันทึก...' : 'บันทึกและส่งลิงก์เชิญ'}
+          </Button>
         </Card>
       </div>
     </div>

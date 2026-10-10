@@ -52,8 +52,55 @@ router.post('/', ...managerGuard, async (req, res) => {
     })
   }
 
-  const tenant = await prisma.$transaction(async (tx) => {
-    const created = await tx.tenant.create({
+  // Legacy create — prefer POST /tenants/onboard (tenant + contract together).
+  // Does NOT mark OCCUPIED until a contract exists (avoids orphan tenants / ฿0 bills).
+  const tenant = await prisma.tenant.create({
+    data: {
+      name: parse.data.name,
+      phone: parse.data.phone,
+      lineId: parse.data.lineId,
+      idCardNumber: parse.data.idCardNumber,
+      unitId: parse.data.unitId,
+      startDate: new Date(parse.data.startDate),
+      endDate: parse.data.endDate ? new Date(parse.data.endDate) : null,
+    },
+  })
+  res.status(201).json(tenant)
+})
+
+const onboardSchema = z.object({
+  name: z.string().min(1),
+  phone: z.string().min(1),
+  lineId: z.string().optional(),
+  idCardNumber: z.string().optional(),
+  unitId: z.string().min(1),
+  startDate: z.string(),
+  endDate: z.string(),
+  rentAmount: z.number().nonnegative(),
+  deposit: z.number().nonnegative(),
+  lateFeePerDay: z.number().nonnegative().optional(),
+  dueDay: z.number().int().min(1).max(28).optional(),
+  terms: z.string().optional(),
+})
+
+/** POST /api/tenants/onboard — create tenant + contract + occupy unit in one step */
+router.post('/onboard', ...managerGuard, async (req, res) => {
+  const parse = onboardSchema.safeParse(req.body)
+  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+  const unit = await ownsUnit(req.user!, parse.data.unitId)
+  if (!unit) return res.status(404).json({ error: 'Unit not found' })
+
+  const activeCount = await prisma.tenant.count({
+    where: { unitId: parse.data.unitId, isActive: true },
+  })
+  if (activeCount > 0) {
+    return res.status(400).json({
+      error: 'ห้องนี้มีผู้เช่าอยู่แล้ว กรุณายกเลิกสัญญาและปล่อยห้องก่อนเพิ่มผู้เช่าใหม่',
+    })
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const tenant = await tx.tenant.create({
       data: {
         name: parse.data.name,
         phone: parse.data.phone,
@@ -61,13 +108,29 @@ router.post('/', ...managerGuard, async (req, res) => {
         idCardNumber: parse.data.idCardNumber,
         unitId: parse.data.unitId,
         startDate: new Date(parse.data.startDate),
-        endDate: parse.data.endDate ? new Date(parse.data.endDate) : null,
+        endDate: new Date(parse.data.endDate),
       },
     })
-    await tx.unit.update({ where: { id: parse.data.unitId }, data: { status: 'OCCUPIED' } })
-    return created
+    const contract = await tx.contract.create({
+      data: {
+        tenantId: tenant.id,
+        unitId: parse.data.unitId,
+        startDate: new Date(parse.data.startDate),
+        endDate: new Date(parse.data.endDate),
+        rentAmount: parse.data.rentAmount,
+        deposit: parse.data.deposit,
+        lateFeePerDay: parse.data.lateFeePerDay ?? 30,
+        dueDay: parse.data.dueDay ?? 5,
+        terms: parse.data.terms,
+      },
+    })
+    await tx.unit.update({
+      where: { id: parse.data.unitId },
+      data: { status: 'OCCUPIED', rentPrice: parse.data.rentAmount },
+    })
+    return { tenant, contract }
   })
-  res.status(201).json(tenant)
+  res.status(201).json(result)
 })
 
 // GET /api/tenants/:id (manager)
