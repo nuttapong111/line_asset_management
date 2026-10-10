@@ -51,6 +51,7 @@ import PayNow from './pages/tenant/PayNow'
 import CommunityFeed from './pages/community/CommunityFeed'
 import CommunityCompose from './pages/community/CommunityCompose'
 import CommunityDetail from './pages/community/CommunityDetail'
+import { RequireRole } from './components/RequireRole'
 
 function DevRoleSwitcher({ onPick }: { onPick: (r: Role) => void }) {
   if (LIFF_ID) return null
@@ -149,15 +150,43 @@ function LiffApp() {
         <Route path="/admin/slip/:paymentId" element={<SlipReview />} />
         <Route path="/admin/receipt/:paymentId" element={<ReceiptView />} />
         <Route path="/admin/reports" element={<Reports />} />
-        <Route path="/admin/notifications" element={<NotifSettings />} />
         <Route path="/admin/settings" element={<Settings />} />
         <Route path="/admin/contract/:id" element={<AdminContractView />} />
         <Route path="/admin/contract/:id/move-out" element={<MoveOut />} />
         <Route path="/admin/invoice/:id" element={<InvoiceDetail />} />
         <Route path="/admin/maintenance/:id" element={<AdminMaintenanceDetail />} />
-        <Route path="/admin/owners" element={<OwnerManage />} />
-        <Route path="/admin/subscription" element={<SubscriptionPay />} />
-        <Route path="/admin/subscriptions" element={<SubscriptionReview />} />
+        <Route
+          path="/admin/owners"
+          element={
+            <RequireRole allow={['ADMIN']}>
+              <OwnerManage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/subscription"
+          element={
+            <RequireRole allow={['OWNER']}>
+              <SubscriptionPay />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/subscriptions"
+          element={
+            <RequireRole allow={['ADMIN']}>
+              <SubscriptionReview />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <RequireRole allow={['ADMIN']}>
+              <NotifSettings />
+            </RequireRole>
+          }
+        />
         <Route path="/admin/document-templates" element={<DocumentTemplates />} />
         <Route path="/admin/document-templates/new" element={<DocumentTemplateEditor />} />
         <Route path="/admin/document-templates/:id" element={<DocumentTemplateEditor />} />

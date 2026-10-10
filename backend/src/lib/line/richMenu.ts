@@ -14,7 +14,7 @@ const ADMIN_RICHMENU_IMAGE = path.resolve(process.cwd(), 'assets', 'richmenu-adm
 const TENANT_MENU_NAME = 'PropFlow Tenant Menu v2'
 const TENANT_MENU_ALIASES = ['PropFlow Tenant Menu', TENANT_MENU_NAME]
 
-const OWNER_MENU_NAME = 'PropFlow Owner Menu v3'
+const OWNER_MENU_NAME = 'PropFlow Owner Menu v4'
 const OWNER_MENU_ALIASES = ['PropFlow Admin Menu', 'PropFlow Admin Menu v2', OWNER_MENU_NAME]
 
 const ADMIN_MENU_NAME = 'PropFlow Platform Admin Menu v3'
@@ -40,7 +40,7 @@ const ownerRichMenuObject: RichMenu = {
   size: { width: 2500, height: 843 },
   selected: true,
   name: OWNER_MENU_NAME,
-  chatBarText: 'เมนูผู้ดูแล',
+  chatBarText: 'เมนูเจ้าของ',
   areas: [
     { bounds: { x: 0, y: 0, width: 1250, height: 421 }, action: { type: 'uri', uri: liffAdmin('/admin/portfolio') } },
     { bounds: { x: 1250, y: 0, width: 1250, height: 421 }, action: { type: 'uri', uri: liffAdmin('/admin/billing') } },

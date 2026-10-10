@@ -6,7 +6,7 @@ import PortalSubscriptionsAdmin from '../portal/PortalSubscriptionsAdmin'
 export default function SubscriptionReview() {
   return (
     <div className="pb-20">
-      <TopBar title="บิลค่าบริการ Owner" />
+      <TopBar title="บิลค่าบริการ Owner" back={false} />
       <div className="p-4">
         <PortalSubscriptionsAdmin />
       </div>

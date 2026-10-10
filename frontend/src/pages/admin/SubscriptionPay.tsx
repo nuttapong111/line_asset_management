@@ -2,7 +2,7 @@ import { TopBar } from '../../components/layout/TopBar'
 import { BottomNav } from '../../components/layout/BottomNav'
 import PortalSubscription from '../portal/PortalSubscription'
 
-/** LIFF mobile page for owner SaaS payment */
+/** LIFF mobile page for owner SaaS payment (own bill — not admin approval). */
 export default function SubscriptionPay() {
   return (
     <div className="pb-20">
@@ -10,7 +10,7 @@ export default function SubscriptionPay() {
       <div className="p-4">
         <PortalSubscription />
       </div>
-      <BottomNav role="ADMIN" />
+      <BottomNav role="OWNER" />
     </div>
   )
 }

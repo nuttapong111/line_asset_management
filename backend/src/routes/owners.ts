@@ -197,10 +197,26 @@ router.post('/owners/link', authMiddleware, async (req, res) => {
   const lineUserId = req.user?.lineUserId || parse.data.lineUserId
   if (!lineUserId) return res.status(400).json({ error: 'lineUserId required' })
 
+  // Same LINE cannot be both platform Admin and Owner — resolveRole prefers Admin
+  const asAdmin = await prisma.admin.findUnique({ where: { lineUserId } })
+  if (asAdmin) {
+    return res.status(409).json({
+      error:
+        'บัญชี LINE นี้ผูกเป็นผู้ดูแลระบบ (แอดมิน) อยู่แล้ว — ใช้ LINE อื่นสำหรับ Owner หรือปลด LINE จากแอดมินก่อน',
+    })
+  }
+
   const owner = await prisma.owner.findUnique({ where: { inviteToken: parse.data.inviteToken } })
   if (!owner) return res.status(404).json({ error: 'Invalid invite token' })
   if (owner.inviteExpiry && owner.inviteExpiry < new Date()) {
     return res.status(410).json({ error: 'Invite token expired' })
+  }
+
+  const otherOwner = await prisma.owner.findFirst({
+    where: { lineUserId, id: { not: owner.id }, linkedAt: { not: null } },
+  })
+  if (otherOwner) {
+    return res.status(409).json({ error: 'บัญชี LINE นี้ผูกกับเจ้าของคนอื่นอยู่แล้ว' })
   }
 
   const updated = await prisma.owner.update({
@@ -212,7 +228,7 @@ router.post('/owners/link', authMiddleware, async (req, res) => {
   try {
     await pushText(
       lineUserId,
-      `สวัสดีครับ คุณ${updated.name} 👋\nผูกบัญชีเจ้าของสำเร็จแล้ว\nใช้เมนูผู้ดูแลด้านล่างเพื่อจัดการอาคาร บิล และชุมชนลูกบ้าน`
+      `สวัสดีครับ คุณ${updated.name} 👋\nผูกบัญชีเจ้าของสำเร็จแล้ว\nใช้เมนูเจ้าของด้านล่างเพื่อจัดการอาคาร บิลค่าเช่า และชุมชนลูกบ้าน`
     )
     await pushEntry(lineUserId, 'แตะเพื่อเปิดระบบจัดการ', 'เปิดระบบจัดการ')
   } catch (err) {
