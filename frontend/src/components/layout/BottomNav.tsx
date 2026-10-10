@@ -22,10 +22,19 @@ const ICONS = {
   wrench: 'M14 7a4 4 0 01-5 5l-6 6 2 2 6-6a4 4 0 015-5l-2 2-2-2 2-2z',
   docs: 'M7 3h8l4 4v14H7V3zM15 3v4h4',
   community: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
+  users: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
 }
 
-/** Owner + Admin share the same manager menu (includes community / webboard). */
-const managerNav: NavItem[] = [
+/** Platform admin: SaaS ops — owner bills + owner accounts (no property community). */
+const adminNav: NavItem[] = [
+  { label: 'ภาพรวม', path: '/admin/portfolio', icon: <Icon d={ICONS.home} /> },
+  { label: 'ค่าบริการ', path: '/admin/subscriptions', icon: <Icon d={ICONS.bill} /> },
+  { label: 'เจ้าของ', path: '/admin/owners', icon: <Icon d={ICONS.users} /> },
+  { label: 'ตั้งค่า', path: '/admin/settings', icon: <Icon d={ICONS.settings} /> },
+]
+
+/** Property owner: rent billing + tenant community. */
+const ownerNav: NavItem[] = [
   { label: 'ภาพรวม', path: '/admin/portfolio', icon: <Icon d={ICONS.home} /> },
   { label: 'บิล', path: '/admin/billing', icon: <Icon d={ICONS.bill} /> },
   { label: 'ชุมชน', path: '/community', icon: <Icon d={ICONS.community} /> },
@@ -42,7 +51,7 @@ const tenantNav: NavItem[] = [
 export function BottomNav({ role }: { role: 'ADMIN' | 'OWNER' | 'TENANT' }) {
   const nav = useNavigate()
   const loc = useLocation()
-  const items = role === 'TENANT' ? tenantNav : managerNav
+  const items = role === 'TENANT' ? tenantNav : role === 'OWNER' ? ownerNav : adminNav
   return (
     <div className="fixed bottom-0 inset-x-0 z-20 bg-white border-t border-gray-100 grid grid-cols-4 h-16 max-w-md mx-auto">
       {items.map((it) => {

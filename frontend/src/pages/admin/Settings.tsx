@@ -87,19 +87,17 @@ export default function Settings() {
     }
   }
 
-  const items = [
-    { label: 'เทมเพลตเอกสาร', path: '/admin/document-templates' },
-    { label: 'สร้างใบแจ้งหนี้', path: '/admin/invoice-builder' },
-    { label: 'รายงานรายได้', path: '/admin/reports' },
-    ...(!isAdmin ? [{ label: 'ค่าบริการ PropFlow', path: '/admin/subscription' }] : []),
-    ...(isAdmin
-      ? [
-          { label: 'จัดการเจ้าของ', path: '/admin/owners' },
-          { label: 'บิลค่าบริการ Owner', path: '/admin/subscriptions' },
-          { label: 'การแจ้งเตือน', path: '/admin/notifications' },
-        ]
-      : []),
-  ]
+  const items = isAdmin
+    ? [
+        { label: 'การแจ้งเตือน', path: '/admin/notifications' },
+        { label: 'รายงานภาพรวม', path: '/admin/reports' },
+      ]
+    : [
+        { label: 'เทมเพลตเอกสาร', path: '/admin/document-templates' },
+        { label: 'สร้างใบแจ้งหนี้', path: '/admin/invoice-builder' },
+        { label: 'รายงานรายได้', path: '/admin/reports' },
+        { label: 'ค่าบริการ PropFlow', path: '/admin/subscription' },
+      ]
 
   return (
     <div className="pb-20">
@@ -162,7 +160,9 @@ export default function Settings() {
           <>
             <Card>
               <div className="font-medium text-sm mb-1">เมนู LINE OA</div>
-              <p className="text-xs text-gray-400 mb-3">อัปเดตเมนูผู้เช่า + เมนูผู้ดูแล (รวมชุมชน)</p>
+              <p className="text-xs text-gray-400 mb-3">
+                อัปเดตเมนูผู้เช่า + เมนูแอดมิน (ค่าบริการ/เจ้าของ) + เมนู Owner (บิล/ชุมชน)
+              </p>
               <Button variant="secondary" onClick={setupRichMenu} disabled={richLoading}>
                 {richLoading ? 'กำลังอัปเดต...' : 'อัปเดต Rich Menu'}
               </Button>

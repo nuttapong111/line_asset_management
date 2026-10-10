@@ -278,126 +278,165 @@ const out = path.join(ASSETS, 'richmenu.png')
 fs.writeFileSync(out, canvas.toBuffer('image/png'))
 console.log('✅ wrote', out)
 
-// ---- Admin / Owner menu (2×2): ภาพรวม | การเงิน | ชุมชน | ตั้งค่า ----
-{
-  const adminCanvas = createCanvas(W, H)
-  const actx = adminCanvas.getContext('2d')
-  const ACW = W / 2
-  const ACH = H / 2
+// ---- Shared 2×2 drawer for owner / platform-admin menus ----
+function writeManagerMenu(
+  filename: string,
+  cells: { label: string; kind: 'home' | 'money' | 'people' | 'gear' | 'bill' }[]
+) {
+  const c = createCanvas(W, H)
+  const x = c.getContext('2d')
+  const CW2 = W / 2
+  const CH2 = H / 2
 
-  actx.fillStyle = '#FFFFFF'
-  actx.fillRect(0, 0, W, H)
-  actx.strokeStyle = DIVIDER
-  actx.lineWidth = 3
-  actx.beginPath()
-  actx.moveTo(ACW, 24)
-  actx.lineTo(ACW, H - 24)
-  actx.stroke()
-  actx.beginPath()
-  actx.moveTo(40, ACH)
-  actx.lineTo(W - 40, ACH)
-  actx.stroke()
+  x.fillStyle = '#FFFFFF'
+  x.fillRect(0, 0, W, H)
+  x.strokeStyle = DIVIDER
+  x.lineWidth = 3
+  x.beginPath()
+  x.moveTo(CW2, 24)
+  x.lineTo(CW2, H - 24)
+  x.stroke()
+  x.beginPath()
+  x.moveTo(40, CH2)
+  x.lineTo(W - 40, CH2)
+  x.stroke()
 
-  function aStroke(cb: () => void, width = 9) {
-    actx.strokeStyle = GREEN
-    actx.fillStyle = GREEN
-    actx.lineWidth = width
-    actx.lineCap = 'round'
-    actx.lineJoin = 'round'
+  function s(cb: () => void, width = 9) {
+    x.strokeStyle = GREEN
+    x.fillStyle = GREEN
+    x.lineWidth = width
+    x.lineCap = 'round'
+    x.lineJoin = 'round'
     cb()
   }
 
-  const adminDraw: { label: string; icon: (cx: number, cy: number) => void }[] = [
-    {
-      label: 'ภาพรวม',
-      icon: (cx, cy) =>
-        aStroke(() => {
-          actx.beginPath()
-          actx.moveTo(cx, cy - 40)
-          actx.lineTo(cx + 42, cy - 4)
-          actx.lineTo(cx + 42, cy + 38)
-          actx.lineTo(cx - 42, cy + 38)
-          actx.lineTo(cx - 42, cy - 4)
-          actx.closePath()
-          actx.stroke()
-          actx.beginPath()
-          actx.rect(cx - 12, cy + 10, 24, 28)
-          actx.stroke()
-        }),
+  const icons: Record<(typeof cells)[number]['kind'], (cx: number, cy: number) => void> = {
+    home: (cx, cy) =>
+      s(() => {
+        x.beginPath()
+        x.moveTo(cx, cy - 40)
+        x.lineTo(cx + 42, cy - 4)
+        x.lineTo(cx + 42, cy + 38)
+        x.lineTo(cx - 42, cy + 38)
+        x.lineTo(cx - 42, cy - 4)
+        x.closePath()
+        x.stroke()
+        x.beginPath()
+        x.rect(cx - 12, cy + 10, 24, 28)
+        x.stroke()
+      }),
+    money: (cx, cy) => {
+      x.fillStyle = GREEN
+      x.font = 'bold 92px Sarabun'
+      x.textAlign = 'center'
+      x.textBaseline = 'middle'
+      x.fillText('฿', cx, cy + 4)
     },
-    {
-      label: 'การเงิน',
-      icon: (cx, cy) => {
-        actx.fillStyle = GREEN
-        actx.font = 'bold 92px Sarabun'
-        actx.textAlign = 'center'
-        actx.textBaseline = 'middle'
-        actx.fillText('฿', cx, cy + 4)
-      },
+    bill: (cx, cy) => iconBill(cx, cy),
+    people: (cx, cy) =>
+      s(() => {
+        x.beginPath()
+        x.arc(cx - 16, cy - 18, 16, 0, Math.PI * 2)
+        x.stroke()
+        x.beginPath()
+        x.arc(cx - 16, cy + 38, 28, Math.PI * 1.15, Math.PI * 1.85)
+        x.stroke()
+        x.beginPath()
+        x.arc(cx + 22, cy - 12, 13, 0, Math.PI * 2)
+        x.stroke()
+        x.beginPath()
+        x.arc(cx + 22, cy + 38, 22, Math.PI * 1.1, Math.PI * 1.9)
+        x.stroke()
+      }, 9),
+    gear: (cx, cy) => {
+      const teeth = 8
+      const rOut = 52
+      const rIn = 38
+      s(() => {
+        x.beginPath()
+        for (let i = 0; i < teeth * 2; i++) {
+          const r = i % 2 === 0 ? rOut : rIn
+          const a = (Math.PI / teeth) * i
+          const px = cx + r * Math.cos(a)
+          const py = cy + r * Math.sin(a)
+          if (i === 0) x.moveTo(px, py)
+          else x.lineTo(px, py)
+        }
+        x.closePath()
+        x.stroke()
+        x.beginPath()
+        x.arc(cx, cy, 17, 0, Math.PI * 2)
+        x.stroke()
+      })
     },
-    {
-      label: 'ชุมชน',
-      icon: (cx, cy) =>
-        aStroke(() => {
-          actx.beginPath()
-          actx.arc(cx - 16, cy - 18, 16, 0, Math.PI * 2)
-          actx.stroke()
-          actx.beginPath()
-          actx.arc(cx - 16, cy + 38, 28, Math.PI * 1.15, Math.PI * 1.85)
-          actx.stroke()
-          actx.beginPath()
-          actx.arc(cx + 22, cy - 12, 13, 0, Math.PI * 2)
-          actx.stroke()
-          actx.beginPath()
-          actx.arc(cx + 22, cy + 38, 22, Math.PI * 1.1, Math.PI * 1.9)
-          actx.stroke()
-        }, 9),
-    },
-    {
-      label: 'ตั้งค่า',
-      icon: (cx, cy) => {
-        const teeth = 8
-        const rOut = 52
-        const rIn = 38
-        aStroke(() => {
-          actx.beginPath()
-          for (let i = 0; i < teeth * 2; i++) {
-            const r = i % 2 === 0 ? rOut : rIn
-            const a = (Math.PI / teeth) * i
-            const px = cx + r * Math.cos(a)
-            const py = cy + r * Math.sin(a)
-            if (i === 0) actx.moveTo(px, py)
-            else actx.lineTo(px, py)
-          }
-          actx.closePath()
-          actx.stroke()
-          actx.beginPath()
-          actx.arc(cx, cy, 17, 0, Math.PI * 2)
-          actx.stroke()
-        })
-      },
-    },
-  ]
+  }
 
-  adminDraw.forEach((cell, i) => {
+  // iconBill draws on global ctx — redraw with local context for bill kind
+  function drawBill(cx: number, cy: number) {
+    const w = 76
+    const h = 98
+    const bx = cx - w / 2
+    const by = cy - h / 2
+    const fold = 26
+    s(() => {
+      x.beginPath()
+      x.moveTo(bx, by)
+      x.lineTo(bx + w - fold, by)
+      x.lineTo(bx + w, by + fold)
+      x.lineTo(bx + w, by + h)
+      x.lineTo(bx, by + h)
+      x.closePath()
+      x.stroke()
+      x.beginPath()
+      x.moveTo(bx + w - fold, by)
+      x.lineTo(bx + w - fold, by + fold)
+      x.lineTo(bx + w, by + fold)
+      x.stroke()
+    })
+    s(() => {
+      for (const ly of [0.5, 0.66, 0.82]) {
+        x.beginPath()
+        x.moveTo(bx + 16, by + h * ly)
+        x.lineTo(bx + w - 16, by + h * ly)
+        x.stroke()
+      }
+    }, 7)
+  }
+
+  cells.forEach((cell, i) => {
     const col = i % 2
     const row = Math.floor(i / 2)
-    const cx = col * ACW + ACW / 2
-    const cyTop = row * ACH
-    const iconCy = cyTop + ACH * 0.4
-    actx.fillStyle = GREEN_LIGHT
-    actx.beginPath()
-    actx.arc(cx, iconCy, 78, 0, Math.PI * 2)
-    actx.fill()
-    cell.icon(cx, iconCy)
-    actx.fillStyle = TEXT
-    actx.font = 'bold 50px Sarabun'
-    actx.textAlign = 'center'
-    actx.textBaseline = 'middle'
-    actx.fillText(cell.label, cx, cyTop + ACH * 0.75)
+    const cx = col * CW2 + CW2 / 2
+    const cyTop = row * CH2
+    const iconCy = cyTop + CH2 * 0.4
+    x.fillStyle = GREEN_LIGHT
+    x.beginPath()
+    x.arc(cx, iconCy, 78, 0, Math.PI * 2)
+    x.fill()
+    if (cell.kind === 'bill') drawBill(cx, iconCy)
+    else icons[cell.kind](cx, iconCy)
+    x.fillStyle = TEXT
+    x.font = 'bold 48px Sarabun'
+    x.textAlign = 'center'
+    x.textBaseline = 'middle'
+    x.fillText(cell.label, cx, cyTop + CH2 * 0.75)
   })
 
-  const adminOut = path.join(ASSETS, 'richmenu-admin.png')
-  fs.writeFileSync(adminOut, adminCanvas.toBuffer('image/png'))
-  console.log('✅ wrote', adminOut)
+  const outPath = path.join(ASSETS, filename)
+  fs.writeFileSync(outPath, c.toBuffer('image/png'))
+  console.log('✅ wrote', outPath)
 }
+
+writeManagerMenu('richmenu-owner.png', [
+  { label: 'ภาพรวม', kind: 'home' },
+  { label: 'การเงิน', kind: 'money' },
+  { label: 'ชุมชน', kind: 'people' },
+  { label: 'ตั้งค่า', kind: 'gear' },
+])
+
+writeManagerMenu('richmenu-admin.png', [
+  { label: 'ภาพรวม', kind: 'home' },
+  { label: 'ค่าบริการ', kind: 'money' },
+  { label: 'เจ้าของ', kind: 'people' },
+  { label: 'ตั้งค่า', kind: 'gear' },
+])

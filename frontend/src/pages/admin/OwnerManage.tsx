@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import api from '../../lib/axios'
 import { Button, Card, Badge, Input } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
+import { BottomNav } from '../../components/layout/BottomNav'
 import { OWNER_PLAN_LABEL, OWNER_PLAN_OPTIONS, OwnerPlan } from '../../lib/ownerPlan'
 import { thaiDate } from '../../lib/utils'
 
@@ -157,8 +158,8 @@ export default function OwnerManage() {
   const unassigned = properties.filter((p) => !p.ownerId)
 
   return (
-    <div>
-      <TopBar title="จัดการเจ้าของ" />
+    <div className="pb-20">
+      <TopBar title="จัดการเจ้าของ" back={false} />
       <div className="p-4 space-y-3">
         {createdCreds && (
           <Card className="space-y-3 text-center">
@@ -185,6 +186,9 @@ export default function OwnerManage() {
           <h3 className="font-semibold">เพิ่มเจ้าของ</h3>
           <Input label="ชื่อ" value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น คุณสมชาย" />
           <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="somchai" />
+          <p className="text-[11px] text-gray-400 -mt-1">
+            ห้ามซ้ำกับ Username แอดมิน (ตัวพิมพ์เล็ก/ใหญ่ถือว่าเดียวกัน)
+          </p>
           <label className="block">
             <span className="block text-sm font-medium text-gray-600 mb-1">ประเภทบัญชี</span>
             <select
@@ -285,6 +289,7 @@ export default function OwnerManage() {
           ))}
         </div>
       </div>
+      <BottomNav role="ADMIN" />
     </div>
   )
 }

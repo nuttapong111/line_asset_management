@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { liffEntryUrl } from '../lib/env'
 import { authMiddleware, requireRole, signToken } from '../middleware/auth'
-import { setAdminRichMenu } from '../lib/line/richMenu'
+import { setOwnerRichMenu } from '../lib/line/richMenu'
 import { pushText, pushEntry } from '../lib/line/lineService'
 import {
   generateTempPassword,
@@ -38,10 +38,16 @@ router.post('/owners', ...adminOnly, async (req, res) => {
   }
 
   const username = normalizeUsername(parse.data.username)
-  const taken =
-    (await prisma.admin.findUnique({ where: { username } })) ||
-    (await prisma.owner.findUnique({ where: { username } }))
-  if (taken) return res.status(409).json({ error: 'Username นี้ถูกใช้แล้ว' })
+  const takenByAdmin = await prisma.admin.findUnique({ where: { username } })
+  if (takenByAdmin) {
+    return res.status(409).json({
+      error: `Username "${username}" ถูกใช้โดยบัญชีแอดมินแล้ว — เลือกชื่ออื่น (เช่น ${username}_owner)`,
+    })
+  }
+  const takenByOwner = await prisma.owner.findUnique({ where: { username } })
+  if (takenByOwner) {
+    return res.status(409).json({ error: 'Username นี้มีเจ้าของใช้อยู่แล้ว' })
+  }
 
   const tempPassword = parse.data.password || generateTempPassword()
   const passwordHash = await hashPassword(tempPassword)
@@ -202,7 +208,7 @@ router.post('/owners/link', authMiddleware, async (req, res) => {
     data: { lineUserId, linkedAt: owner.linkedAt ?? new Date() },
   })
   const started = !owner.trialStartedAt ? await activateOwnerTrial(owner.id) : updated
-  await setAdminRichMenu(lineUserId)
+  await setOwnerRichMenu(lineUserId)
   try {
     await pushText(
       lineUserId,

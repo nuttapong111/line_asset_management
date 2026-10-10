@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { env, isMockAuthAllowed } from '../lib/env'
 import { signToken, JwtPayload, authMiddleware, requireRole } from '../middleware/auth'
-import { setAdminRichMenu, setTenantRichMenu } from '../lib/line/richMenu'
+import { setAdminRichMenu, setOwnerRichMenu, setTenantRichMenu } from '../lib/line/richMenu'
 import {
   hashPassword,
   verifyPassword,
@@ -123,7 +123,8 @@ router.post('/line', async (req, res) => {
 
     const lineUserId = profile.userId
     const { payload, name, pictureUrl } = await resolveRole(lineUserId)
-    if (payload.role === 'ADMIN' || payload.role === 'OWNER') setAdminRichMenu(lineUserId).catch(() => {})
+    if (payload.role === 'ADMIN') setAdminRichMenu(lineUserId).catch(() => {})
+    else if (payload.role === 'OWNER') setOwnerRichMenu(lineUserId).catch(() => {})
     else if (payload.role === 'TENANT') setTenantRichMenu(lineUserId).catch(() => {})
 
     let username: string | null = null

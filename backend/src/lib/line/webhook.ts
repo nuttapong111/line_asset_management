@@ -4,7 +4,7 @@ import { liffEntryUrl } from '../env'
 import { receiptPdfLiffUrl } from '../../services/paymentService'
 import { tryAnswerChatQuery, resolveManagerByLineUserId } from '../../services/chatQueryService'
 import { reply, replyQuickMenu, replyChatAnswer, pushText, buildEntryMessage } from './lineService'
-import { setTenantRichMenu, setAdminRichMenu } from './richMenu'
+import { setTenantRichMenu, setAdminRichMenu, setOwnerRichMenu } from './richMenu'
 import { buildReceiptFlex } from './flexMessages'
 
 const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
@@ -68,7 +68,7 @@ async function handleFollow(event: FollowEvent): Promise<void> {
 
   const owner = await prisma.owner.findFirst({ where: { lineUserId: userId } })
   if (owner) {
-    await setAdminRichMenu(userId)
+    await setOwnerRichMenu(userId)
     await reply(event.replyToken, [
       { type: 'text', text: `สวัสดีครับ คุณ${owner.name} 👋\nพิมพ์ "ขอดู dashboard" "สรุปข้อมูล" หรือ "ช่วยเหลือ"` },
       buildEntryMessage('แตะเพื่อเปิดระบบจัดการ', 'เปิดระบบจัดการ'),
