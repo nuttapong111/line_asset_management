@@ -4,6 +4,7 @@ import { Card, Button } from '../../components/ui'
 import { BottomNav } from '../../components/layout/BottomNav'
 import { TopBar } from '../../components/layout/TopBar'
 import { baht, thaiMonth } from '../../lib/utils'
+import { useAuthStore } from '../../store/authStore'
 
 interface RevenueReport {
   summary: { total: number; collected: number; pending: number; overdue: number }
@@ -12,6 +13,8 @@ interface RevenueReport {
 }
 
 export default function Reports() {
+  const role = useAuthStore((s) => s.role)
+  const navRole = role === 'OWNER' ? 'OWNER' : 'ADMIN'
   const [report, setReport] = useState<RevenueReport>()
 
   useEffect(() => {
@@ -74,7 +77,7 @@ export default function Reports() {
 
         <Button variant="secondary" onClick={exportCsv}>ส่งออก CSV</Button>
       </div>
-      <BottomNav role="ADMIN" />
+      <BottomNav role={navRole} />
     </div>
   )
 }

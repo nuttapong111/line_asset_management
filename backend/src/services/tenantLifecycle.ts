@@ -69,8 +69,10 @@ export async function moveOutByContractId(contractId: string, input: MoveOutInpu
   }
 
   const now = new Date()
-  await prisma.$transaction([
-    prisma.moveOut.create({
+  const unpaidIds = preview.unpaidInvoices.map((i) => i.id)
+
+  await prisma.$transaction(async (tx) => {
+    await tx.moveOut.create({
       data: {
         contractId,
         deposit: preview.deposit,
@@ -81,14 +83,21 @@ export async function moveOutByContractId(contractId: string, input: MoveOutInpu
         finalElec: input.finalElec,
         finalWater: input.finalWater,
       },
-    }),
-    prisma.contract.update({ where: { id: contractId }, data: { status: 'TERMINATED' } }),
-    prisma.tenant.update({
+    })
+    // Close open bills so Billing no longer shows them as overdue/pending
+    if (unpaidIds.length > 0) {
+      await tx.invoice.updateMany({
+        where: { id: { in: unpaidIds } },
+        data: { status: 'CANCELLED' },
+      })
+    }
+    await tx.contract.update({ where: { id: contractId }, data: { status: 'TERMINATED' } })
+    await tx.tenant.update({
       where: { id: preview.contract.tenantId },
       data: { isActive: false, endDate: now },
-    }),
-    prisma.unit.update({ where: { id: preview.contract.unitId }, data: { status: 'VACANT' } }),
-  ])
+    })
+    await tx.unit.update({ where: { id: preview.contract.unitId }, data: { status: 'VACANT' } })
+  })
 
   return { refundAmount, unpaidTotal: preview.unpaidTotal, deposit: preview.deposit, deductions }
 }

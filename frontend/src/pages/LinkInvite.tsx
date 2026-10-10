@@ -42,9 +42,6 @@ export default function LinkInvite() {
     if (info.type === 'owner' && info.linked && role === 'OWNER') {
       nav('/admin/portfolio', { replace: true })
     }
-    if (info.type === 'tenant' && role === 'TENANT') {
-      nav('/tenant/home', { replace: true })
-    }
   }, [info, role, nav])
 
   function goHome(dest: '/admin/portfolio' | '/tenant/home') {
@@ -53,9 +50,14 @@ export default function LinkInvite() {
 
   async function link() {
     if (!token || !info || linkingRef.current) return
-    if (info.type === 'owner' && info.expired) {
+    if (info.expired) {
       setPhase('error')
-      setError('ลิงก์หมดอายุแล้ว กรุณาขอใหม่จากผู้ดูแล')
+      setError('ลิงก์หมดอายุแล้ว กรุณาขอใหม่จากเจ้าของห้อง')
+      return
+    }
+    if (info.type === 'tenant' && (role === 'ADMIN' || role === 'OWNER')) {
+      setPhase('error')
+      setError('บัญชีนี้เป็นแอดมิน/เจ้าของ — ใช้ LINE อื่นสำหรับผู้เช่า')
       return
     }
     if (info.type === 'owner' && info.linked) {
@@ -95,16 +97,20 @@ export default function LinkInvite() {
     }
   }
 
-  // Auto-link once invite info is ready (NEW / unlinked users)
+  // Auto-link once invite info is ready
   useEffect(() => {
     if (!info || phase !== 'loading') return
-    if (info.type === 'tenant' && role === 'TENANT') return
-    if (info.type === 'owner' && role === 'OWNER' && info.linked) return
-    if (info.type === 'owner' && info.expired) {
+    if (info.expired) {
       setPhase('error')
-      setError('ลิงก์หมดอายุแล้ว กรุณาขอใหม่จากผู้ดูแล')
+      setError('ลิงก์หมดอายุแล้ว กรุณาขอใหม่จากเจ้าของห้อง')
       return
     }
+    if (info.type === 'tenant' && (role === 'ADMIN' || role === 'OWNER')) {
+      setPhase('error')
+      setError('บัญชีนี้เป็นแอดมิน/เจ้าของ — ใช้ LINE อื่นสำหรับผู้เช่า')
+      return
+    }
+    if (info.type === 'owner' && role === 'OWNER' && info.linked) return
     void link()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [info, role])

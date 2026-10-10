@@ -91,16 +91,26 @@ export async function sendOverdueReminders(adminId: string, repeatDays: number):
     if (!t?.lineUserId) continue
     const lateFeePerDay = Number(inv.unit.contracts[0]?.lateFeePerDay ?? 30)
     const lateFee = daysLate * lateFeePerDay
-    const original = Number(inv.total)
-    await prisma.invoice.update({ where: { id: inv.id }, data: { status: 'OVERDUE', lateFee } })
+    // Base = line items without late fee (do not trust total - lateFee; older rows may not have baked lateFee into total)
+    const baseTotal =
+      Number(inv.rentAmount) +
+      Number(inv.electricAmount) +
+      Number(inv.waterAmount) +
+      Number(inv.commonFee) +
+      Number(inv.extraAmount)
+    const total = baseTotal + lateFee
+    await prisma.invoice.update({
+      where: { id: inv.id },
+      data: { status: 'OVERDUE', lateFee, total },
+    })
     await pushOverdue(t.lineUserId, {
       invoiceId: inv.id,
       roomNumber: inv.unit.roomNumber,
       tenantName: t.name,
       daysOverdue: daysLate,
-      originalAmount: original,
+      originalAmount: baseTotal,
       lateFee,
-      total: original + lateFee,
+      total,
       liffUrl: liff(`/payment/${inv.id}`),
     })
   }

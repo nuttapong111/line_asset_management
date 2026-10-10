@@ -5,6 +5,7 @@ import { Card, Badge } from '../../components/ui'
 import { BottomNav } from '../../components/layout/BottomNav'
 import { TopBar } from '../../components/layout/TopBar'
 import { baht, thaiMonth } from '../../lib/utils'
+import { useAuthStore } from '../../store/authStore'
 
 interface Invoice {
   id: string
@@ -33,6 +34,8 @@ const statusText: Record<string, string> = {
 
 export default function BillingOverview() {
   const nav = useNavigate()
+  const role = useAuthStore((s) => s.role)
+  const navRole = role === 'OWNER' ? 'OWNER' : 'ADMIN'
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const now = new Date()
 
@@ -81,7 +84,7 @@ export default function BillingOverview() {
           + สร้าง/ส่งใบแจ้งหนี้
         </button>
       </div>
-      <BottomNav role="ADMIN" />
+      <BottomNav role={navRole} />
     </div>
   )
 }

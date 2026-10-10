@@ -167,13 +167,37 @@ router.post('/link', authMiddleware, async (req, res) => {
   const lineUserId = req.user?.lineUserId || parse.data.lineUserId
   if (!lineUserId) return res.status(400).json({ error: 'lineUserId required' })
 
+  if (req.user?.role === 'ADMIN' || req.user?.role === 'OWNER') {
+    return res.status(409).json({
+      error: 'บัญชี LINE นี้เป็นแอดมิน/เจ้าของอยู่แล้ว — ใช้ LINE อื่นสำหรับผู้เช่า',
+    })
+  }
+  const asAdmin = await prisma.admin.findUnique({ where: { lineUserId } })
+  if (asAdmin) {
+    return res.status(409).json({
+      error: 'บัญชี LINE นี้ผูกเป็นผู้ดูแลระบบอยู่แล้ว — ใช้ LINE อื่นสำหรับผู้เช่า',
+    })
+  }
+  const asOwner = await prisma.owner.findFirst({ where: { lineUserId, linkedAt: { not: null } } })
+  if (asOwner) {
+    return res.status(409).json({
+      error: 'บัญชี LINE นี้ผูกเป็นเจ้าของอยู่แล้ว — ใช้ LINE อื่นสำหรับผู้เช่า',
+    })
+  }
+
   const unit = await prisma.unit.findUnique({
     where: { inviteToken: parse.data.inviteToken },
     include: { property: { include: { admin: true, owner: true } }, tenants: { where: { isActive: true } } },
   })
   if (!unit) return res.status(404).json({ error: 'Invalid invite token' })
   if (unit.inviteExpiry && unit.inviteExpiry < new Date()) {
-    return res.status(410).json({ error: 'Invite token expired' })
+    return res.status(410).json({ error: 'ลิงก์เชิญหมดอายุแล้ว กรุณาขอใหม่จากเจ้าของห้อง' })
+  }
+  const hasContract = await prisma.contract.findFirst({
+    where: { unitId: unit.id, status: 'ACTIVE' },
+  })
+  if (!hasContract) {
+    return res.status(400).json({ error: 'ห้องนี้ยังไม่มีสัญญาเช่า — แจ้งเจ้าของให้ตั้งสัญญาก่อน' })
   }
 
   // Prefer unlinked tenant awaiting invite; else the linked active tenant

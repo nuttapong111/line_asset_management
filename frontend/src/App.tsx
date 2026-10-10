@@ -99,18 +99,10 @@ function LiffApp() {
 
   useEffect(() => {
     if (!ready || !jwt || !inviteToken) return
-    if (role === 'NEW') {
-      navigate(`/link?token=${inviteToken}`, { replace: true })
-      return
-    }
-    const dest =
-      role === 'ADMIN' || role === 'OWNER'
-        ? '/admin/portfolio'
-        : role === 'TENANT'
-        ? '/tenant/home'
-        : '/link-room'
-    navigate(dest, { replace: true })
-  }, [ready, jwt, inviteToken, role, navigate])
+    // Always open invite screen when ?token= is present (even if already logged in)
+    // so a new room/owner invite is not skipped by role home redirect.
+    navigate(`/link?token=${encodeURIComponent(inviteToken)}`, { replace: true })
+  }, [ready, jwt, inviteToken, navigate])
 
   function switchRole(r: Role) {
     clearAuth()

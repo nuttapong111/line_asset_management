@@ -20,6 +20,7 @@ export default function InviteTenant() {
   const [inviteUrl, setInviteUrl] = useState('')
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [linkError, setLinkError] = useState<string>()
 
   useEffect(() => {
     api.get(`/tenants/${tenantId}`).then(async (r) => {
@@ -27,8 +28,9 @@ export default function InviteTenant() {
       try {
         const link = await api.get(`/units/${r.data.unitId}/invite-link`)
         setInviteUrl(link.data.inviteUrl)
-      } catch {
-        /* ignore */
+        setLinkError(undefined)
+      } catch (e: any) {
+        setLinkError(e.response?.data?.error || 'สร้างลิงก์ไม่สำเร็จ')
       }
     })
   }, [tenantId])
@@ -36,9 +38,12 @@ export default function InviteTenant() {
   async function regenerate() {
     if (!tenant) return
     setLoading(true)
+    setLinkError(undefined)
     try {
       const { data } = await api.get(`/units/${tenant.unitId}/invite-link`)
       setInviteUrl(data.inviteUrl)
+    } catch (e: any) {
+      setLinkError(e.response?.data?.error || 'สร้างลิงก์ไม่สำเร็จ')
     } finally {
       setLoading(false)
     }
@@ -103,8 +108,9 @@ export default function InviteTenant() {
           </p>
 
           <p className="mt-6 text-[11px] text-gray-400 break-all px-2 max-w-sm">
-            {inviteUrl || 'กำลังสร้างลิงก์...'}
+            {inviteUrl || (linkError ? '—' : 'กำลังสร้างลิงก์...')}
           </p>
+          {linkError && <p className="text-danger text-sm mt-2">{linkError}</p>}
         </div>
 
         <div className="space-y-2 pt-4 pb-2">

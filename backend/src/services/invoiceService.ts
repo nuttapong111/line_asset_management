@@ -303,6 +303,29 @@ async function maybeSendCatchUpRentReminder(invoiceId: string): Promise<void> {
   })
 }
 
+async function applyDraftToInvoice(invoiceId: string, draft: InvoiceDraft) {
+  const extraItems = draft.extraItems ?? []
+  const extraAmount = extraItems.reduce((a, i) => a + i.amount, 0)
+  return prisma.$transaction(async (tx) => {
+    await tx.invoiceItem.deleteMany({ where: { invoiceId } })
+    return tx.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        rentAmount: draft.rentAmount,
+        electricAmount: draft.electricAmount,
+        waterAmount: draft.waterAmount,
+        commonFee: draft.commonFee,
+        lateFee: draft.lateFee,
+        extraAmount,
+        total: draft.total,
+        dueDate: draft.dueDate,
+        extraItems: { create: extraItems },
+      },
+      include: { extraItems: true },
+    })
+  })
+}
+
 async function upsertAndSend(
   unitId: string,
   month: number,
@@ -314,6 +337,25 @@ async function upsertAndSend(
   if (!invoice) {
     const draft = await build()
     invoice = await createInvoiceFromDraft(draft)
+  } else if (['PENDING', 'OVERDUE', 'CANCELLED'].includes(invoice.status)) {
+    // Resend: rebuild amounts (rent/meter/fees may have changed). Keep PAID / SLIP_UPLOADED untouched.
+    const draft = await build()
+    // Preserve accrued late fee on overdue bills when rebuilding base lines
+    if (invoice.status === 'OVERDUE' && Number(invoice.lateFee) > 0) {
+      const lateFee = Number(invoice.lateFee)
+      draft.lateFee = lateFee
+      draft.total = draft.total + lateFee
+    }
+    if (invoice.status === 'CANCELLED') {
+      invoice = await applyDraftToInvoice(invoice.id, draft)
+      invoice = await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: { status: 'PENDING' },
+        include: { extraItems: true },
+      })
+    } else {
+      invoice = await applyDraftToInvoice(invoice.id, draft)
+    }
   }
   const ok = await sendInvoiceLine(invoice.id)
   return { ok, invoice }

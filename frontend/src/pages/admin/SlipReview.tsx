@@ -73,6 +73,8 @@ export default function SlipReview() {
     try {
       const { data } = await api.post(`/payments/${paymentId}/approve`)
       nav(`/admin/receipt/${data.payment.id}`, { replace: true })
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'อนุมัติไม่สำเร็จ')
     } finally {
       setBusy(false)
     }
@@ -84,6 +86,8 @@ export default function SlipReview() {
     try {
       await api.post(`/payments/${paymentId}/reject`, { rejectReason: reason })
       nav('/admin/billing', { replace: true })
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'ปฏิเสธไม่สำเร็จ')
     } finally {
       setBusy(false)
     }

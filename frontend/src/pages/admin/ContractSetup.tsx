@@ -189,7 +189,7 @@ export default function ContractSetup() {
           <Textarea label="เงื่อนไขเพิ่มเติม" rows={3} value={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.value })} />
           {error && <p className="text-danger text-sm">{error}</p>}
           <Button onClick={next} disabled={saving}>
-            {saving ? 'กำลังบันทึก...' : 'บันทึกและส่งลิงก์เชิญ'}
+            {saving ? 'กำลังบันทึก...' : 'บันทึกสัญญา แล้วไปหน้าลิงก์เชิญ'}
           </Button>
         </Card>
       </div>
