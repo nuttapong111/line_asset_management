@@ -12,7 +12,7 @@ interface Unit {
   floor?: number
   rentPrice: string
   status: 'VACANT' | 'OCCUPIED' | 'MAINTENANCE'
-  tenants: { id: string; name: string }[]
+  tenants: { id: string; name: string; linkedAt?: string | null }[]
   invoices: { id: string; status: string }[]
   contracts: { id: string; signedAt?: string | null }[]
 }
@@ -116,17 +116,30 @@ export default function PropertyDetail() {
                     + ผู้เช่า
                   </Button>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    {u.contracts[0] && (
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2">
+                      {u.contracts[0] && (
+                        <Button
+                          variant="ghost"
+                          className="w-auto px-2 py-1 text-xs"
+                          onClick={() => nav(`/admin/contract/${u.contracts[0].id}`)}
+                        >
+                          สัญญา{u.contracts[0].signedAt ? '' : ' · รอลงนาม'}
+                        </Button>
+                      )}
+                      <Badge kind={tenant?.linkedAt ? (overdue ? 'overdue' : 'paid') : 'pending'}>
+                        {tenant?.linkedAt ? (overdue ? 'ค้างชำระ' : 'ปกติ') : 'รอผูก LINE'}
+                      </Badge>
+                    </div>
+                    {tenant && !tenant.linkedAt && (
                       <Button
                         variant="ghost"
-                        className="w-auto px-2 py-1 text-xs"
-                        onClick={() => nav(`/admin/contract/${u.contracts[0].id}`)}
+                        className="w-auto px-2 py-1 text-xs text-line"
+                        onClick={() => nav(`/admin/tenant/${tenant.id}/invite`)}
                       >
-                        สัญญา{u.contracts[0].signedAt ? '' : ' · รอลงนาม'}
+                        ลิงก์เชิญ
                       </Button>
                     )}
-                    <Badge kind={overdue ? 'overdue' : 'paid'}>{overdue ? 'ค้างชำระ' : 'ปกติ'}</Badge>
                   </div>
                 )}
               </Card>
