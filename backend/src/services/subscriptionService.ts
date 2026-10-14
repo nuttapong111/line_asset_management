@@ -178,6 +178,26 @@ async function nextBillNo(): Promise<string> {
 }
 
 /**
+ * Whether to open a SaaS renewal bill.
+ * Mid-trial / far-from-expiry → false unless force, grace, or suspended.
+ */
+export function shouldCreateSubscriptionBill(params: {
+  force?: boolean
+  subscriptionStatus: string
+  daysLeft: number | null
+  remindDays?: number[]
+}): boolean {
+  const remind = params.remindDays?.length ? params.remindDays : [7]
+  const remindHorizon = Math.max(7, ...remind)
+  return (
+    Boolean(params.force) ||
+    params.subscriptionStatus === 'GRACE' ||
+    params.subscriptionStatus === 'SUSPENDED' ||
+    (params.daysLeft !== null && params.daysLeft <= remindHorizon)
+  )
+}
+
+/**
  * Open bill for renewal (create or reuse pending/rejected).
  * Permanent owners never get bills.
  * By default does NOT create during active trial / far-from-expiry — pass force to create now.
@@ -196,12 +216,12 @@ export async function ensureSubscriptionBill(ownerId: string, opts?: { force?: b
   if (open && open.status !== 'REJECTED') return open
 
   const daysLeft = daysUntil(owner.expiresAt)
-  const remindHorizon = Math.max(7, ...(env.SUBSCRIPTION_REMIND_DAYS.length ? env.SUBSCRIPTION_REMIND_DAYS : [7]))
-  const needsBill =
-    opts?.force ||
-    owner.subscriptionStatus === 'GRACE' ||
-    owner.subscriptionStatus === 'SUSPENDED' ||
-    (daysLeft !== null && daysLeft <= remindHorizon)
+  const needsBill = shouldCreateSubscriptionBill({
+    force: opts?.force,
+    subscriptionStatus: owner.subscriptionStatus,
+    daysLeft,
+    remindDays: env.SUBSCRIPTION_REMIND_DAYS,
+  })
 
   if (!needsBill) return null
 

@@ -5,6 +5,7 @@ import api from '../../lib/axios'
 import { Button, Card } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
 import { baht } from '../../lib/utils'
+import { formatCountdown, qrSecondsLeft } from '../../lib/paymentQr'
 
 export default function PaymentQR() {
   const { invoiceId } = useParams()
@@ -28,12 +29,7 @@ export default function PaymentQR() {
       .get(`/payments/${invoiceId}/qr`)
       .then((r) => {
         setQr(r.data)
-        if (r.data.expiresAt) {
-          const left = Math.max(0, Math.floor((new Date(r.data.expiresAt).getTime() - Date.now()) / 1000))
-          setSeconds(left || 30 * 60)
-        } else {
-          setSeconds(30 * 60)
-        }
+        setSeconds(qrSecondsLeft(r.data.expiresAt))
       })
       .catch(() => setError('ไม่สามารถสร้าง QR ได้'))
   }
@@ -48,9 +44,7 @@ export default function PaymentQR() {
     return () => clearInterval(t)
   }, [])
 
-  const expired = seconds <= 0
-  const mm = String(Math.floor(seconds / 60)).padStart(2, '0')
-  const ss = String(seconds % 60).padStart(2, '0')
+  const { mm, ss, expired } = formatCountdown(seconds)
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]

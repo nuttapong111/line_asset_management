@@ -18,6 +18,8 @@ interface Contract {
   pdfUrl?: string
   signedDocumentUrl?: string | null
   signedAt?: string | null
+  landlordSignedAt?: string | null
+  tenantSignedAt?: string | null
   terms?: string
   renewalRequestedAt?: string | null
   renewalNote?: string | null
@@ -109,7 +111,10 @@ export default function ContractView() {
   }
 
   const daysLeft = Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-  const hasSigned = Boolean(contract.signedAt)
+  const landlordSigned = Boolean(contract.landlordSignedAt)
+  const tenantSigned = Boolean(contract.tenantSignedAt)
+  const hasSigned = Boolean(contract.signedAt) || (landlordSigned && tenantSigned)
+  const hasAnyEsign = landlordSigned || tenantSigned || Boolean(contract.signedDocumentUrl)
 
   return (
     <div className="pb-6">
@@ -164,56 +169,64 @@ export default function ContractView() {
         )}
 
         <Card>
-          <h3 className="font-semibold mb-1">ลงนามสัญญา</h3>
+          <h3 className="font-semibold mb-1">ลงนามสัญญา (e-sign)</h3>
           <p className="text-xs text-gray-400 mb-3">
-            ยังไม่มี e-sign ในระบบ — ปริ้นเซ็นแล้วแนบไฟล์กลับเป็นหลักฐาน
+            เซ็นบนหน้าจอในแอป — ลายเซ็นจะถูกฝังลง PDF เมื่อครบทั้งผู้ให้เช่าและผู้เช่า
           </p>
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+            <p className={landlordSigned ? 'text-line-dark' : 'text-amber-700'}>
+              ผู้ให้เช่า: {landlordSigned ? `เซ็นแล้ว · ${thaiDate(contract.landlordSignedAt!)}` : 'ยังไม่เซ็น'}
+            </p>
+            <p className={tenantSigned ? 'text-line-dark' : 'text-amber-700'}>
+              ผู้เช่า: {tenantSigned ? `เซ็นแล้ว · ${thaiDate(contract.tenantSignedAt!)}` : 'ยังไม่เซ็น'}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <Button variant="secondary" onClick={() => viewPdf()}>ดู PDF</Button>
             <Button variant="secondary" onClick={() => viewPdf(true)}>ปริ้น</Button>
           </div>
+          {contract.status === 'ACTIVE' && (
+            <Button className="mb-3" onClick={() => nav(`/admin/contract/${id}/esign`)}>
+              {landlordSigned ? 'ดู / เซ็นใหม่ (e-sign)' : 'ลงนามด้วย e-sign'}
+            </Button>
+          )}
 
-          {hasSigned ? (
+          {hasAnyEsign ? (
             <div className="space-y-3 pt-3 border-t border-gray-100">
               <p className="text-sm text-line font-medium">
-                แนบหลักฐานแล้ว · {thaiDate(contract.signedAt!)}
+                {hasSigned
+                  ? `ลงนามครบแล้ว${contract.signedAt ? ` · ${thaiDate(contract.signedAt)}` : ''}`
+                  : 'มีลายเซ็นบางส่วน — รออีกฝ่าย'}
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button onClick={viewSigned}>ดูหลักฐาน</Button>
-                <Button variant="danger" onClick={removeSigned} disabled={uploading}>ลบหลักฐาน</Button>
-              </div>
-              <label className="block">
-                <span className="inline-block bg-gray-100 rounded-lg px-3 py-2 text-sm cursor-pointer">
-                  {uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดใหม่'}
-                </span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,application/pdf"
-                  className="hidden"
-                  disabled={uploading}
-                  onChange={(e) => e.target.files?.[0] && uploadSigned(e.target.files[0])}
-                />
-              </label>
+              {contract.signedDocumentUrl && (
+                <Button onClick={viewSigned}>ดูสัญญาที่ลงนามแล้ว</Button>
+              )}
+              <Button variant="danger" onClick={removeSigned} disabled={uploading}>
+                ล้างลายเซ็น / หลักฐาน
+              </Button>
             </div>
           ) : (
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-sm text-amber-700 mb-2">ยังไม่มีหลักฐานการลงนาม — แนบไฟล์หลังปริ้นและเซ็นแล้ว</p>
-              <label className="block">
-                <span className="inline-flex w-full justify-center bg-line text-white rounded-xl px-4 py-3 text-sm font-medium cursor-pointer">
-                  {uploading ? 'กำลังอัปโหลด...' : '+ แนบสัญญาที่ลงนามแล้ว'}
-                </span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,application/pdf"
-                  className="hidden"
-                  disabled={uploading}
-                  onChange={(e) => e.target.files?.[0] && uploadSigned(e.target.files[0])}
-                />
-              </label>
+            <div className="pt-3 border-t border-gray-100 space-y-2">
+              <p className="text-sm text-amber-700">ยังไม่มีลายเซ็น — กด e-sign หรือแนบไฟล์สแกนด้านล่าง</p>
             </div>
           )}
+
+          <div className="pt-3 mt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-400 mb-2">ทางเลือก: แนบไฟล์ที่ปริ้นเซ็นแล้ว (JPG/PNG/PDF ≤ 15 MB)</p>
+            <label className="block">
+              <span className="inline-flex w-full justify-center bg-gray-100 rounded-xl px-4 py-3 text-sm font-medium cursor-pointer">
+                {uploading ? 'กำลังอัปโหลด...' : '+ แนบสัญญาที่สแกนแล้ว'}
+              </span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,application/pdf"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => e.target.files?.[0] && uploadSigned(e.target.files[0])}
+              />
+            </label>
+          </div>
           {uploadError && <p className="text-danger text-sm mt-2">{uploadError}</p>}
-          <p className="text-xs text-gray-400 mt-3">รองรับ JPG, PNG หรือ PDF ขนาดไม่เกิน 15 MB</p>
         </Card>
 
         {contract.status === 'ACTIVE' && (

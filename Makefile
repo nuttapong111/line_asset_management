@@ -1,4 +1,4 @@
-.PHONY: dev migrate seed install db
+.PHONY: dev migrate seed install db test
 
 db:
 	docker-compose up postgres redis -d
@@ -16,3 +16,7 @@ seed:
 install:
 	cd backend && npm install
 	cd frontend && npm install
+
+test:
+	cd backend && npm test
+	cd frontend && npm test

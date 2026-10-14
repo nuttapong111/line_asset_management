@@ -117,7 +117,17 @@ export async function generateReceipt(d: ReceiptInput): Promise<Buffer> {
   return bufferFromDoc(doc)
 }
 
-export async function generateContractPdf(d: ContractData): Promise<Buffer> {
+export type ContractSignatureImages = {
+  landlordPng?: Buffer | null
+  tenantPng?: Buffer | null
+  landlordSignedAt?: Date | null
+  tenantSignedAt?: Date | null
+}
+
+export async function generateContractPdf(
+  d: ContractData,
+  signatures?: ContractSignatureImages
+): Promise<Buffer> {
   const doc = newDoc()
   const sections = buildContractText(d)
 
@@ -141,15 +151,47 @@ export async function generateContractPdf(d: ContractData): Promise<Buffer> {
     doc.moveDown(0.8)
   }
 
-  // Signatures
-  doc.moveDown(3)
+  // Signature blocks — leave room for PNG strokes
+  if (doc.y > 620) doc.addPage()
+  doc.moveDown(2)
+  fontBold(doc)
+  doc.fontSize(12).fillColor('#000').text('ลงนามในสัญญา', { align: 'left' })
+  doc.moveDown(0.5)
   fontRegular(doc)
-  const y = doc.y
-  doc.fontSize(11)
-  doc.text('ลงชื่อ ............................. ผู้ให้เช่า', 50, y)
-  doc.text('ลงชื่อ ............................. ผู้เช่า', 320, y)
-  doc.text(`(${d.landlordName})`, 70, y + 20)
-  doc.text(`(${d.tenantName})`, 340, y + 20)
+
+  const y = Math.max(doc.y, 100)
+  const sigW = 160
+  const sigH = 56
+
+  // Landlord
+  doc.fontSize(11).fillColor('#000')
+  doc.text('ผู้ให้เช่า', 50, y)
+  if (signatures?.landlordPng?.length) {
+    doc.image(signatures.landlordPng, 50, y + 16, { fit: [sigW, sigH] })
+  } else {
+    doc.text('ลงชื่อ .............................', 50, y + 36)
+  }
+  doc.text(`(${d.landlordName})`, 50, y + 16 + sigH + 6)
+  if (signatures?.landlordSignedAt) {
+    doc.fillColor('#666').fontSize(9)
+    doc.text(`e-sign ${signatures.landlordSignedAt.toLocaleString('th-TH')}`, 50, y + 16 + sigH + 22)
+    doc.fillColor('#000').fontSize(11)
+  }
+
+  // Tenant
+  doc.fontSize(11).fillColor('#000')
+  doc.text('ผู้เช่า', 320, y)
+  if (signatures?.tenantPng?.length) {
+    doc.image(signatures.tenantPng, 320, y + 16, { fit: [sigW, sigH] })
+  } else {
+    doc.text('ลงชื่อ .............................', 320, y + 36)
+  }
+  doc.text(`(${d.tenantName})`, 320, y + 16 + sigH + 6)
+  if (signatures?.tenantSignedAt) {
+    doc.fillColor('#666').fontSize(9)
+    doc.text(`e-sign ${signatures.tenantSignedAt.toLocaleString('th-TH')}`, 320, y + 16 + sigH + 22)
+    doc.fillColor('#000').fontSize(11)
+  }
 
   return bufferFromDoc(doc)
 }

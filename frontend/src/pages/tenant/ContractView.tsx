@@ -17,6 +17,9 @@ interface Contract {
   status: string
   pdfUrl?: string
   signedAt?: string | null
+  landlordSignedAt?: string | null
+  tenantSignedAt?: string | null
+  signedDocumentUrl?: string | null
   renewalRequestedAt?: string | null
   tenant: { name: string }
   unit: { roomNumber: string; property: { name: string } }
@@ -51,7 +54,9 @@ export default function ContractView() {
     openPdfViewer(nav, `contracts/${contract!.id}/signed`, { title: 'สัญญาที่ลงนามแล้ว' })
   }
 
-  const hasSigned = Boolean(contract.signedAt)
+  const landlordSigned = Boolean(contract.landlordSignedAt)
+  const tenantSigned = Boolean(contract.tenantSignedAt)
+  const hasSigned = Boolean(contract.signedAt) || (landlordSigned && tenantSigned)
   const daysLeft = Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 
   async function requestRenew() {
@@ -77,7 +82,10 @@ export default function ContractView() {
               <h3 className="font-semibold text-lg">{contract.unit.property.name}</h3>
               <p className="text-gray-400 text-sm">ห้อง {contract.unit.roomNumber}</p>
             </div>
-            <Badge kind={contract.status === 'ACTIVE' ? 'paid' : 'gray'}>{contract.status}</Badge>
+            <div className="flex flex-col items-end gap-1">
+              <Badge kind={contract.status === 'ACTIVE' ? 'paid' : 'gray'}>{contract.status}</Badge>
+              <Badge kind={hasSigned ? 'paid' : 'pending'}>{hasSigned ? 'ลงนามครบ' : 'รอลงนาม'}</Badge>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <Field label="ผู้เช่า" value={contract.tenant.name} />
@@ -92,9 +100,25 @@ export default function ContractView() {
           <Button variant="secondary" onClick={() => viewPdf()}>ดู / ดาวน์โหลด PDF</Button>
           <Button variant="secondary" onClick={() => viewPdf(true)}>ปริ้น PDF</Button>
         </div>
-        {hasSigned && (
-          <Button onClick={viewSigned}>ดูสัญญาที่ลงนามแล้ว</Button>
-        )}
+        <Card className="space-y-3">
+          <h3 className="font-semibold">ลงนามสัญญา (e-sign)</h3>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <p className={landlordSigned ? 'text-line-dark' : 'text-amber-700'}>
+              ผู้ให้เช่า: {landlordSigned ? 'เซ็นแล้ว' : 'ยังไม่เซ็น'}
+            </p>
+            <p className={tenantSigned ? 'text-line-dark' : 'text-amber-700'}>
+              ผู้เช่า: {tenantSigned ? 'เซ็นแล้ว' : 'ยังไม่เซ็น'}
+            </p>
+          </div>
+          {contract.status === 'ACTIVE' && (
+            <Button onClick={() => nav(`/contract/${contract.id}/esign`)}>
+              {tenantSigned ? 'ดูสถานะการลงนาม' : 'ลงนามด้วย e-sign'}
+            </Button>
+          )}
+          {(hasSigned || contract.signedDocumentUrl) && (
+            <Button variant="secondary" onClick={viewSigned}>ดูสัญญาที่ลงนามแล้ว</Button>
+          )}
+        </Card>
         {contract.status === 'ACTIVE' && daysLeft <= 90 && (
           contract.renewalRequestedAt ? (
             <Card className="bg-line-light">

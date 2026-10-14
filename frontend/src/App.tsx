@@ -26,6 +26,7 @@ import Reports from './pages/admin/Reports'
 import NotifSettings from './pages/admin/NotifSettings'
 import Settings from './pages/admin/Settings'
 import AdminContractView from './pages/admin/ContractView'
+import ContractEsign from './pages/ContractEsign'
 import MoveOut from './pages/admin/MoveOut'
 import AdminMaintenanceDetail from './pages/admin/MaintenanceDetail'
 import OwnerManage from './pages/admin/OwnerManage'
@@ -145,6 +146,7 @@ function LiffApp() {
         <Route path="/admin/reports" element={<Reports />} />
         <Route path="/admin/settings" element={<Settings />} />
         <Route path="/admin/contract/:id" element={<AdminContractView />} />
+        <Route path="/admin/contract/:id/esign" element={<ContractEsign />} />
         <Route path="/admin/contract/:id/move-out" element={<MoveOut />} />
         <Route path="/admin/invoice/:id" element={<InvoiceDetail />} />
         <Route path="/admin/maintenance/:id" element={<AdminMaintenanceDetail />} />
@@ -200,6 +202,7 @@ function LiffApp() {
         <Route path="/tenant/history" element={<PaymentHistory />} />
         <Route path="/contract" element={<TenantContractView />} />
         <Route path="/contract/:id" element={<TenantContractView />} />
+        <Route path="/contract/:id/esign" element={<ContractEsign />} />
         <Route path="/community" element={<CommunityFeed />} />
         <Route path="/community/new" element={<CommunityCompose />} />
         <Route path="/community/:id" element={<CommunityDetail />} />

@@ -10,6 +10,17 @@ export interface MoveOutInput {
   finalWater?: number
 }
 
+/** Deposit settlement: refund = deposit − unpaid bills − extra deductions. */
+export function computeMoveOutRefund(
+  deposit: number,
+  unpaidTotal: number,
+  deductions: Deduction[] = []
+): { deductionTotal: number; refundAmount: number } {
+  const valid = deductions.filter((d) => d.label.trim() && d.amount > 0)
+  const deductionTotal = valid.reduce((a, d) => a + d.amount, 0)
+  return { deductionTotal, refundAmount: deposit - unpaidTotal - deductionTotal }
+}
+
 export async function moveOutPreview(contractId: string) {
   const contract = await prisma.contract.findUnique({
     where: { id: contractId },
@@ -61,8 +72,7 @@ export async function moveOutPreview(contractId: string) {
 export async function moveOutByContractId(contractId: string, input: MoveOutInput = {}) {
   const preview = await moveOutPreview(contractId)
   const deductions = (input.deductions ?? []).filter((d) => d.label.trim() && d.amount > 0)
-  const deductionTotal = deductions.reduce((a, d) => a + d.amount, 0)
-  const refundAmount = preview.deposit - preview.unpaidTotal - deductionTotal
+  const { refundAmount } = computeMoveOutRefund(preview.deposit, preview.unpaidTotal, deductions)
 
   if (preview.contract.tenant.lineUserId) {
     await removeTenantRichMenu(preview.contract.tenant.lineUserId)

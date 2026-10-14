@@ -18,7 +18,7 @@ function daysUntilDue(dueDate: Date): number {
 }
 
 /** Due date for billing month — rolls forward if before contract start (e.g. move-in on 21st, due on 1st). */
-function resolveDueDate(year: number, month: number, dueDay: number, contractStart: Date): Date {
+export function resolveDueDate(year: number, month: number, dueDay: number, contractStart: Date): Date {
   let due = new Date(year, month - 1, dueDay)
   if (due < startOfDay(contractStart)) {
     due = new Date(year, month, dueDay)

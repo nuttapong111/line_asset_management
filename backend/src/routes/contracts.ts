@@ -8,6 +8,7 @@ import { propertyWhere } from '../lib/scope'
 import { uploadFile, readFile, extractStorageKey } from '../services/storageService'
 import { moveOutByContractId, moveOutPreview } from '../services/tenantLifecycle'
 import { generateAndStoreContractPdf } from '../services/contractPdfService'
+import { applyContractEsign } from '../services/contractEsignService'
 import { notifyOwnersOfProperty } from '../services/ownerNotify'
 import { env } from '../lib/env'
 
@@ -139,7 +140,34 @@ router.get('/:id/pdf', async (req, res) => {
   res.send(file.body)
 })
 
-// POST /api/contracts/:id/signed — upload scanned/photo of signed contract (manager)
+// POST /api/contracts/:id/esign — draw signature on device (tenant or landlord)
+router.post('/:id/esign', async (req, res) => {
+  const contract = await loadContract(req.params.id, req.user!)
+  if (!contract) return res.status(404).json({ error: 'Contract not found' })
+
+  const role = req.user!.role
+  let party: 'LANDLORD' | 'TENANT'
+  if (role === 'TENANT') party = 'TENANT'
+  else if (role === 'ADMIN' || role === 'OWNER') party = 'LANDLORD'
+  else return res.status(403).json({ error: 'Forbidden' })
+
+  const schema = z.object({
+    signaturePng: z.string().min(64),
+  })
+  const parse = schema.safeParse(req.body)
+  if (!parse.success) return res.status(400).json({ error: 'กรุณาเซ็นบนหน้าจอก่อนบันทึก' })
+
+  try {
+    const result = await applyContractEsign(contract.id, party, parse.data.signaturePng)
+    const fresh = await loadContract(contract.id, req.user!)
+    res.json({ ...fresh, esign: result })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'ลงนามไม่สำเร็จ'
+    res.status(400).json({ error: msg })
+  }
+})
+
+// POST /api/contracts/:id/signed — upload scanned/photo of signed contract (manager fallback)
 router.post('/:id/signed', requireRole('ADMIN', 'OWNER'), signedUpload.single('file'), async (req, res) => {
   const contract = await loadContract(req.params.id, req.user!)
   if (!contract) return res.status(404).json({ error: 'Contract not found' })
@@ -174,7 +202,14 @@ router.delete('/:id/signed', requireRole('ADMIN', 'OWNER'), async (req, res) => 
   if (!contract) return res.status(404).json({ error: 'Contract not found' })
   const updated = await prisma.contract.update({
     where: { id: contract.id },
-    data: { signedDocumentUrl: null, signedAt: null },
+    data: {
+      signedDocumentUrl: null,
+      signedAt: null,
+      landlordSignatureUrl: null,
+      landlordSignedAt: null,
+      tenantSignatureUrl: null,
+      tenantSignedAt: null,
+    },
   })
   res.json(updated)
 })

@@ -145,7 +145,7 @@ export default function PropertyDetail() {
                       className="w-auto px-2 py-1 text-xs"
                       onClick={() => nav(`/admin/contract/${u.contracts[0].id}`)}
                     >
-                      สัญญา{u.contracts[0].signedAt ? '' : ' · รอลงนาม'}
+                      สัญญา{u.contracts[0].signedAt ? ' · ลงนามครบ' : ' · รอลงนาม'}
                     </Button>
                     <Badge kind={overdue ? 'overdue' : 'paid'}>{overdue ? 'ค้างชำระ' : 'ปกติ'}</Badge>
                   </div>

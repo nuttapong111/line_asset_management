@@ -73,7 +73,8 @@ type Intent =
   | 'MANAGER_OCCUPANCY'
   | 'MANAGER_HELP'
 
-function detectIntent(text: string, role: 'TENANT' | 'MANAGER'): Intent | null {
+/** Exported for unit tests — keyword → intent routing for LINE chat Q&A. */
+export function detectIntent(text: string, role: 'TENANT' | 'MANAGER'): Intent | null {
   const t = normalize(text)
 
   if (/^(help|ช่วยเหลือ|คำสั่ง|เมนูช่วยเหลือ|คำถามที่ใช้ได้)$/.test(t)) {

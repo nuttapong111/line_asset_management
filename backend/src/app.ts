@@ -94,6 +94,9 @@ async function main() {
   })
 }
 
-main()
+// Only listen when this file is the process entry (not when imported by tests)
+if (require.main === module) {
+  main()
+}
 
 export default app

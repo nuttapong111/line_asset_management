@@ -14,7 +14,9 @@
     "reset:db:seed": "tsx scripts/resetDatabase.ts --seed",
     "gen:richmenu": "tsx scripts/genRichMenu.ts",
     "gen:richmenu:admin": "tsx scripts/genAdminRichMenu.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -51,6 +53,9 @@
     "@types/pdfkit": "^0.13.4",
     "prisma": "^5.16.1",
     "tsx": "^4.16.0",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
+    "vitest": "^3.2.4"
   }
 }

@@ -221,6 +221,12 @@ model Contract {
   pdfUrl             String?
   signedDocumentUrl  String?
   signedAt           DateTime?
+  /// E-sign PNG (landlord / owner-admin)
+  landlordSignatureUrl String?
+  landlordSignedAt     DateTime?
+  /// E-sign PNG (tenant)
+  tenantSignatureUrl   String?
+  tenantSignedAt       DateTime?
   status             ContractStatus @default(ACTIVE)
   renewalRequestedAt DateTime?
   renewalNote        String?
