@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>คู่มือการใช้งาน PropFlow สำหรับลูกค้า</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --line: #06c755;
+      --line-dark: #04a244;
+      --line-light: #eaf3de;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --bg: #f5f6f8;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --danger: #e24b4a;
+      --amber: #ef9f27;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Sarabun, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.65;
+      font-size: 16px;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 24px 20px 80px; }
+    .hero {
+      background: linear-gradient(145deg, #049c42 0%, #06c755 45%, #8fd9a8 100%);
+      color: #fff;
+      border-radius: 24px;
+      overflow: hidden;
+      margin-bottom: 28px;
+      box-shadow: 0 12px 40px rgba(6, 199, 85, 0.25);
+    }
+    .hero-img { width: 100%; display: block; max-height: 320px; object-fit: cover; }
+    .hero-body { padding: 28px 28px 32px; }
+    .hero h1 { margin: 0 0 8px; font-size: 2rem; font-weight: 700; }
+    .hero p { margin: 0; opacity: 0.95; font-size: 1.05rem; }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+    nav.toc {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 22px;
+      margin-bottom: 28px;
+    }
+    nav.toc h2 { margin: 0 0 10px; font-size: 1.1rem; }
+    nav.toc ol { margin: 0; padding-left: 1.25rem; }
+    nav.toc a { color: var(--line-dark); text-decoration: none; font-weight: 500; }
+    nav.toc a:hover { text-decoration: underline; }
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 26px 24px;
+      margin-bottom: 20px;
+    }
+    section h2 {
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+      color: var(--ink);
+      border-left: 4px solid var(--line);
+      padding-left: 12px;
+    }
+    section .lead { color: var(--muted); margin: 0 0 18px; }
+    h3 { margin: 22px 0 8px; font-size: 1.15rem; }
+    ol.steps, ul { padding-left: 1.2rem; }
+    ol.steps li { margin-bottom: 8px; }
+    .figure {
+      margin: 16px 0 8px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #fafafa;
+    }
+    .figure img { width: 100%; display: block; }
+    .figure.phone { max-width: 340px; margin-left: auto; margin-right: auto; }
+    .caption {
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+      margin: 0 0 16px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 700px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 1.55rem; }
+    }
+    .card-mini {
+      background: var(--line-light);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .card-mini strong { display: block; color: var(--line-dark); margin-bottom: 4px; }
+    .card-mini span { font-size: 0.92rem; color: var(--ink); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      margin: 12px 0 8px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #f9fafb; }
+    .tip {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 14px 0 0;
+      font-size: 0.95rem;
+    }
+    .tip strong { color: #92400e; }
+    .ok {
+      background: var(--line-light);
+      border: 1px solid #b7e4c7;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 14px;
+    }
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      max-width: 420px;
+      margin: 12px auto 8px;
+    }
+    .menu-cell {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 8px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+    .menu-cell .ico {
+      width: 36px; height: 36px;
+      margin: 0 auto 8px;
+      border-radius: 50%;
+      background: var(--line-light);
+      color: var(--line-dark);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-top: 28px;
+    }
+    .print-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(245,246,248,0.92);
+      backdrop-filter: blur(8px);
+      padding: 10px 0 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      background: var(--line);
+      color: #fff;
+      font-family: inherit;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .btn.secondary {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--border);
+    }
+    @media print {
+      .print-bar { display: none; }
+      body { background: #fff; }
+      section, nav.toc, .hero { break-inside: avoid; box-shadow: none; }
+      .wrap { max-width: 100%; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="print-bar">
+      <button class="btn secondary" type="button" onclick="window.print()">พิมพ์ / บันทึก PDF</button>
+    </div>
+
+    <header class="hero">
+      <img class="hero-img" src="images/propflow-guide-cover.jpg" alt="PropFlow ภาพปกคู่มือ" />
+      <div class="hero-body">
+        <div class="badge">คู่มือสำหรับลูกค้า</div>
+        <h1>คู่มือการใช้งาน PropFlow</h1>
+        <p>ระบบจัดการบ้านเช่าผ่าน LINE — ชำระบิล แนบสลิป ดูเอกสาร แจ้งซ่อม และชุมชนลูกบ้าน ในที่เดียว</p>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <h2>สารบัญ</h2>
+      <ol>
+        <li><a href="#roles">ใครใช้ระบบอะไรบ้าง</a></li>
+        <li><a href="#owner">คู่มือเจ้าของบ้านเช่า (Owner)</a></li>
+        <li><a href="#tenant">คู่มือผู้เช่า (ผ่าน LINE)</a></li>
+        <li><a href="#slip">ตรวจสลิปและ OCR</a></li>
+        <li><a href="#plan">ประเภทบัญชี และการเปลี่ยนเป็นถาวร</a></li>
+        <li><a href="#faq">คำถามที่พบบ่อย</a></li>
+      </ol>
+    </nav>
+
+    <section id="roles">
+      <h2>1. ใครใช้ระบบอะไรบ้าง</h2>
+      <p class="lead">PropFlow แยกหน้าจอตามบทบาท เพื่อให้แต่ละคนเห็นเฉพาะงานของตน</p>
+      <div class="grid-2">
+        <div class="card-mini">
+          <strong>เจ้าของบ้านเช่า (Owner)</strong>
+          <span>จัดการอาคาร ห้อง ผู้เช่า ออกบิล ตรวจสลิป แจ้งซ่อม ชุมชน — ผ่าน Web Portal หรือ LINE</span>
+        </div>
+        <div class="card-mini">
+          <strong>ผู้เช่า (Tenant)</strong>
+          <span>ชำระเงิน ดูเอกสาร แจ้งซ่อม ชุมชน — ทำทั้งหมดผ่าน LINE OA โดยไม่ต้องจำรหัสผ่าน</span>
+        </div>
+        <div class="card-mini">
+          <strong>ผู้ดูแลแพลตฟอร์ม (Admin)</strong>
+          <span>สร้างบัญชีเจ้าของ กำหนดประเภทบัญชี (เดือน/ปี/ถาวร) มอบหมายทรัพย์สิน</span>
+        </div>
+        <div class="card-mini">
+          <strong>ช่องทางเข้าใช้</strong>
+          <span>Portal บนคอม: <em>/portal/login</em><br />ผู้เช่า: เปิดจากเมนูในแชท LINE OA</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="owner">
+      <h2>2. คู่มือเจ้าของบ้านเช่า (Owner)</h2>
+      <p class="lead">หลังได้รับ Username/Password จากผู้ดูแล ให้ล็อกอิน Portal แล้วเริ่มจัดการอสังหาฯ ของคุณ</p>
+
+      <div class="figure">
+        <img src="images/propflow-guide-owner.jpg" alt="หน้าภาพรวมของเจ้าของใน Portal" />
+      </div>
+      <p class="caption">ภาพตัวอย่างหน้าภาพรวม — เห็นสลิปรอตรวจ ค้างชำระ และงานแจ้งซ่อม</p>
+
+      <h3>ขั้นตอนเริ่มต้น</h3>
+      <ol class="steps">
+        <li>เปิดลิงก์ Portal ที่ได้รับ → ล็อกอินด้วย Username / Password</li>
+        <li>ถ้าระบบบังคับเปลี่ยนรหัสผ่าน ให้ตั้งรหัสใหม่ทันที</li>
+        <li>(แนะนำ) เปิดลิงก์ผูก LINE เพื่อรับแจ้งเตือนสลิป/งานด่วนใน LINE</li>
+        <li>ตรวจว่ามีทรัพย์สินถูกมอบหมายแล้ว จากเมนูภาพรวมหรือรายการอาคาร</li>
+      </ol>
+
+      <h3>งานที่ใช้บ่อย</h3>
+      <table>
+        <thead>
+          <tr><th>งาน</th><th>ทำอย่างไร</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>เพิ่มห้อง / ผู้เช่า</td>
+            <td>เปิดทรัพย์สิน → เพิ่มห้อง → เพิ่มผู้เช่า → ตั้งสัญญา → ส่งลิงก์เชิญให้ผู้เช่ากดใน LINE</td>
+          </tr>
+          <tr>
+            <td>ออกบิล</td>
+            <td>บันทึกมิเตอร์ (ถ้ามีค่าน้ำไฟ) → สร้างบิล → ส่งผ่าน LINE ให้ผู้เช่า</td>
+          </tr>
+          <tr>
+            <td>ตรวจสลิป</td>
+            <td>เปิดรายการสลิปรอตรวจ → ดูรูป + ผล OCR → กดอนุมัติหรือปฏิเสธ</td>
+          </tr>
+          <tr>
+            <td>ประกาศลูกบ้าน</td>
+            <td>เข้าเมนูชุมชน → โพสต์ประเภท “ประกาศ” (ปักหมุดได้)</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="tip">
+        <strong>เคล็ดลับ:</strong> เริ่มวันด้วยหน้า “ภาพรวม” จะเห็นงานค้างทั้งหมดในที่เดียว ไม่ต้องไล่หาทีละเมนู
+      </div>
+    </section>
+
+    <section id="tenant">
+      <h2>3. คู่มือผู้เช่า (ผ่าน LINE)</h2>
+      <p class="lead">ผู้เช่าไม่ต้องสมัครเอง — กดลิงก์เชิญจากเจ้าของครั้งเดียว แล้วใช้เมนูด้านล่างแชท LINE ได้เลย</p>
+
+      <div class="figure">
+        <img src="images/propflow-guide-richmenu.jpg" alt="Rich Menu 6 ปุ่มใน LINE" />
+      </div>
+      <p class="caption">เมนูลัดด้านล่างแชท LINE OA</p>
+
+      <div class="menu-grid">
+        <div class="menu-cell"><div class="ico">฿</div>ชำระเงิน</div>
+        <div class="menu-cell"><div class="ico">📄</div>เอกสาร</div>
+        <div class="menu-cell"><div class="ico">🏘️</div>ชุมชน</div>
+        <div class="menu-cell"><div class="ico">🔧</div>แจ้งซ่อม</div>
+        <div class="menu-cell"><div class="ico">💬</div>ติดต่อ</div>
+        <div class="menu-cell"><div class="ico">🏠</div>หน้าหลัก</div>
+      </div>
+
+      <h3>3.1 ชำระค่าเช่า / ค่าน้ำไฟ</h3>
+      <ol class="steps">
+        <li>กดปุ่ม <strong>ชำระเงิน</strong> ในเมนู หรือเปิดบิลจากหน้าหลัก</li>
+        <li>ตรวจยอดให้ตรงกับใบแจ้งหนี้</li>
+        <li>สแกน QR PromptPay → โอนเงิน</li>
+        <li>กลับมาในแอป แล้วกด <strong>แนบสลิป</strong></li>
+        <li>รอเจ้าของอนุมัติ จะได้รับใบเสร็จในเมนูเอกสาร</li>
+      </ol>
+      <div class="figure phone">
+        <img src="images/propflow-guide-pay.jpg" alt="หน้าจอชำระเงินพร้อม QR" />
+      </div>
+      <p class="caption">ภาพตัวอย่างหน้าชำระเงินและแนบสลิป</p>
+
+      <h3>3.2 เอกสาร (บิล / ใบเสร็จ / สัญญา)</h3>
+      <ol class="steps">
+        <li>กดปุ่ม <strong>เอกสาร</strong></li>
+        <li>ใช้ชิปด้านบนกรอง: ทั้งหมด / บิล / ใบเสร็จ / สัญญา</li>
+        <li>แตะรายการเพื่อเปิดดูหรือดาวน์โหลด</li>
+      </ol>
+      <div class="figure phone">
+        <img src="images/propflow-guide-documents.jpg" alt="หน้าเอกสารรวม" />
+      </div>
+      <p class="caption">บิลที่ยังไม่ชำระจะถูกจัดไว้ด้านบนสุดให้ง่ายต่อการกดจ่าย</p>
+
+      <h3>3.3 ชุมชนและแจ้งซ่อม</h3>
+      <ul>
+        <li><strong>ชุมชน</strong> — อ่านประกาศเจ้าของ พูดคุย ของหาย ซื้อขายมือสองในกลุ่ม (คอมเมนต์ในแอป)</li>
+        <li><strong>แจ้งซ่อม</strong> — สร้างรายการ แนบรูป แล้วติดตามสถานะได้</li>
+      </ul>
+    </section>
+
+    <section id="slip">
+      <h2>4. ตรวจสลิปและ OCR (สำหรับเจ้าของ)</h2>
+      <p class="lead">เมื่อผู้เช่าแนบสลิป ระบบจะอ่านรูปบนเซิร์ฟเวอร์ของคุณเอง แล้วแนะนำว่ายอดกับบัญชีปลายทางตรงหรือไม่ — <strong>คนยังเป็นผู้อนุมัติสุดท้าย</strong></p>
+
+      <div class="figure phone">
+        <img src="images/propflow-guide-slip.jpg" alt="หน้าตรวจสอบสลิปพร้อมผล OCR" />
+      </div>
+      <p class="caption">หน้าตรวจสลิป — ดูรูปจริง + สถานะตรง/ไม่ตรง แล้วกดอนุมัติหรือปฏิเสธ</p>
+
+      <ol class="steps">
+        <li>เปิดรายการสลิปรอตรวจจากภาพรวมหรือเมนูบิล</li>
+        <li>ดูรูปสลิปให้ชัด</li>
+        <li>ดูบล็อก “ผลตรวจสลิป (OCR แนะนำ)”
+          <ul>
+            <li>ยอดในสลิป ตรงกับบิลหรือไม่</li>
+            <li>บัญชีปลายทาง ตรงกับ PromptPay/เลขบัญชีของอาคารหรือไม่</li>
+          </ul>
+        </li>
+        <li>ถ้าดูด้วยตาแล้วยืนยันได้ → กด <strong>อนุมัติ</strong></li>
+        <li>ถ้าผิดยอด / ผิดบัญชี / สลิปไม่ชัด → กด <strong>ปฏิเสธ</strong> พร้อมเหตุผล</li>
+      </ol>
+      <div class="ok">
+        รูปสลิปถูกประมวลผลบนเซิร์ฟเวอร์ของระบบ (ไม่ส่งออกไปบริการภายนอกในโหมดมาตรฐาน) และใช้เป็นคำแนะนำเท่านั้น
+      </div>
+    </section>
+
+    <section id="plan">
+      <h2>5. ประเภทบัญชี และการเปลี่ยนเป็นถาวร</h2>
+      <p class="lead">แอดมินกำหนดประเภทตอนสร้างบัญชี หรือเปลี่ยนภายหลังได้จากหน้าจัดการเจ้าของ</p>
+      <table>
+        <thead>
+          <tr><th>ประเภท</th><th>ความหมาย</th><th>เหมาะกับ</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>ทดลองใช้</td><td>เริ่มนับวันเมื่อเข้าใช้งานครั้งแรก</td><td>ลูกค้าใหม่ทดระบบ</td></tr>
+          <tr><td>รายเดือน</td><td>เปิดสิทธิ์ประมาณ 30 วัน</td><td>ลูกค้าจ่ายรายเดือน</td></tr>
+          <tr><td>รายปี</td><td>เปิดสิทธิ์ประมาณ 365 วัน</td><td>ลูกค้าจ่ายรายปี</td></tr>
+          <tr><td>ถาวร</td><td>ไม่มีวันหมดอายุ ไม่มีบิลค่าบริการ</td><td>ใช้งานเอง / บ้านเช่าของตนเอง</td></tr>
+        </tbody>
+      </table>
+
+      <h3>วิธีเปลี่ยน Owner ที่มีอยู่แล้วเป็นถาวร</h3>
+      <ol class="steps">
+        <li>ล็อกอินด้วยบัญชี <strong>แอดมิน</strong></li>
+        <li>เข้าเมนู <strong>เจ้าของ / จัดการเจ้าของ</strong></li>
+        <li>หาชื่อเจ้าของที่ต้องการ</li>
+        <li>ที่รายการประเภทบัญชี เลือก <strong>ถาวร (ใช้งานเอง)</strong></li>
+        <li>ยืนยัน — ระบบจะเปิดสิทธิ์แบบไม่มีวันหมดอายุทันที</li>
+      </ol>
+    </section>
+
+    <section id="faq">
+      <h2>6. คำถามที่พบบ่อย</h2>
+      <h3>ผู้เช่าต้องมี Username ไหม?</h3>
+      <p>ไม่ต้อง — ผูกผ่านลิงก์เชิญใน LINE ครั้งเดียว แล้วใช้เมนูด้านล่างแชท</p>
+
+      <h3>ชำระเงินแล้วแต่ยังไม่ขึ้นใบเสร็จ?</h3>
+      <p>แปลว่าเจ้าของยังไม่อนุมัติสลิป ให้รอหรือติดต่อเจ้าของผ่านปุ่ม “ติดต่อ”</p>
+
+      <h3>เมนูใน LINE ยังเป็นปุ่มเก่า?</h3>
+      <p>ให้แอดมินอัปเดต Rich Menu ในหน้าตั้งค่า แล้วให้ผู้เช่าเปิดแอปจาก LINE อีกครั้ง</p>
+
+      <h3>ชุมชนไม่ขึ้นประกาศ?</h3>
+      <p>ตรวจว่าห้องของผู้เช่าผูกกับเจ้าของคนเดียวกับผู้โพสต์ และโพสต์ไม่ได้ถูกซ่อน</p>
+
+      <h3>ต้องการความช่วยเหลือเพิ่ม?</h3>
+      <p>ติดต่อผู้ดูแลระบบที่ให้บัญชีคุณ (แอดมิน PropFlow ขององค์กรคุณ)</p>
+    </section>
+
+    <footer>
+      PropFlow — คู่มือลูกค้า · เปิดไฟล์นี้ในเบราว์เซอร์แล้วกด “พิมพ์ / บันทึก PDF” เพื่อส่งให้ลูกค้าได้ทันที
+    </footer>
+  </div>
+</body>
+</html>

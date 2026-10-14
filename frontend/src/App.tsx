@@ -177,7 +177,7 @@ function LiffApp() {
         <Route
           path="/admin/notifications"
           element={
-            <RequireRole allow={['ADMIN']}>
+            <RequireRole allow={['ADMIN', 'OWNER']}>
               <NotifSettings />
             </RequireRole>
           }

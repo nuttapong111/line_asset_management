@@ -66,6 +66,7 @@ model Owner {
   subscriptionPayments   SubscriptionPayment[]
   documentTemplates      DocumentTemplate[]
   communityPosts         CommunityPost[]
+  notifSettings          OwnerNotifSettings?
   createdAt              DateTime               @default(now())
 
   @@index([lineUserId])
@@ -466,10 +467,40 @@ model NotifSettings {
   adminId              String   @unique
   admin                Admin    @relation(fields: [adminId], references: [id])
   invoiceEnabled       Boolean  @default(true)
+  /// @deprecated Prefer invoiceDaysBeforeDue (per-contract due day)
   invoiceSendDay       Int      @default(1)
+  /// Create/send rent bill N days before each unit's contract dueDay
+  invoiceDaysBeforeDue Int      @default(4)
   invoiceSendTime      String   @default("08:00")
   rentReminderEnabled  Boolean  @default(true)
   rentReminderDays     Int[]    @default([10, 5, 1])
+  rentReminderTime     String   @default("08:00")
+  overdueEnabled       Boolean  @default(true)
+  overdueRepeatDays    Int      @default(1)
+  overdueSendTime      String   @default("09:00")
+  contractEnabled      Boolean  @default(true)
+  contractReminderDays Int[]    @default([60, 30, 14, 7])
+  contractSendTime     String   @default("08:00")
+  notifyTenant         Boolean  @default(true)
+  maintEnabled         Boolean  @default(true)
+  maintUnackHours      Int      @default(1)
+  quietEnabled         Boolean  @default(true)
+  quietStart           String   @default("22:00")
+  quietEnd             String   @default("07:00")
+  updatedAt            DateTime @updatedAt
+}
+
+/// Per-owner billing / notification preferences (each landlord sets their own)
+model OwnerNotifSettings {
+  id                   String   @id @default(cuid())
+  ownerId              String   @unique
+  owner                Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  invoiceEnabled       Boolean  @default(true)
+  /// Days before contract.dueDay to create+send that month's rent invoice
+  invoiceDaysBeforeDue Int      @default(4)
+  invoiceSendTime      String   @default("08:00")
+  rentReminderEnabled  Boolean  @default(true)
+  rentReminderDays     Int[]    @default([3, 1])
   rentReminderTime     String   @default("08:00")
   overdueEnabled       Boolean  @default(true)
   overdueRepeatDays    Int      @default(1)

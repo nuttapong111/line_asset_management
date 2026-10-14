@@ -267,7 +267,12 @@ async function maybeSendCatchUpRentReminder(invoiceId: string): Promise<void> {
     include: {
       unit: {
         include: {
-          property: { include: { admin: { include: { notifSettings: true } } } },
+          property: {
+            include: {
+              admin: { include: { notifSettings: true } },
+              owner: { include: { notifSettings: true } },
+            },
+          },
           tenants: { where: { isActive: true } },
         },
       },
@@ -276,7 +281,8 @@ async function maybeSendCatchUpRentReminder(invoiceId: string): Promise<void> {
   if (!invoice || invoice.type !== 'RENT') return
   if (!['PENDING', 'SLIP_UPLOADED'].includes(invoice.status)) return
 
-  const settings = invoice.unit.property.admin.notifSettings
+  const settings =
+    invoice.unit.property.owner?.notifSettings ?? invoice.unit.property.admin.notifSettings
   if (!settings?.rentReminderEnabled) return
 
   const daysLeft = daysUntilDue(invoice.dueDate)
@@ -324,6 +330,10 @@ export async function applyDraftToInvoice(invoiceId: string, draft: InvoiceDraft
       include: { extraItems: true },
     })
   })
+}
+
+export async function buildAndSendRentForUnit(unitId: string, month: number, year: number) {
+  return upsertAndSend(unitId, month, year, 'RENT', () => buildRentInvoiceDraft(unitId, month, year))
 }
 
 async function upsertAndSend(

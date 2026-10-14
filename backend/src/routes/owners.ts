@@ -65,6 +65,7 @@ router.post('/owners', ...adminOnly, async (req, res) => {
       adminId: req.user!.adminId!,
       inviteExpiry: expiry,
       ...planFields,
+      notifSettings: { create: {} },
     },
   })
 

@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import api from '../../lib/axios'
 import { Card, Button, Toggle, Chip } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
+import { useAuthStore } from '../../store/authStore'
 
 interface Settings {
+  scope?: 'OWNER' | 'ADMIN'
   invoiceEnabled: boolean
-  invoiceSendDay: number
+  invoiceDaysBeforeDue: number
   invoiceSendTime: string
   rentReminderEnabled: boolean
   rentReminderDays: number[]
@@ -27,6 +29,7 @@ interface Settings {
 const TIMES = ['06:00', '08:00', '09:00', '10:00', '12:00', '18:00']
 
 export default function NotifSettings() {
+  const role = useAuthStore((s) => s.role)
   const [s, setS] = useState<Settings>()
   const [saved, setSaved] = useState(false)
 
@@ -43,31 +46,54 @@ export default function NotifSettings() {
   }
 
   async function save() {
-    await api.put('/notifications/settings', s)
+    if (!s) return
+    const { scope: _scope, ...body } = s
+    await api.put('/notifications/settings', body)
     setSaved(true)
     setTimeout(() => setSaved(false), 1500)
   }
+
+  const isOwner = role === 'OWNER' || s.scope === 'OWNER'
 
   return (
     <div className="pb-6">
       <TopBar title="ตั้งค่าการแจ้งเตือน" />
       <div className="p-4 space-y-4">
-        <Section title="ใบแจ้งหนี้" enabled={s.invoiceEnabled} onToggle={(v) => upd({ invoiceEnabled: v })}>
-          <Label>วันที่ส่ง</Label>
+        <Card className="bg-line-light border-line">
+          <p className="text-sm text-line-dark">
+            {isOwner
+              ? 'ตั้งค่านี้ใช้กับอาคารของคุณเท่านั้น — บิลค่าเช่าจะถูกสร้างตามวันครบกำหนดของแต่ละสัญญา'
+              : 'ใช้กับอาคารที่ยังไม่มีเจ้าของผูก — อาคารที่มี Owner จะใช้ค่าที่ Owner ตั้งเอง'}
+          </p>
+        </Card>
+
+        <Section title="ใบแจ้งหนี้ค่าเช่า (อัตโนมัติ)" enabled={s.invoiceEnabled} onToggle={(v) => upd({ invoiceEnabled: v })}>
+          <Label>สร้างและส่งบิลกี่วันก่อนวันครบกำหนด</Label>
+          <p className="text-xs text-gray-500 mb-1">
+            วันครบกำหนดมาจากสัญญาแต่ละห้อง (เช่นทุกวันที่ 5) — เลือก 4 วันก่อน → ส่งวันที่ 1
+          </p>
           <div className="flex gap-2 flex-wrap">
-            {[1, 5, 10, 15, 25].map((d) => (
-              <Chip key={d} active={s.invoiceSendDay === d} onClick={() => upd({ invoiceSendDay: d })}>วันที่ {d}</Chip>
+            {[0, 1, 3, 5, 7, 10, 14].map((d) => (
+              <Chip
+                key={d}
+                active={s.invoiceDaysBeforeDue === d}
+                onClick={() => upd({ invoiceDaysBeforeDue: d })}
+              >
+                {d === 0 ? 'วันครบกำหนด' : `${d} วันก่อน`}
+              </Chip>
             ))}
           </div>
           <Label>เวลาส่ง</Label>
           <TimeGrid value={s.invoiceSendTime} onChange={(v) => upd({ invoiceSendTime: v })} />
         </Section>
 
-        <Section title="เตือนล่วงหน้าค่าเช่า" enabled={s.rentReminderEnabled} onToggle={(v) => upd({ rentReminderEnabled: v })}>
-          <Label>เตือนกี่วันก่อนครบกำหนด</Label>
+        <Section title="เตือนล่วงหน้าก่อนจ่าย" enabled={s.rentReminderEnabled} onToggle={(v) => upd({ rentReminderEnabled: v })}>
+          <Label>เตือนกี่วันก่อนครบกำหนดชำระ</Label>
           <div className="flex gap-2 flex-wrap">
-            {[10, 5, 1].map((d) => (
-              <Chip key={d} active={s.rentReminderDays.includes(d)} onClick={() => toggleDay('rentReminderDays', d)}>{d} วัน</Chip>
+            {[10, 7, 5, 3, 1].map((d) => (
+              <Chip key={d} active={s.rentReminderDays.includes(d)} onClick={() => toggleDay('rentReminderDays', d)}>
+                {d} วัน
+              </Chip>
             ))}
           </div>
           <Label>เวลาส่ง</Label>
@@ -78,7 +104,9 @@ export default function NotifSettings() {
           <Label>เตือนซ้ำทุกกี่วัน (1 = ทุกวันจนกว่าจะชำระ)</Label>
           <div className="flex gap-2 flex-wrap">
             {[1, 2, 3, 5, 7].map((d) => (
-              <Chip key={d} active={s.overdueRepeatDays === d} onClick={() => upd({ overdueRepeatDays: d })}>{d} วัน</Chip>
+              <Chip key={d} active={s.overdueRepeatDays === d} onClick={() => upd({ overdueRepeatDays: d })}>
+                {d} วัน
+              </Chip>
             ))}
           </div>
           <Label>เวลาส่ง</Label>
@@ -89,7 +117,13 @@ export default function NotifSettings() {
           <Label>เตือนกี่วันก่อนหมดสัญญา</Label>
           <div className="flex gap-2 flex-wrap">
             {[60, 30, 14, 7, 3].map((d) => (
-              <Chip key={d} active={s.contractReminderDays.includes(d)} onClick={() => toggleDay('contractReminderDays', d)}>{d} วัน</Chip>
+              <Chip
+                key={d}
+                active={s.contractReminderDays.includes(d)}
+                onClick={() => toggleDay('contractReminderDays', d)}
+              >
+                {d} วัน
+              </Chip>
             ))}
           </div>
           <div className="flex items-center justify-between mt-2">
@@ -102,7 +136,9 @@ export default function NotifSettings() {
           <Label>เตือนหลังจาก (ชั่วโมง)</Label>
           <div className="flex gap-2 flex-wrap">
             {[1, 3, 6, 24].map((h) => (
-              <Chip key={h} active={s.maintUnackHours === h} onClick={() => upd({ maintUnackHours: h })}>{h} ชม.</Chip>
+              <Chip key={h} active={s.maintUnackHours === h} onClick={() => upd({ maintUnackHours: h })}>
+                {h} ชม.
+              </Chip>
             ))}
           </div>
         </Section>
@@ -116,11 +152,21 @@ export default function NotifSettings() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>เริ่ม</Label>
-                <input type="time" value={s.quietStart} onChange={(e) => upd({ quietStart: e.target.value })} className="w-full border border-gray-300 rounded-xl px-3 py-2" />
+                <input
+                  type="time"
+                  value={s.quietStart}
+                  onChange={(e) => upd({ quietStart: e.target.value })}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2"
+                />
               </div>
               <div>
                 <Label>ถึง</Label>
-                <input type="time" value={s.quietEnd} onChange={(e) => upd({ quietEnd: e.target.value })} className="w-full border border-gray-300 rounded-xl px-3 py-2" />
+                <input
+                  type="time"
+                  value={s.quietEnd}
+                  onChange={(e) => upd({ quietEnd: e.target.value })}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2"
+                />
               </div>
             </div>
           )}
@@ -132,7 +178,17 @@ export default function NotifSettings() {
   )
 }
 
-function Section({ title, enabled, onToggle, children }: { title: string; enabled: boolean; onToggle: (v: boolean) => void; children: React.ReactNode }) {
+function Section({
+  title,
+  enabled,
+  onToggle,
+  children,
+}: {
+  title: string
+  enabled: boolean
+  onToggle: (v: boolean) => void
+  children: React.ReactNode
+}) {
   return (
     <Card>
       <div className="flex items-center justify-between">
@@ -150,7 +206,9 @@ function TimeGrid({ value, onChange }: { value: string; onChange: (v: string) =>
   return (
     <div className="grid grid-cols-3 gap-2">
       {TIMES.map((t) => (
-        <Chip key={t} active={value === t} onClick={() => onChange(t)}>{t}</Chip>
+        <Chip key={t} active={value === t} onClick={() => onChange(t)}>
+          {t}
+        </Chip>
       ))}
     </div>
   )
