@@ -33,7 +33,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   PAID: { label: 'ชำระแล้ว', cls: 'bg-ok-bg text-ok-fg' },
 }
 
-const TYPE_TH: Record<string, string> = { RENT: 'ค่าเช่า', UTILITY: 'ค่าน้ำไฟ', SHORTFALL: 'ส่วนต่าง' }
+const TYPE_TH: Record<string, string> = { RENT: 'ค่าเช่า', UTILITY: 'ค่าน้ำไฟ', SHORTFALL: 'ส่วนต่าง', CONTRACT: 'ค่าแรกเข้า' }
 
 function Icon({ d, size = 22 }: { d: string; size?: number }) {
   return (

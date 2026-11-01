@@ -52,6 +52,22 @@ describe('invoiceLineItems', () => {
     ])
   })
 
+  it('builds a contract opening bill with rent and deposit', () => {
+    const items = invoiceLineItems({
+      type: 'CONTRACT',
+      rentAmount: 6500,
+      electricAmount: 0,
+      waterAmount: 0,
+      commonFee: 0,
+      lateFee: 0,
+      extraItems: [{ label: 'เงินมัดจำ', amount: 13000 }],
+    })
+    expect(items).toEqual([
+      { label: 'ค่าเช่า', amount: 6500 },
+      { label: 'เงินมัดจำ', amount: 13000 },
+    ])
+  })
+
   it('builds utility lines without rent', () => {
     const items = invoiceLineItems({
       type: 'UTILITY',

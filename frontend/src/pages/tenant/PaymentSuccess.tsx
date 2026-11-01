@@ -10,7 +10,7 @@ interface PayState {
   sentAt?: string
 }
 
-const TYPE_TH: Record<string, string> = { RENT: 'ค่าเช่า', UTILITY: 'ค่าน้ำไฟ', SHORTFALL: 'ส่วนต่าง' }
+const TYPE_TH: Record<string, string> = { RENT: 'ค่าเช่า', UTILITY: 'ค่าน้ำไฟ', SHORTFALL: 'ส่วนต่าง', CONTRACT: 'ค่าแรกเข้า' }
 
 export default function PaymentSuccess() {
   const { invoiceId } = useParams()

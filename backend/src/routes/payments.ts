@@ -262,7 +262,11 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
 async function visiblePayment(req: import('express').Request, paymentId: string) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
-    include: { invoice: { include: { unit: { include: { property: true } } } }, tenant: true, bundle: { include: { payments: { include: { invoice: true } } } } },
+    include: {
+      invoice: { include: { extraItems: true, unit: { include: { property: true } } } },
+      tenant: true,
+      bundle: { include: { payments: { include: { invoice: true } } } },
+    },
   })
   if (!payment) return null
 

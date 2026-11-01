@@ -4,6 +4,7 @@ import { generateContractPdf } from './pdfService'
 import { notifyOwnersOfProperty } from './ownerNotify'
 import { pushText } from '../lib/line/lineService'
 import { env } from '../lib/env'
+import { issueContractOpeningInvoice } from './invoiceService'
 
 const MAX_PNG_BYTES = 800_000
 
@@ -129,11 +130,13 @@ export async function applyContractEsign(
   signedAt: Date | null
   signedDocumentUrl: string | null
   complete: boolean
+  openingInvoiceId: string | null
 }> {
   const contract = await loadForEsign(contractId)
   if (!contract) throw new Error('Contract not found')
   if (contract.status !== 'ACTIVE') throw new Error('สัญญาไม่พร้อมลงนาม')
 
+  const wasComplete = Boolean(contract.landlordSignedAt && contract.tenantSignedAt)
   const png = parseSignaturePng(signaturePng)
   const now = new Date()
   const key =
@@ -170,6 +173,16 @@ export async function applyContractEsign(
     },
   })
 
+  let openingInvoiceId: string | null = null
+  if (complete && !wasComplete) {
+    try {
+      const opening = await issueContractOpeningInvoice(updated)
+      openingInvoiceId = opening?.id ?? null
+    } catch (e) {
+      console.error('[esign] opening invoice', (e as Error).message)
+    }
+  }
+
   const liff = env.LIFF_BASE_URL.replace(/\/$/, '')
   if (party === 'TENANT') {
     await notifyOwnersOfProperty(
@@ -191,5 +204,6 @@ export async function applyContractEsign(
     signedAt: updated.signedAt,
     signedDocumentUrl: updated.signedDocumentUrl,
     complete,
+    openingInvoiceId,
   }
 }

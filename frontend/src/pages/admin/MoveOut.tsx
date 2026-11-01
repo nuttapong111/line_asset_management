@@ -116,7 +116,7 @@ export default function MoveOut() {
           </div>
           {preview.unpaidInvoices.map((i) => (
             <div key={i.id} className="flex justify-between text-sm text-danger">
-              <span className="text-ink-2">− {i.type === 'RENT' ? 'ค่าเช่า' : i.type === 'UTILITY' ? 'ค่าน้ำไฟ' : 'ส่วนต่าง'} {thaiMonth(i.month)} {i.year + 543}</span>
+              <span className="text-ink-2">− {i.type === 'RENT' ? 'ค่าเช่า' : i.type === 'UTILITY' ? 'ค่าน้ำไฟ' : i.type === 'CONTRACT' ? 'ค่าแรกเข้า' : 'ส่วนต่าง'} {thaiMonth(i.month)} {i.year + 543}</span>
               <span>{Number(i.total).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ))}

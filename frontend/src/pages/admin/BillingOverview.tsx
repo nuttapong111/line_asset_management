@@ -16,7 +16,7 @@ interface Invoice {
   payment?: { id: string; status: string } | null
 }
 
-const TYPE_TH: Record<string, string> = { RENT: 'ค่าเช่า', UTILITY: 'ค่าน้ำไฟ', SHORTFALL: 'ส่วนต่าง' }
+const TYPE_TH: Record<string, string> = { RENT: 'ค่าเช่า', UTILITY: 'ค่าน้ำไฟ', SHORTFALL: 'ส่วนต่าง', CONTRACT: 'ค่าแรกเข้า' }
 
 const STATUS: Record<string, { text: string; cls: string }> = {
   PAID: { text: 'ชำระแล้ว', cls: 'bg-ok-bg text-ok-fg' },

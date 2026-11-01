@@ -47,7 +47,8 @@ export default function InvoiceDetail() {
   const usedWater = m ? Number(m.currWater) - Number(m.prevWater) : 0
   const extras = inv.extraItems ?? []
   const canEditExtras = (role === 'ADMIN' || role === 'OWNER') && ['PENDING', 'OVERDUE'].includes(inv.status)
-  const isRent = inv.type !== 'UTILITY'
+  const isRent = inv.type !== 'UTILITY' && inv.type !== 'SHORTFALL'
+  const heading = inv.type === 'CONTRACT' ? 'ค่าแรกเข้า' : inv.type === 'UTILITY' ? 'ค่าน้ำไฟ' : inv.type === 'SHORTFALL' ? 'ส่วนต่าง' : 'ค่าเช่า'
 
   async function saveExtras(items: { label: string; amount: number }[]) {
     setSavingExtra(true)
@@ -66,14 +67,14 @@ export default function InvoiceDetail() {
       <TopBar title="รายละเอียดบิล" />
       <div className="p-4 space-y-4">
         <div className="bg-line text-white rounded-2xl p-4 text-center">
-          <p className="text-white/80 text-sm">ใบแจ้งหนี้ {thaiMonth(inv.month)} {inv.year}</p>
+          <p className="text-white/80 text-sm">ใบแจ้งหนี้{heading} {thaiMonth(inv.month)} {inv.year}</p>
           <div className="text-3xl font-bold my-1">{baht(inv.total)}</div>
           <p className="text-white/80 text-xs">กำหนดชำระ {thaiDate(inv.dueDate)}</p>
         </div>
 
         <Card>
           <h4 className="font-semibold mb-2">รายการ</h4>
-          {isRent && <Row label="ค่าเช่า" value={baht(inv.rentAmount)} />}
+          {isRent && Number(inv.rentAmount) > 0 && <Row label="ค่าเช่า" value={baht(inv.rentAmount)} />}
           {Number(inv.electricAmount) > 0 && (
             <Row label={`ค่าไฟ (${usedElec} หน่วย × ${baht(inv.unit.electricRate)})`} value={baht(inv.electricAmount)} />
           )}

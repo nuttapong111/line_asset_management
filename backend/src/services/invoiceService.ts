@@ -197,8 +197,10 @@ export function invoiceLineItems(invoice: {
   extraItems?: { label: string; amount: unknown }[]
 }) {
   const items: { label: string; amount: number }[] = []
-  if (invoice.type === 'RENT') {
-    items.push({ label: 'ค่าเช่า', amount: Number(invoice.rentAmount) })
+  if (invoice.type === 'RENT' || invoice.type === 'CONTRACT') {
+    if (invoice.type === 'RENT' || Number(invoice.rentAmount) > 0) {
+      items.push({ label: 'ค่าเช่า', amount: Number(invoice.rentAmount) })
+    }
     if (Number(invoice.commonFee) > 0) items.push({ label: 'ค่าส่วนกลาง', amount: Number(invoice.commonFee) })
   } else if (invoice.type === 'SHORTFALL') {
     items.push({ label: 'ส่วนต่างการชำระ', amount: Number(invoice.extraAmount ?? 0) })
@@ -241,7 +243,14 @@ export async function sendInvoiceLine(invoiceId: string): Promise<boolean> {
   const tenant = linkedTenant(invoice.unit.tenants)
   if (!tenant?.lineUserId) return false
 
-  const typeLabel = invoice.type === 'RENT' ? 'ใบแจ้งหนี้ค่าเช่า' : 'ใบแจ้งหนี้ค่าน้ำค่าไฟ'
+  const typeLabel =
+    invoice.type === 'RENT'
+      ? 'ใบแจ้งหนี้ค่าเช่า'
+      : invoice.type === 'CONTRACT'
+        ? 'ใบแจ้งหนี้ค่าแรกเข้า'
+        : invoice.type === 'SHORTFALL'
+          ? 'ใบแจ้งหนี้ส่วนต่าง'
+          : 'ใบแจ้งหนี้ค่าน้ำค่าไฟ'
   const data: InvoiceData = {
     invoiceId: invoice.id,
     roomNumber: invoice.unit.roomNumber,
@@ -281,7 +290,7 @@ async function maybeSendCatchUpRentReminder(invoiceId: string): Promise<void> {
       },
     },
   })
-  if (!invoice || invoice.type !== 'RENT') return
+  if (!invoice || (invoice.type !== 'RENT' && invoice.type !== 'CONTRACT')) return
   if (!['PENDING', 'SLIP_UPLOADED'].includes(invoice.status)) return
 
   const settings =
@@ -336,7 +345,76 @@ export async function applyDraftToInvoice(invoiceId: string, draft: InvoiceDraft
 }
 
 export async function buildAndSendRentForUnit(unitId: string, month: number, year: number) {
+  const opening = await prisma.invoice.findFirst({
+    where: {
+      unitId,
+      month,
+      year,
+      type: 'CONTRACT',
+      status: { not: 'CANCELLED' },
+      rentAmount: { gt: 0 },
+    },
+  })
+  if (opening) return { ok: true, invoice: opening, skipped: true as const }
   return upsertAndSend(unitId, month, year, 'RENT', () => buildRentInvoiceDraft(unitId, month, year))
+}
+
+/**
+ * Bill issued once both parties have signed: first month's rent (if that month
+ * has no rent bill yet) plus the deposit, so payment can produce a receipt.
+ */
+export async function issueContractOpeningInvoice(contract: {
+  unitId: string
+  startDate: Date
+  rentAmount: { toString(): string } | number
+  deposit: { toString(): string } | number
+}) {
+  const start = new Date(contract.startDate)
+  const month = start.getMonth() + 1
+  const year = start.getFullYear()
+
+  const existing = await prisma.invoice.findFirst({
+    where: { unitId: contract.unitId, month, year, type: 'CONTRACT', status: { not: 'CANCELLED' } },
+  })
+  if (existing) return existing
+
+  const rentBill = await prisma.invoice.findFirst({
+    where: { unitId: contract.unitId, month, year, type: 'RENT', status: { not: 'CANCELLED' } },
+  })
+  const includeRent = !rentBill
+  const unit = await prisma.unit.findUnique({ where: { id: contract.unitId } })
+  const fees = includeRent ? await prisma.recurringFee.findMany({ where: { unitId: contract.unitId } }) : []
+
+  const rentAmount = includeRent ? Number(contract.rentAmount) || Number(unit?.rentPrice ?? 0) : 0
+  const commonFee = includeRent ? Number(unit?.commonFee ?? 0) : 0
+  const extraItems = fees.map((f) => ({ label: f.label, amount: Number(f.amount) }))
+  const deposit = Number(contract.deposit)
+  if (deposit > 0) extraItems.push({ label: 'เงินมัดจำ', amount: deposit })
+  const extraAmount = extraItems.reduce((sum, item) => sum + item.amount, 0)
+  const total = rentAmount + commonFee + extraAmount
+  if (total <= 0) return null
+
+  const today = startOfDay(new Date())
+  const startDay = startOfDay(start)
+  const dueDate = startDay < today ? today : startDay
+
+  const invoice = await createInvoiceFromDraft({
+    unitId: contract.unitId,
+    type: 'CONTRACT',
+    month,
+    year,
+    rentAmount,
+    electricAmount: 0,
+    waterAmount: 0,
+    commonFee,
+    lateFee: 0,
+    extraAmount,
+    extraItems,
+    total,
+    dueDate,
+  })
+  await sendInvoiceLine(invoice.id)
+  return invoice
 }
 
 async function upsertAndSend(

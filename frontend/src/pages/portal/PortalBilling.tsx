@@ -38,7 +38,7 @@ const FILTERS = ['ALL', 'PENDING', 'SLIP_UPLOADED', 'PAID', 'OVERDUE'] as const
 const REJECTS = ['ยอดไม่ครบ', 'สลิปไม่ชัด', 'บัญชีปลายทางไม่ตรง', 'อื่นๆ']
 
 function billLabel(r: Invoice) {
-  const kind = r.type === 'UTILITY' ? 'ค่าน้ำไฟ' : r.type === 'SHORTFALL' ? 'ส่วนต่าง' : 'ค่าเช่า'
+  const kind = r.type === 'UTILITY' ? 'ค่าน้ำไฟ' : r.type === 'SHORTFALL' ? 'ส่วนต่าง' : r.type === 'CONTRACT' ? 'ค่าแรกเข้า' : 'ค่าเช่า'
   return `${kind} ${thaiMonth(r.month)} ${r.year + 543}`
 }
 

@@ -22,6 +22,16 @@ interface Ticket {
 }
 
 const SLOTS = ['09–12', '13–16', '16–18']
+
+function startOfToday(from = new Date()) {
+  const d = new Date(from)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function sameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}
 const CAT: Record<string, string> = { ELECTRIC: 'ไฟฟ้า', PLUMBING: 'ประปา', APPLIANCE: 'เครื่องใช้', GENERAL: 'ทั่วไป' }
 
 const fieldCls = 'h-11 box-border border-[1.5px] border-line-input rounded-input px-3 text-[15px] text-ink bg-white'
@@ -30,33 +40,42 @@ export default function MaintenanceDetail() {
   const { id } = useParams()
   const [ticket, setTicket] = useState<Ticket>()
   const [msg, setMsg] = useState('')
-  const [day, setDay] = useState(0)
   const [slot, setSlot] = useState(SLOTS[1])
   const [tech, setTech] = useState('')
   const [busy, setBusy] = useState(false)
+  const [picked, setPicked] = useState<Date>(() => startOfToday())
+  const [cursor, setCursor] = useState(() => {
+    const d = startOfToday()
+    return { y: d.getFullYear(), m: d.getMonth() }
+  })
 
   const load = () => api.get(`/maintenance/${id}`).then((r) => {
     setTicket(r.data)
     if (r.data.technicianName) setTech(r.data.technicianName)
     if (r.data.scheduleSlot && SLOTS.includes(r.data.scheduleSlot)) setSlot(r.data.scheduleSlot)
+    if (r.data.scheduledAt) {
+      const d = startOfToday(new Date(r.data.scheduledAt))
+      if (d >= startOfToday()) {
+        setPicked(d)
+        setCursor({ y: d.getFullYear(), m: d.getMonth() })
+      }
+    }
   })
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  const days = useMemo(() => {
-    const out: { label: string; n: number; date: Date }[] = []
-    const start = new Date()
-    start.setHours(0, 0, 0, 0)
-    const dow = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
-    for (let i = 0; i < 5; i++) {
-      const d = new Date(start)
-      d.setDate(start.getDate() + i)
-      out.push({ label: i === 0 ? 'วันนี้' : dow[d.getDay()], n: d.getDate(), date: d })
-    }
-    return out
-  }, [])
+  const calendar = useMemo(() => {
+    const firstDow = new Date(cursor.y, cursor.m, 1).getDay()
+    const count = new Date(cursor.y, cursor.m + 1, 0).getDate()
+    const cells: (Date | null)[] = Array.from({ length: firstDow }, () => null)
+    for (let n = 1; n <= count; n++) cells.push(new Date(cursor.y, cursor.m, n))
+    const today = startOfToday()
+    const canPrev = cursor.y > today.getFullYear() || (cursor.y === today.getFullYear() && cursor.m > today.getMonth())
+    const label = new Date(cursor.y, cursor.m, 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
+    return { cells, canPrev, label, today }
+  }, [cursor])
 
   if (!ticket) {
     return (
@@ -69,7 +88,7 @@ export default function MaintenanceDetail() {
 
   const minutes = Math.max(1, Math.round((Date.now() - new Date(ticket.createdAt).getTime()) / 60000))
   const whenIso = (() => {
-    const d = new Date(days[day].date)
+    const d = new Date(picked)
     const hour = slot.startsWith('09') ? 9 : slot.startsWith('13') ? 13 : 16
     d.setHours(hour, 0, 0, 0)
     return d.toISOString()
@@ -129,22 +148,54 @@ export default function MaintenanceDetail() {
 
         <section className="bg-white rounded-card p-3.5 flex flex-col gap-3">
           <strong className="text-sm">นัดช่าง (ไม่บังคับ)</strong>
-          <div className="flex gap-1.5">
-            {days.map((d, i) => {
-              const on = day === i
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              aria-label="เดือนก่อน"
+              disabled={!calendar.canPrev}
+              className="w-9 h-9 rounded-full border border-line-soft text-ink disabled:opacity-30"
+              onClick={() => setCursor((c) => {
+                const d = new Date(c.y, c.m - 1, 1)
+                return { y: d.getFullYear(), m: d.getMonth() }
+              })}
+            >
+              ‹
+            </button>
+            <strong className="text-sm">{calendar.label}</strong>
+            <button
+              type="button"
+              aria-label="เดือนถัดไป"
+              className="w-9 h-9 rounded-full border border-line-soft text-ink"
+              onClick={() => setCursor((c) => {
+                const d = new Date(c.y, c.m + 1, 1)
+                return { y: d.getFullYear(), m: d.getMonth() }
+              })}
+            >
+              ›
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map((w) => (
+              <span key={w} className="text-[11px] text-muted py-1">{w}</span>
+            ))}
+            {calendar.cells.map((date, i) => {
+              if (!date) return <span key={`e-${i}`} />
+              const disabled = date < calendar.today
+              const on = sameDay(date, picked)
               return (
                 <button
-                  key={d.n + d.label}
+                  key={date.toISOString()}
                   type="button"
+                  disabled={disabled}
                   aria-pressed={on}
                   className={cls(
-                    'flex-1 h-[58px] rounded-button flex flex-col items-center justify-center',
-                    on ? 'border-2 border-primary bg-primary-soft' : 'border-[1.5px] border-line-soft bg-white'
+                    'h-9 rounded-lg text-sm',
+                    on ? 'bg-primary text-white font-bold' : 'bg-white text-ink',
+                    disabled && 'text-muted opacity-40'
                   )}
-                  onClick={() => setDay(i)}
+                  onClick={() => setPicked(date)}
                 >
-                  <span className="text-xs text-muted">{d.label}</span>
-                  <strong className="text-base">{d.n}</strong>
+                  {date.getDate()}
                 </button>
               )
             })}

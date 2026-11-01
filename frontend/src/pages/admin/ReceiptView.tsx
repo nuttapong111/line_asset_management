@@ -19,6 +19,7 @@ interface Payment {
     waterAmount: string
     commonFee: string
     lateFee: string
+    extraItems?: { id?: string; label: string; amount: string | number }[]
     unit: { roomNumber: string }
   }
 }
@@ -41,6 +42,9 @@ export default function ReceiptView() {
     { label: 'ค่าส่วนกลาง', amount: inv.commonFee },
   ]
   if (Number(inv.lateFee) > 0) items.push({ label: 'ค่าปรับ', amount: inv.lateFee })
+  for (const extra of inv.extraItems ?? []) {
+    if (Number(extra.amount) > 0) items.push({ label: extra.label, amount: String(extra.amount) })
+  }
 
   return (
     <div>

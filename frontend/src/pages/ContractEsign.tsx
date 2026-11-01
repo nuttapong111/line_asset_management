@@ -74,10 +74,14 @@ export default function ContractEsign() {
     setSaving(true)
     setError(undefined)
     try {
-      await api.post(`/contracts/${id}/esign`, { signaturePng: dataUrl })
-      await load()
+      const { data } = await api.post(`/contracts/${id}/esign`, { signaturePng: dataUrl })
+      const invoiceId = data?.esign?.openingInvoiceId as string | undefined
       padRef.current?.clear()
       setHasInk(false)
+      if (isTenant && invoiceId) {
+        nav(`/payment/${invoiceId}`, { replace: true })
+        return
+      }
       nav(backPath, { replace: true })
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
