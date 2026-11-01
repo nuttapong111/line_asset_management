@@ -81,7 +81,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   res.status(500).json({ error: err.message || 'Internal server error' })
 })
 
-async function main() {
+export async function main() {
   try {
     await prisma.$connect()
     console.log('🗄️  Database connected')
@@ -89,14 +89,21 @@ async function main() {
     console.error('⚠️  Database connection failed:', (e as Error).message)
   }
   startScheduler()
-  app.listen(env.PORT, () => {
-    console.log(`🚀 PropFlow backend running on port ${env.PORT} [${env.NODE_ENV}]`)
+  await new Promise<void>((resolve, reject) => {
+    const server = app.listen(env.PORT, '0.0.0.0', () => {
+      console.log(`PropFlow backend listening on 0.0.0.0:${env.PORT} [${env.NODE_ENV}]`)
+      resolve()
+    })
+    server.on('error', reject)
   })
 }
 
-// Only listen when this file is the process entry (not when imported by tests)
+// Listen when this file is the process entry. Railway runs dist/start.js, which calls main() after migrations.
 if (require.main === module) {
-  main()
+  main().catch((err) => {
+    console.error('Failed to start API', err)
+    process.exit(1)
+  })
 }
 
 export default app

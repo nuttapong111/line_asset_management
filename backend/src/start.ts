@@ -118,3 +118,8 @@ function ensureDatabase() {
 ensureDatabase()
 
 import('./app')
+  .then((mod) => mod.main())
+  .catch((err) => {
+    console.error('Failed to start API', err)
+    process.exit(1)
+  })
