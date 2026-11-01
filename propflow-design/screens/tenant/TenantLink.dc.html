@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ผูกห้องจากคำเชิญ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #0F3D25; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <div style="flex: 0 0 300px; padding: 48px 24px 0; box-sizing: border-box; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center">
+    <div style="width: 72px; height: 72px; border-radius: 22px; background: #06C755; display: flex; align-items: center; justify-content: center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path><path d="M10 20v-5h4v5"></path></svg></div>
+    <span style="font-size: 14px; color: #BFE9CF">คำเชิญจากคุณรัตนา · บ้านสวนรัตนา</span>
+    <h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700; line-height: 1.3">ยินดีต้อนรับสู่<br>ห้อง A-206</h1>
+  </div>
+  <div style="flex: 1; background: #F4F6F5; border-radius: 28px 28px 0 0; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px">
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+      <strong style="font-size: 15px">ตรวจข้อมูลก่อนยืนยัน</strong>
+      <div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: #4F5F57">ผู้เช่า</span><span>คุณพิมพ์ชนก แสงทอง</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: #4F5F57">ค่าเช่า</span><span>฿6,500 / เดือน</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: #4F5F57">สัญญา</span><span>1 พ.ย. 69 – 31 ต.ค. 70</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: #4F5F57">ครบกำหนดชำระ</span><span>ทุกวันที่ 5</span></div>
+    </section>
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <strong style="font-size: 15px">หลังผูกบัญชี คุณจะได้</strong>
+      <div style="display: flex; gap: 10px; align-items: center; font-size: 14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>รับบิลและจ่ายผ่าน LINE ไม่ต้องสมัครสมาชิก</div>
+      <div style="display: flex; gap: 10px; align-items: center; font-size: 14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>ใบเสร็จและสัญญาเก็บไว้ในที่เดียว</div>
+      <div style="display: flex; gap: 10px; align-items: center; font-size: 14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>แจ้งซ่อมพร้อมรูป และติดตามสถานะได้</div>
+    </section>
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px">
+      <a href="TenantHome.dc.html" style="height: 54px; border-radius: 14px; background: #047C3B; color: #FFFFFF; font-size: 17px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center">ยืนยันและผูกบัญชี LINE</a>
+      <span style="font-size: 13px; color: #4F5F57; text-align: center">ข้อมูลไม่ถูกต้อง? <a href="TenantContact.dc.html" style="font-weight: 700">ติดต่อเจ้าของ</a> · ลิงก์ใช้ได้ถึง 8 พ.ย.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -89,7 +89,48 @@ export async function ensureReceiptPdf(paymentId: string): Promise<string> {
   return receiptUrl
 }
 
-export async function approvePayment(paymentId: string): Promise<void> {
+/** บันทึกยอดที่ยังค้างหลังรับสลิปไม่ครบ เป็นบิล SHORTFALL ของเดือนนั้น */
+export async function recordShortfall(unitId: string, amount: number): Promise<void> {
+  const due = Math.round(amount * 100) / 100
+  if (due <= 0) return
+  const now = new Date()
+  const month = now.getMonth() + 1
+  const year = now.getFullYear()
+  const existing = await prisma.invoice.findUnique({
+    where: { unitId_month_year_type: { unitId, month, year, type: 'SHORTFALL' } },
+  })
+  if (existing && existing.status !== 'PAID' && existing.status !== 'CANCELLED') {
+    const total = Number(existing.total) + due
+    await prisma.invoice.update({
+      where: { id: existing.id },
+      data: { total, extraAmount: total, status: existing.status === 'OVERDUE' ? 'OVERDUE' : 'PENDING' },
+    })
+    return
+  }
+  if (existing) return
+  await prisma.invoice.create({
+    data: {
+      unitId,
+      type: 'SHORTFALL',
+      month,
+      year,
+      rentAmount: 0,
+      electricAmount: 0,
+      waterAmount: 0,
+      commonFee: 0,
+      lateFee: 0,
+      extraAmount: due,
+      total: due,
+      dueDate: now,
+      status: 'PENDING',
+    },
+  })
+}
+
+export async function approvePayment(
+  paymentId: string,
+  opts?: { acceptShortfall?: boolean }
+): Promise<void> {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
@@ -103,11 +144,17 @@ export async function approvePayment(paymentId: string): Promise<void> {
   const year = new Date().getFullYear()
   const receiptNo = await nextReceiptNo(year)
 
+  let shortfall = 0
+  if (opts?.acceptShortfall && payment.ocrAmount != null) {
+    shortfall = Math.max(0, Math.round((Number(payment.invoice.total) - Number(payment.ocrAmount)) * 100) / 100)
+  }
+
   await prisma.payment.update({
     where: { id: paymentId },
-    data: { status: 'APPROVED', approvedAt: new Date(), receiptNo },
+    data: { status: 'APPROVED', approvedAt: new Date(), receiptNo, shortfall },
   })
   await prisma.invoice.update({ where: { id: payment.invoice.id }, data: { status: 'PAID' } })
+  if (shortfall > 0) await recordShortfall(payment.invoice.unitId, shortfall)
 
   await ensureReceiptPdf(paymentId)
 
@@ -137,7 +184,11 @@ export async function approvePayment(paymentId: string): Promise<void> {
   })
 }
 
-export async function rejectPayment(paymentId: string, reason: string): Promise<void> {
+export async function rejectPayment(
+  paymentId: string,
+  reason: string,
+  opts?: { silent?: boolean }
+): Promise<void> {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
@@ -154,7 +205,7 @@ export async function rejectPayment(paymentId: string, reason: string): Promise<
   await prisma.invoice.update({ where: { id: payment.invoiceId }, data: { status: 'PENDING' } })
 
   const notifyLine = linkedTenant(payment.invoice.unit.tenants)?.lineUserId || payment.tenant.lineUserId
-  if (notifyLine) {
+  if (notifyLine && !opts?.silent) {
     await pushText(
       notifyLine,
       `สลิปของห้อง ${payment.invoice.unit.roomNumber} ไม่ผ่านการตรวจสอบ\nเหตุผล: ${reason}\nกรุณาอัปโหลดสลิปใหม่: ${liff('/payment')}`

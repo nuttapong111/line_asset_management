@@ -47,6 +47,9 @@ export const env = {
   // Platform SaaS subscription (Owner pays PropFlow)
   PLATFORM_PROMPTPAY_NUMBER: (process.env.PLATFORM_PROMPTPAY_NUMBER || process.env.DEFAULT_PROMPTPAY_NUMBER || '').trim(),
   SUBSCRIPTION_PRICE: parseFloat(process.env.SUBSCRIPTION_PRICE || '499'),
+  SUBSCRIPTION_YEARLY_PRICE: parseFloat(
+    process.env.SUBSCRIPTION_YEARLY_PRICE || process.env.SUBSCRIPTION_PRICE || '499'
+  ),
   SUBSCRIPTION_PERIOD_DAYS: parseInt(process.env.SUBSCRIPTION_PERIOD_DAYS || '30', 10),
   SUBSCRIPTION_YEARLY_DAYS: parseInt(process.env.SUBSCRIPTION_YEARLY_DAYS || '365', 10),
   SUBSCRIPTION_GRACE_DAYS: parseInt(process.env.SUBSCRIPTION_GRACE_DAYS || '7', 10),

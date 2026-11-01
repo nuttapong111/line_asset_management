@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>แอดมิน ภาพรวม</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 20px 16px 12px; display: flex; flex-direction: column; gap: 14px">
+    <header style="display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; flex-direction: column"><span style="font-size: 13px; color: #4F5F57">แอดมินแพลตฟอร์ม</span><strong style="font-family: Anuphan, sans-serif; font-size: 24px">PropFlow</strong></div>
+      <span style="padding: 5px 12px; border-radius: 999px; background: #F1ECFA; color: #5A3496; font-size: 12px; font-weight: 700">ADMIN</span>
+    </header>
+
+    <section style="background: #FFFFFF; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <span style="font-size: 14px; color: #4F5F57">รายได้ค่าบริการเดือนนี้</span>
+      <strong style="font-family: Anuphan, sans-serif; font-size: 30px">฿[ยอด]</strong>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+        <sc-for list="{{states}}" as="s" hint-placeholder-count="4">
+          <div style="background: {{s.bg}}; border-radius: 12px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px"><strong style="font-size: 20px; color: {{s.fg}}">{{s.n}}</strong><span style="font-size: 11px; font-weight: 700; color: {{s.fg}}">{{s.label}}</span></div>
+        </sc-for>
+      </div>
+    </section>
+
+    <a href="AdminSubs.dc.html" style="background: #FFFFFF; border-radius: 16px; padding: 12px 14px; text-decoration: none; color: #0F1F17; display: flex; align-items: center; gap: 12px">
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: #FEF3E2; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A4B05" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg></span>
+      <span style="flex: 1; display: flex; flex-direction: column"><strong style="font-size: 15px">สลิปค่าบริการรอตรวจ 2</strong><span style="font-size: 13px; color: #4F5F57">เก่าสุด 3 ชม.</span></span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F5F57" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+    </a>
+
+    <section style="display: flex; flex-direction: column; gap: 8px">
+      <h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600">ใกล้หมดอายุ / ค้างจ่าย</h2>
+      <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden">
+        <sc-for list="{{expiring}}" as="e" hint-placeholder-count="4">
+          <a href="AdminOwners.dc.html" style="padding: 12px 14px; border-bottom: 1px solid #EEF1EF; text-decoration: none; color: #0F1F17; display: flex; align-items: center; gap: 12px">
+            <span style="flex: 1; display: flex; flex-direction: column"><strong style="font-size: 15px">{{e.name}}</strong><span style="font-size: 12px; color: #4F5F57">{{e.sub}}</span></span>
+            <span style="padding: 3px 10px; border-radius: 999px; background: {{e.bg}}; color: {{e.fg}}; font-size: 12px; font-weight: 700">{{e.tag}}</span>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+  <dc-import name="TabBar" role="admin" active="home" hint-size="390px,82px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const states = [
+      { label: 'ทดลอง', n: '6', bg: '#EAF1FE', fg: '#1A4FBF' },
+      { label: 'ใช้งาน', n: '31', bg: '#E7F8EE', fg: '#046A33' },
+      { label: 'ผ่อนผัน', n: '3', bg: '#FEF3E2', fg: '#8A4B05' },
+      { label: 'ระงับ', n: '1', bg: '#FDECEA', fg: '#A8221A' }
+    ];
+    const T = { trial: ['ทดลอง 5 วัน', '#EAF1FE', '#1A4FBF'], grace: ['ผ่อนผัน', '#FEF3E2', '#8A4B05'], sus: ['ระงับ', '#FDECEA', '#A8221A'], soon: ['เหลือ 3 วัน', '#F0F2F1', '#33403A'] };
+    const expiring = [
+      ['คุณรัตนา', 'rattana · 2 อาคาร · 40 ห้อง', 'trial'],
+      ['คุณประเสริฐ', 'prasert · 1 อาคาร · 12 ห้อง', 'grace'],
+      ['คุณวรรณา', 'wanna · 3 อาคาร · 58 ห้อง', 'soon'],
+      ['คุณเอกชัย', 'ekachai · 1 อาคาร · 8 ห้อง', 'sus']
+    ].map(([name, sub, k]) => ({ name, sub, tag: T[k][0], bg: T[k][1], fg: T[k][2] }));
+    return { states, expiring };
+  }
+}
+</script>
+</body>
+</html>

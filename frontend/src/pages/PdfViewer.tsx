@@ -28,6 +28,7 @@ export default function PdfViewer() {
   const ready = useAuthStore((s) => s.ready)
   const path = params.get('path') || ''
   const title = params.get('title') || 'เอกสาร'
+  const sub = params.get('sub') || ''
   const autoPrint = params.get('print') === '1'
   const [url, setUrl] = useState<string>()
   const [mime, setMime] = useState('application/pdf')
@@ -131,7 +132,7 @@ export default function PdfViewer() {
       const page = await pdf.getPage(i)
       const viewport = page.getViewport({ scale })
       const canvas = document.createElement('canvas')
-      canvas.className = 'w-full h-auto bg-white mb-2 shadow-sm block mx-auto'
+      canvas.className = 'w-full h-auto bg-white mb-3 shadow-paper block mx-auto rounded-sm'
       const ctx = canvas.getContext('2d')
       if (!ctx) continue
       canvas.width = Math.floor(viewport.width * dpr)
@@ -173,6 +174,23 @@ export default function PdfViewer() {
     } finally {
       setOpening(false)
     }
+  }
+
+  async function shareDoc() {
+    const blob = blobRef.current
+    if (blob && typeof navigator.share === 'function') {
+      const file = new File([blob], `${title}.${fileExt()}`, { type: mime })
+      const can = typeof navigator.canShare === 'function' ? navigator.canShare({ files: [file] }) : true
+      if (can) {
+        try {
+          await navigator.share({ files: [file], title })
+          return
+        } catch {
+          /* user cancelled or share failed — fall through */
+        }
+      }
+    }
+    await openExternal({ download: false })
   }
 
   async function download() {
@@ -219,8 +237,8 @@ export default function PdfViewer() {
   if (!ready || !jwt) {
     return (
       <div className="flex flex-col h-screen bg-gray-100">
-        <TopBar title={title} />
-        <p className="flex-1 flex items-center justify-center text-gray-400">กำลังเข้าสู่ระบบ...</p>
+        <TopBar title={title} sub={sub || undefined} />
+        <p className="flex-1 flex items-center justify-center text-muted">กำลังเข้าสู่ระบบ...</p>
       </div>
     )
   }
@@ -244,31 +262,31 @@ export default function PdfViewer() {
           }
         }
       `}</style>
-      <div className="flex flex-col h-screen bg-gray-100 print:h-auto">
-        <TopBar title={title} />
-        <div className="flex-1 relative overflow-auto print:overflow-visible">
+      <div className="flex flex-col h-screen bg-segment print:h-auto">
+        <TopBar title={title} sub={sub || undefined} />
+        <div className="flex-1 relative overflow-auto print:overflow-visible p-4">
           {loading && (
-            <p className="absolute inset-0 flex items-center justify-center text-gray-400">กำลังโหลด...</p>
+            <p className="absolute inset-0 flex items-center justify-center text-muted">กำลังโหลด...</p>
           )}
           {error && (
             <p className="absolute inset-0 flex items-center justify-center text-danger px-4 text-center">{error}</p>
           )}
-          {url && isImage && <img src={url} alt={title} className="w-full h-auto bg-white" />}
-          {isPdf && <div ref={printRootRef} id="pdf-print-root" className="p-2 min-h-[50vh]" />}
+          {url && isImage && <img src={url} alt={title} className="w-full h-auto bg-white shadow-paper" />}
+          {isPdf && <div ref={printRootRef} id="pdf-print-root" className="min-h-[50vh]" />}
         </div>
         {showActions && (
-          <div className="p-3 bg-white border-t print:hidden">
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="secondary" onClick={download} disabled={opening}>
-                {opening ? 'กำลังเปิด...' : 'ดาวน์โหลด'}
-              </Button>
-              <Button variant="secondary" onClick={printDoc} disabled={opening}>
-                {opening ? 'กำลังเปิด...' : 'ปริ้น'}
-              </Button>
+          <div className="bg-white border-t border-[#EEF1EF] px-4 pt-3 pb-6 print:hidden">
+            <div className="grid grid-cols-2 gap-2.5">
+              <button type="button" onClick={shareDoc} disabled={opening} className="h-[50px] rounded-cta border-[1.5px] border-primary bg-white text-primary font-bold text-base disabled:opacity-50">
+                {opening ? 'กำลังเปิด...' : 'แชร์'}
+              </button>
+              <button type="button" onClick={download} disabled={opening} className="h-[50px] rounded-cta bg-primary text-white font-bold text-base disabled:opacity-50">
+                {opening ? 'กำลังเปิด...' : 'ดาวน์โหลด PDF'}
+              </button>
             </div>
             {externalHint && (
-              <p className="text-xs text-gray-500 text-center mt-2 leading-relaxed">
-                บนมือถือจะเปิดใน Safari/Chrome — กดแชร์เพื่อบันทึกลงไฟล์หรือพิมพ์
+              <p className="text-xs text-muted text-center mt-2 leading-relaxed">
+                บนมือถือจะเปิดในเบราว์เซอร์ แล้วกดแชร์เพื่อบันทึกหรือพิมพ์
               </p>
             )}
           </div>

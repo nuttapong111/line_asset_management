@@ -18,6 +18,42 @@ async function readableUnit(req: import('express').Request, unitId: string) {
   return prisma.unit.findFirst({ where: { id: unitId, property: propertyWhere(req.user!) } })
 }
 
+function meterWarnings(
+  history: { prevElec: unknown; currElec: unknown; prevWater: unknown; currWater: unknown }[],
+  prevElec: number,
+  currElec: number,
+  prevWater: number,
+  currWater: number
+) {
+  const warnings: { field: 'elec' | 'water'; level: 'danger' | 'warn'; message: string }[] = []
+  if (currElec < prevElec) {
+    warnings.push({ field: 'elec', level: 'danger', message: 'เลขไฟปัจจุบันน้อยกว่าเลขก่อนหน้า' })
+  }
+  if (currWater < prevWater) {
+    warnings.push({ field: 'water', level: 'danger', message: 'เลขน้ำปัจจุบันน้อยกว่าเลขก่อนหน้า' })
+  }
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0)
+  const elecAvg = avg(history.slice(0, 3).map((h) => Math.max(0, Number(h.currElec) - Number(h.prevElec))))
+  const waterAvg = avg(history.slice(0, 3).map((h) => Math.max(0, Number(h.currWater) - Number(h.prevWater))))
+  const elecUse = currElec - prevElec
+  const waterUse = currWater - prevWater
+  if (elecAvg > 0 && elecUse > elecAvg * 2) {
+    warnings.push({
+      field: 'elec',
+      level: 'warn',
+      message: `ไฟใช้ ${elecUse} หน่วย สูงกว่าค่าเฉลี่ย 3 เดือน (${Math.round(elecAvg)}) เกิน 2 เท่า`,
+    })
+  }
+  if (waterAvg > 0 && waterUse > waterAvg * 2) {
+    warnings.push({
+      field: 'water',
+      level: 'warn',
+      message: `น้ำใช้ ${waterUse} หน่วย สูงกว่าค่าเฉลี่ย 3 เดือน (${Math.round(waterAvg)}) เกิน 2 เท่า`,
+    })
+  }
+  return warnings
+}
+
 const meterSchema = z.object({
   unitId: z.string().min(1),
   month: z.number().int().min(1).max(12),
@@ -62,6 +98,28 @@ router.get('/:unitId', async (req, res) => {
     orderBy: [{ year: 'desc' }, { month: 'desc' }],
   })
   res.json(readings)
+})
+
+// GET /api/meters/:unitId/anomaly?prevElec&currElec&prevWater&currWater
+router.get('/:unitId/anomaly', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  if (!(await readableUnit(req, req.params.unitId))) return res.status(404).json({ error: 'Unit not found' })
+  const q = z
+    .object({
+      prevElec: z.coerce.number(),
+      currElec: z.coerce.number(),
+      prevWater: z.coerce.number(),
+      currWater: z.coerce.number(),
+    })
+    .safeParse(req.query)
+  if (!q.success) return res.status(400).json({ error: q.error.flatten() })
+  const history = await prisma.meterReading.findMany({
+    where: { unitId: req.params.unitId },
+    orderBy: [{ year: 'desc' }, { month: 'desc' }],
+    take: 3,
+  })
+  res.json({
+    warnings: meterWarnings(history, q.data.prevElec, q.data.currElec, q.data.prevWater, q.data.currWater),
+  })
 })
 
 // GET /api/meters/:unitId/latest

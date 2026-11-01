@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Button, Card, Input } from '../../components/ui'
 import { TopBar } from '../../components/layout/TopBar'
 import { Stepper } from './_Stepper'
 
@@ -10,6 +9,8 @@ export type TenantDraft = {
   lineId: string
   idCardNumber: string
 }
+
+const fieldCls = 'h-11 box-border border-[1.5px] border-line-input rounded-input px-3 text-[15px] text-ink bg-white'
 
 /** Step 1 — draft only (not saved). Tenant is created with the contract in step 2. */
 export default function AddTenant() {
@@ -42,24 +43,35 @@ export default function AddTenant() {
   }
 
   return (
-    <div>
-      <TopBar title="เพิ่มผู้เช่า" />
-      <div className="p-4 space-y-4">
+    <div className="pb-28">
+      <TopBar title="รับผู้เช่า" sub="ข้อมูลผู้เช่า" />
+      <div className="px-4 py-3.5 flex flex-col gap-3.5">
         <Stepper step={1} />
-        <Card className="space-y-4">
-          <p className="text-xs text-gray-400">ยังไม่บันทึก — กดกลับได้โดยไม่ผูกผู้เช่า</p>
-          <Input label="ชื่อ-นามสกุล *" value={form.name} onChange={set('name')} />
-          <Input label="เบอร์โทร *" value={form.phone} onChange={set('phone')} placeholder="08xxxxxxxx" />
-          <details className="text-sm">
-            <summary className="text-gray-400 cursor-pointer select-none py-1">ข้อมูลเพิ่มเติม (ไม่บังคับ)</summary>
-            <div className="space-y-3 mt-3">
-              <Input label="LINE ID" value={form.lineId} onChange={set('lineId')} />
-              <Input label="เลขบัตรประชาชน" value={form.idCardNumber} onChange={set('idCardNumber')} />
-            </div>
-          </details>
-          {error && <p className="text-danger text-sm">{error}</p>}
-          <Button onClick={next}>ถัดไป — ตั้งค่าสัญญา</Button>
-        </Card>
+        <section className="bg-white rounded-card p-3.5 flex flex-col gap-3">
+          <p className="text-xs text-muted">ยังไม่บันทึก — กดกลับได้โดยไม่ผูกผู้เช่า</p>
+          <label className="flex flex-col gap-1 text-[13px] font-semibold text-muted">
+            ชื่อ-นามสกุล
+            <input className={fieldCls} value={form.name} onChange={set('name')} />
+          </label>
+          <label className="flex flex-col gap-1 text-[13px] font-semibold text-muted">
+            เบอร์โทร
+            <input className={fieldCls} value={form.phone} onChange={set('phone')} placeholder="08xxxxxxxx" inputMode="tel" />
+          </label>
+          <label className="flex flex-col gap-1 text-[13px] font-semibold text-muted">
+            LINE ID (ไม่บังคับ)
+            <input className={fieldCls} value={form.lineId} onChange={set('lineId')} />
+          </label>
+          <label className="flex flex-col gap-1 text-[13px] font-semibold text-muted">
+            เลขบัตรประชาชน (ไม่บังคับ)
+            <input className={fieldCls} value={form.idCardNumber} onChange={set('idCardNumber')} />
+          </label>
+          {error && <p className="text-[13px] text-danger">{error}</p>}
+        </section>
+      </div>
+      <div className="fixed bottom-0 inset-x-0 z-20 max-w-liff mx-auto bg-white border-t border-line-soft px-4 pt-3 pb-6">
+        <button type="button" className="w-full h-[52px] rounded-cta bg-primary text-white text-[17px] font-bold" onClick={next}>
+          ถัดไป: สัญญา
+        </button>
       </div>
     </div>
   )

@@ -27,18 +27,32 @@ router.get('/info', async (req, res) => {
     })
   }
 
-  const unit = await prisma.unit.findUnique({
-    where: { inviteToken: token },
-    include: { property: true },
-  })
-  if (unit) {
-    return res.json({
-      type: 'tenant',
-      roomNumber: unit.roomNumber,
-      propertyName: unit.property.name,
-      expired: unit.inviteExpiry ? unit.inviteExpiry < new Date() : false,
+    const unit = await prisma.unit.findUnique({
+      where: { inviteToken: token },
+      include: {
+        property: { include: { owner: { select: { name: true, phone: true } } } },
+        tenants: { where: { isActive: true }, take: 1 },
+        contracts: { where: { status: 'ACTIVE' }, orderBy: { createdAt: 'desc' }, take: 1 },
+      },
     })
-  }
+    if (unit) {
+      const tenant = unit.tenants[0]
+      const contract = unit.contracts[0]
+      return res.json({
+        type: 'tenant',
+        roomNumber: unit.roomNumber,
+        propertyName: unit.property.name,
+        ownerName: unit.property.owner?.name || null,
+        ownerPhone: unit.property.owner?.phone || null,
+        tenantName: tenant?.name || null,
+        rentAmount: contract ? Number(contract.rentAmount) : Number(unit.rentPrice),
+        startDate: contract?.startDate || tenant?.startDate || null,
+        endDate: contract?.endDate || tenant?.endDate || null,
+        dueDay: contract?.dueDay ?? null,
+        inviteExpiry: unit.inviteExpiry,
+        expired: unit.inviteExpiry ? unit.inviteExpiry < new Date() : false,
+      })
+    }
 
   return res.status(404).json({ error: 'Invalid invite token' })
 })

@@ -1,0 +1,63 @@
+/* PropFlow design tokens — import once in your global CSS (e.g. src/index.css) */
+@import url("https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap");
+
+:root {
+  /* Brand */
+  --pf-brand: #06C755;          /* LINE green: logo, icons, progress bars. NEVER behind white text */
+  --pf-primary: #047C3B;        /* buttons, links, active tab (white text 5.3:1) */
+  --pf-primary-hover: #035E2D;
+  --pf-primary-soft: #E7F8EE;   /* selected chips, success backgrounds */
+  --pf-hero: #0F3D25;           /* dark green hero cards (tenant total, invite header) */
+  --pf-sidebar: #0F2A1C;        /* Portal sidebar (owner) */
+  --pf-sidebar-admin: #1E1638;  /* Portal sidebar (admin) */
+
+  /* Neutrals */
+  --pf-ink: #0F1F17;            /* primary text */
+  --pf-ink-2: #33403A;          /* secondary body text */
+  --pf-muted: #4F5F57;          /* labels, captions (6.4:1 on white) */
+  --pf-placeholder: #9AA8A1;    /* dashed borders, chevrons (decor only) */
+  --pf-canvas: #F4F6F5;         /* app background */
+  --pf-surface: #FFFFFF;        /* cards */
+  --pf-surface-2: #F0F2F1;      /* inset fields, neutral chips */
+  --pf-segment: #E8ECEA;        /* segmented-control track */
+  --pf-line: #DCE3DF;           /* borders */
+  --pf-line-soft: #EEF1EF;      /* list dividers */
+  --pf-input-border: #C9D2CD;
+
+  /* Status (fg on bg) */
+  --pf-info-fg: #1A4FBF;    --pf-info-bg: #EAF1FE;     /* PENDING, WAITING_SLIP, NEW, TRIAL */
+  --pf-warn-fg: #8A4B05;    --pf-warn-bg: #FEF3E2;     /* SLIP_UPLOADED, UNDER_REVIEW, IN_PROGRESS, SCHEDULED, GRACE */
+  --pf-warn-strong: #B26A00; --pf-warn-chart: #E3A13B;
+  --pf-ok-fg: #046A33;      --pf-ok-bg: #E7F8EE;       /* PAID, APPROVED, DONE, ACTIVE */
+  --pf-danger-fg: #A8221A;  --pf-danger-bg: #FDECEA;   /* OVERDUE, REJECTED, SUSPENDED */
+  --pf-neutral-fg: #4A5550; --pf-neutral-bg: #F0F2F1;  /* CANCELLED, CLOSED, VACANT */
+  --pf-admin-fg: #5A3496;   --pf-admin-bg: #F1ECFA;    /* admin badge, PERMANENT plan */
+
+  /* Type */
+  --pf-font-display: "Anuphan", "Sarabun", system-ui, sans-serif;
+  --pf-font-body: "Sarabun", system-ui, sans-serif;
+
+  /* Radius */
+  --pf-r-input: 10px;
+  --pf-r-button: 12px;   /* 14px for full-width mobile CTAs */
+  --pf-r-card: 16px;     /* 18–20px for hero/feature cards */
+  --pf-r-pill: 999px;
+
+  /* Sizes */
+  --pf-btn-h-mobile: 52px;
+  --pf-btn-h-desktop: 44px;
+  --pf-input-h: 48px;
+  --pf-appbar-h: 56px;
+  --pf-tabbar-h: 82px;
+  --pf-liff-max-w: 430px;
+}
+
+body {
+  margin: 0;
+  background: var(--pf-canvas);
+  color: var(--pf-ink);
+  font-family: var(--pf-font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.pf-amount { font-family: var(--pf-font-display); font-weight: 700; font-variant-numeric: tabular-nums; }

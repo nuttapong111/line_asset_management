@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Portal รายงาน</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="min-height: 1080px; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-wrap: wrap; align-items: stretch">
+  <aside style="flex: 1 1 240px; max-width: 100%; box-sizing: border-box; background: #0F2A1C; color: #FFFFFF; padding: 24px 16px; display: flex; flex-direction: column; gap: 24px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+      <span style="width: 36px; height: 36px; border-radius: 10px; background: #06C755; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg></span>
+      <strong style="font-family: Anuphan, sans-serif; font-size: 20px">PropFlow</strong>
+    </div>
+    <nav aria-label="เมนูหลัก" style="display: flex; flex-direction: column; gap: 4px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+        <a href="{{n.href}}" style="height: 44px; border-radius: 10px; padding: 0 12px; display: flex; align-items: center; text-decoration: none; color: {{n.fg}}; background: {{n.bg}}; font-size: 15px; font-weight: 600">{{n.label}}</a>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px clamp(16px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 20px">
+    <header style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px"><h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">รายงานรายรับ</h1><span style="font-size: 14px; color: #4F5F57">พ.ค. – ต.ค. 2569 · ทุกอาคาร</span></div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px">
+        <div role="tablist" style="display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #E8ECEA">
+          <button role="tab" aria-selected="false" style="height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600; color: #4F5F57">3 เดือน</button>
+          <button role="tab" aria-selected="true" style="height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 700">6 เดือน</button>
+          <button role="tab" aria-selected="false" style="height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600; color: #4F5F57">ปีนี้</button>
+        </div>
+        <button style="height: 44px; padding: 0 16px; border: 1.5px solid #DCE3DF; border-radius: 10px; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 600">ส่งออก CSV</button>
+        <button style="height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">ส่งออก PDF</button>
+      </div>
+    </header>
+
+    <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
+      <div style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #4F5F57">รับแล้ว 6 เดือน</span><strong style="font-family: Anuphan, sans-serif; font-size: 30px">฿791,650</strong><span style="font-size: 13px; color: #4F5F57">เฉลี่ย ฿131,942 / เดือน</span></div>
+      <div style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #4F5F57">อัตราเก็บเงินได้</span><strong style="font-family: Anuphan, sans-serif; font-size: 30px">99.1%</strong><span style="font-size: 13px; color: #4F5F57">ภายในเดือนที่ออกบิล</span></div>
+      <div style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #4F5F57">ค่าปรับที่เก็บได้</span><strong style="font-family: Anuphan, sans-serif; font-size: 30px">฿1,260</strong><span style="font-size: 13px; color: #4F5F57">42 วันที่ล่าช้ารวม</span></div>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600">รายเดือน</h2>
+      <div style="overflow-x: auto">
+        <table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums">
+          <thead><tr style="text-align: right; color: #4F5F57; font-size: 13px">
+            <th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600; text-align: left">เดือน</th>
+            <th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600">ค่าเช่า</th>
+            <th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600">ค่าน้ำไฟ</th>
+            <th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600">รับแล้ว</th>
+            <th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600">ค้าง</th>
+            <th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600; text-align: left; width: 200px">เก็บได้</th>
+            <th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600">เข้าพัก</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+              <tr style="text-align: right">
+                <td style="padding: 12px; border-bottom: 1px solid #EEF1EF; text-align: left; font-weight: 700">{{r.m}}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #EEF1EF">{{r.rent}}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #EEF1EF">{{r.util}}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #EEF1EF; font-weight: 700">{{r.paid}}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #EEF1EF; color: {{r.dueC}}">{{r.due}}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #EEF1EF; text-align: left"><div style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; height: 8px; border-radius: 999px; background: #E3E8E5; display: flex"><span style="width: {{r.pct}}; height: 8px; border-radius: 999px; background: #047C3B"></span></span><span style="width: 48px; font-size: 13px">{{r.pct}}</span></div></td>
+                <td style="padding: 12px; border-bottom: 1px solid #EEF1EF">{{r.occ}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const on = { fg: '#FFFFFF', bg: 'rgba(6,199,85,0.22)' }, off = { fg: '#C9D6CF', bg: 'transparent' };
+    const nav = [
+      ['ภาพรวม', 'PortalDash.dc.html'], ['อาคารและห้อง', '#'], ['บิลและการชำระ', 'PortalBilling.dc.html'], ['ผู้เช่าและสัญญา', '#'], ['แจ้งซ่อม', '#'], ['รายงาน', 'PortalReports.dc.html'], ['ตั้งค่า', 'PortalSettings.dc.html']
+    ].map(([label, href]) => ({ label, href, ...(label === 'รายงาน' ? on : off) }));
+    const raw = [
+      ['ต.ค. 69', '118,400', '17,350', '128,750', '7,000', 95, '90%'],
+      ['ก.ย. 69', '118,400', '16,900', '135,300', '0', 100, '92%'],
+      ['ส.ค. 69', '117,600', '16,700', '134,300', '0', 100, '90%'],
+      ['ก.ค. 69', '117,600', '15,200', '132,800', '0', 100, '90%'],
+      ['มิ.ย. 69', '116,800', '14,900', '131,700', '0', 100, '88%'],
+      ['พ.ค. 69', '115,200', '13,600', '128,800', '0', 100, '88%']
+    ];
+    const rows = raw.map(([m, rent, util, paid, due, pct, occ]) => ({ m, rent, util, paid, due, pct: pct + '%', occ, dueC: due === '0' ? '#4F5F57' : '#A8221A' }));
+    return { nav, rows };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ค่าบริการแพลตฟอร์ม</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <dc-import name="AppBar" title="ค่าบริการ PropFlow" back="OwnerSettings.dc.html" hint-size="390px,56px"></dc-import>
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: center"><strong style="font-size: 15px">สถานะ</strong><span style="padding: 4px 10px; border-radius: 999px; background: #EAF1FE; color: #1A4FBF; font-size: 13px; font-weight: 700">ทดลองใช้</span></div>
+      <div style="display: flex; gap: 4px" aria-label="ไทม์ไลน์">
+        <div style="flex: 14; display: flex; flex-direction: column; gap: 4px"><span style="height: 6px; border-radius: 4px; background: #1A4FBF"></span><span style="font-size: 11px; color: #4F5F57">ทดลอง 14 วัน</span></div>
+        <div style="flex: 7; display: flex; flex-direction: column; gap: 4px"><span style="height: 6px; border-radius: 4px; background: #E3A13B"></span><span style="font-size: 11px; color: #4F5F57">ผ่อนผัน 7 วัน</span></div>
+        <div style="flex: 5; display: flex; flex-direction: column; gap: 4px"><span style="height: 6px; border-radius: 4px; background: #A8221A"></span><span style="font-size: 11px; color: #4F5F57">ระงับ</span></div>
+      </div>
+      <span style="font-size: 13px; line-height: 1.5; color: #33403A">หมดทดลอง 6 พ.ย. หลังจากนั้นใช้ต่อได้อีก 7 วัน ถ้ายังไม่ต่ออายุ ระบบจะเปิดให้ดูข้อมูลได้อย่างเดียว</span>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <button aria-pressed="true" style="border-radius: 16px; border: 2px solid #047C3B; background: #E7F8EE; padding: 14px; font-family: Sarabun, sans-serif; color: #0F1F17; text-align: left; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 700; color: #046A33">รายเดือน</span><strong style="font-family: Anuphan, sans-serif; font-size: 24px">฿499</strong><span style="font-size: 12px; color: #4F5F57">ต่ออายุ 30 วัน</span></button>
+      <button aria-pressed="false" style="border-radius: 16px; border: 1.5px solid #DCE3DF; background: #FFFFFF; padding: 14px; font-family: Sarabun, sans-serif; color: #0F1F17; text-align: left; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 700; color: #4F5F57">รายปี</span><strong style="font-family: Anuphan, sans-serif; font-size: 24px">[ราคา]</strong><span style="font-size: 12px; color: #4F5F57">ต่ออายุ 365 วัน</span></button>
+    </div>
+
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 14px">
+      <div role="img" aria-label="QR PromptPay ของแพลตฟอร์ม" style="flex: 0 0 104px; height: 104px; border-radius: 12px; border: 1px solid #DCE3DF; background: #F0F2F1; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #4F5F57">QR ฿499</div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #4F5F57">บิล SUB-2569-00042</span><strong style="font-size: 15px">สแกนจ่าย แล้วแนบสลิป</strong><span style="font-size: 12px; color: #4F5F57">แอดมินตรวจภายใน 1 วันทำการ แจ้งผลทาง LINE</span></div>
+    </section>
+
+    <button style="height: 56px; border-radius: 14px; border: 1.5px dashed #9AA8A1; background: #FFFFFF; color: #047C3B; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">แนบสลิปการโอน</button>
+  </div>
+  <div style="flex: 0 0 auto; background: #FFFFFF; padding: 12px 16px 24px; border-top: 1px solid #E3E8E5">
+    <button style="width: 100%; height: 52px; border: 0; border-radius: 14px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 17px; font-weight: 700">ส่งสลิปค่าบริการ</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

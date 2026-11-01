@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>อาคารทั้งหมด</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <dc-import name="AppBar" title="อาคารทั้งหมด" sub="2 อาคาร · 40 ห้อง" action="+ เพิ่ม" back="OwnerHome.dc.html" hint-size="390px,56px"></dc-import>
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+    <sc-for list="{{props}}" as="p" hint-placeholder-count="2">
+      <a href="OwnerProperty.dc.html" style="background: #FFFFFF; border-radius: 20px; overflow: hidden; text-decoration: none; color: #0F1F17; display: flex; flex-direction: column">
+        <div style="height: 110px; background: {{p.cover}}; padding: 14px 16px; box-sizing: border-box; display: flex; align-items: flex-end; justify-content: space-between">
+          <strong style="font-family: Anuphan, sans-serif; font-size: 22px; color: #FFFFFF">{{p.name}}</strong>
+          <span style="padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.18); color: #FFFFFF; font-size: 12px; font-weight: 700">{{p.floors}}</span>
+        </div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; justify-content: space-between; font-size: 13px"><span style="color: #4F5F57">เข้าพัก</span><strong>{{p.occ}}</strong></div>
+          <div style="height: 8px; border-radius: 999px; background: #E3E8E5"><div style="width: {{p.pct}}; height: 8px; border-radius: 999px; background: #06C755"></div></div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+            <div style="display: flex; flex-direction: column"><span style="font-size: 12px; color: #4F5F57">รับแล้ว</span><strong style="font-size: 15px">{{p.paid}}</strong></div>
+            <div style="display: flex; flex-direction: column"><span style="font-size: 12px; color: #4F5F57">ค้าง</span><strong style="font-size: 15px; color: #A8221A">{{p.due}}</strong></div>
+            <div style="display: flex; flex-direction: column"><span style="font-size: 12px; color: #4F5F57">ซ่อมเปิดอยู่</span><strong style="font-size: 15px">{{p.maint}}</strong></div>
+          </div>
+        </div>
+      </a>
+    </sc-for>
+    <button style="height: 56px; border-radius: 16px; border: 1.5px dashed #9AA8A1; background: transparent; color: #047C3B; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">+ เพิ่มอาคารใหม่ (ต้องมีเลข PromptPay)</button>
+  </div>
+  <dc-import name="TabBar" role="owner" active="home" hint-size="390px,82px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const props = [
+      { name: 'บ้านสวนรัตนา', floors: '3 ชั้น · 20 ห้อง', occ: '18 / 20', pct: '90%', paid: '฿52,600', due: '฿7,480', maint: '2', cover: '#0F3D25' },
+      { name: 'รัตนา เรสซิเดนซ์', floors: '2 ชั้น · 20 ห้อง', occ: '18 / 20', pct: '90%', paid: '฿31,600', due: '฿7,120', maint: '0', cover: '#1B4F6B' }
+    ];
+    return { props };
+  }
+}
+</script>
+</body>
+</html>

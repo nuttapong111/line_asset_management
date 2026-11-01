@@ -31,6 +31,8 @@ model Property {
   address         String?
   bankName        String?
   bankAccount     String?
+  /// เบอร์ฉุกเฉินของอาคาร ที่ผู้เช่าเห็นในหน้าติดต่อ
+  emergencyPhone  String?
   promptpayNumber String
   paymentQrUrl    String?
   units           Unit[]
@@ -201,6 +203,7 @@ model Tenant {
   linkedAt     DateTime?
   contracts    Contract[]
   payments     Payment[]
+  paymentBundles PaymentBundle[]
   chatMessages ChatMessage[]
   communityPosts CommunityPost[]
   createdAt    DateTime      @default(now())
@@ -231,6 +234,8 @@ model Contract {
   status             ContractStatus @default(ACTIVE)
   renewalRequestedAt DateTime?
   renewalNote        String?
+  moveOutRequestedAt DateTime?
+  moveOutNote        String?
   moveOut            MoveOut?
   createdAt          DateTime       @default(now())
 }
@@ -295,6 +300,7 @@ model InvoiceItem {
 enum InvoiceType {
   RENT // ค่าเช่า + ค่าส่วนกลาง — สร้างอัตโนมัติทุกเดือน
   UTILITY // ค่าน้ำ + ค่าไฟ — สร้างเมื่อบันทึกมิเตอร์แล้ว
+  SHORTFALL // ส่วนต่างที่รับสลิปไม่ครบ แล้วยังคงเป็นยอดค้าง
 }
 
 enum InvoiceStatus {
@@ -332,7 +338,37 @@ model Payment {
   receiptNo      String?         @unique
   receiptUrl     String?
   receiptPdfUrl  String?
+  /// ส่วนต่างที่ยอมรับตอนอนุมัติสลิป (ยอดบิล − ยอดบนสลิป)
+  shortfall      Decimal         @default(0)
+  bundleId       String?
+  bundle         PaymentBundle?  @relation(fields: [bundleId], references: [id])
   createdAt      DateTime        @default(now())
+
+  @@index([bundleId])
+}
+
+/// สลิปเดียวครอบหลายบิลของผู้เช่าคนเดียวกัน
+model PaymentBundle {
+  id                String        @id @default(cuid())
+  tenantId          String
+  tenant            Tenant        @relation(fields: [tenantId], references: [id])
+  total             Decimal
+  slipUrl           String?
+  slipUploadedAt    DateTime?
+  ocrAmount         Decimal?
+  ocrMatched        Boolean?
+  ocrAccountMatched Boolean?
+  ocrParsedAccount  String?
+  ocrNote           String?
+  status            PaymentStatus @default(WAITING_SLIP)
+  shortfall         Decimal       @default(0)
+  rejectReason      String?
+  approvedAt        DateTime?
+  rejectedAt        DateTime?
+  payments          Payment[]
+  createdAt         DateTime      @default(now())
+
+  @@index([tenantId, status])
 }
 
 enum PaymentStatus {
@@ -375,6 +411,15 @@ model Maintenance {
   photoUrls   String[]
   status      MaintenanceStatus    @default(NEW)
   scheduledAt DateTime?
+  /// ช่วงเวลาที่นัด เช่น 09:00-12:00
+  scheduleSlot String?
+  technicianName String?
+  /// CONFIRMED | RESCHEDULE | null
+  appointmentStatus String?
+  appointmentNote String?
+  tenantRespondedAt DateTime?
+  /// ผู้เช่ายืนยันว่างานเสร็จ
+  doneConfirmedAt DateTime?
   completedAt DateTime?
   messages    MaintenanceMessage[]
   createdAt   DateTime             @default(now())

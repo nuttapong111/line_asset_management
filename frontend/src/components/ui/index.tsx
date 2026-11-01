@@ -10,16 +10,16 @@ export function Button({
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'amber'
 }) {
   const variants: Record<string, string> = {
-    primary: 'bg-line text-white active:bg-line-dark',
-    secondary: 'bg-white text-gray-700 border border-gray-300 active:bg-gray-50',
-    danger: 'bg-danger text-white active:opacity-90',
-    amber: 'bg-amber text-white active:opacity-90',
-    ghost: 'bg-transparent text-line active:bg-line-light',
+    primary: 'bg-primary text-white active:bg-primary-hover',
+    secondary: 'bg-white text-primary border-[1.5px] border-primary active:bg-primary-soft',
+    danger: 'bg-danger-bg text-danger active:opacity-90',
+    amber: 'bg-warn-bg text-warn-fg active:opacity-90',
+    ghost: 'bg-surface-2 text-ink active:opacity-80',
   }
   return (
     <button
       className={cls(
-        'w-full rounded-xl px-4 py-3 font-semibold text-base transition disabled:opacity-50 disabled:cursor-not-allowed',
+        'w-full min-h-[52px] rounded-cta px-4 font-bold text-[17px] transition disabled:opacity-50 disabled:cursor-not-allowed',
         variants[variant],
         className
       )}
@@ -34,7 +34,7 @@ export function Card({ children, className, onClick }: { children: React.ReactNo
   return (
     <div
       onClick={onClick}
-      className={cls('bg-white rounded-2xl shadow-sm border border-gray-100 p-4', onClick && 'cursor-pointer active:bg-gray-50', className)}
+      className={cls('bg-white rounded-card border border-line-soft p-4', onClick && 'cursor-pointer active:bg-canvas', className)}
     >
       {children}
     </div>

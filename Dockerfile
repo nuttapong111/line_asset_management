@@ -22,7 +22,7 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 COPY backend/package*.json ./
 RUN npm ci
 COPY backend/ ./
-RUN npx prisma generate && npm run build
+RUN ./node_modules/.bin/prisma generate && npm run build
 
 # 3) Runtime
 FROM node:20-bookworm-slim AS runtime
@@ -30,15 +30,16 @@ ENV NODE_ENV=production
 WORKDIR /app/backend
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-# Install production deps + prisma CLI (kept for `migrate deploy` at start)
+# Production deps, then the same Prisma CLI as the repo (5.22).
+# `npx prisma` without this can download Prisma 8, which will not apply these migrations.
 COPY backend/package*.json ./
-RUN npm ci
+RUN npm ci && npm install --no-save --no-package-lock prisma@5.22.0
 
 # Prisma schema + generated client + built code + fonts
 COPY --from=backend /app/backend/prisma ./prisma
 COPY --from=backend /app/backend/dist ./dist
 COPY --from=backend /app/backend/assets ./assets
-RUN npx prisma generate
+RUN ./node_modules/.bin/prisma generate
 
 # Frontend build served from backend/public
 COPY --from=frontend /app/frontend/dist ./public

@@ -1,0 +1,36 @@
+---
+description: PropFlow UI rewrite. Build every screen to match the design package in design/ (DESIGN.md, tokens, screens/*.dc.html).
+globs: src/**/*.{tsx,ts,css}
+alwaysApply: true
+---
+
+# PropFlow design rule
+
+The design package lives in `design/` (adjust the path if you put it elsewhere).
+It is the source of truth for every UI decision. Read `design/DESIGN.md` before building or changing a screen.
+
+## Before building a screen
+1. Find the screen in DESIGN.md §6 (screen ↔ route map) and open its mockup in `design/screens/<role>/<Name>.dc.html`.
+2. Read the `renderVals()` block at the bottom of the mockup. Its return value is the data/props shape for the component.
+3. Rebuild the markup 1:1: same order, same spacing, same sizes, same Thai copy (character for character).
+
+## Translating `.dc.html` to React + Tailwind
+- `<x-dc>` content = the component JSX. Ignore `<helmet>`, `support.js`, `data-props`.
+- `{{value}}` → prop or derived value. `<sc-for list="{{items}}" as="item">` → `items.map(...)` with a stable `key`.
+- `<sc-if value="{{x}}">` → `{x && ...}`.
+- `<dc-import name="TabBar" .../>` → shared component. Sources are in `design/screens/components/`.
+- `<a href="X.dc.html">` → router link to the route of X (DESIGN.md §6).
+- Inline styles → Tailwind classes from the preset in `design/tokens/tailwind.config.js`. Arbitrary values (`p-[14px]`) are fine for one-off px values; arbitrary colors are not.
+
+## Hard rules
+- Colors only from tokens (`bg-primary`, `text-muted`, `bg-warn-bg text-warn-fg`, ...). No other hex values.
+- `brand` (#06C755) is never a background behind white text. Use `primary` (#047C3B) for buttons.
+- Fonts: `font-display` (Anuphan) for headings and amounts, `font-sans` (Sarabun) for everything else. Amounts use `.pf-amount` / `tabular-nums`.
+- Status = color + Thai word, always via one `<StatusBadge kind status />` that reads `design/tokens/tokens.json` → `statusMap`. Never color alone.
+- Mobile (LIFF): design width 390, min 360, `max-w-liff mx-auto`. Primary action in a sticky bottom action bar, buttons 52px high, tap targets ≥ 44px.
+- Portal (desktop): sidebar + main as in the mockups (flex-wrap, sidebar `1 1 240px`, main `999 1 560px`). Buttons 44px.
+- Icons: lucide-react, 20–24px, stroke 2, matching the mockup icon names.
+- Build shared components first (DESIGN.md §4) and reuse them. Do not restyle a component per screen.
+- Loading = skeletons, empty = one muted line + one primary action, errors inline. Follow DESIGN.md §8.
+- Items in DESIGN.md §7 need backend work. Build the UI, but put mock data behind a clear TODO if the API does not exist yet.
+- Values shown as `[ราคา]`, `[ยอด]` etc. in mockups are placeholders: read them from config/API, never hard-code.

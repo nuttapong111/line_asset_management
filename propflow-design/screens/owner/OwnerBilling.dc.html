@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>เจ้าของ บิลทุกห้อง</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 20px 16px 12px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 26px; font-weight: 700">บิล</h1>
+      <button style="height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #DCE3DF; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 700; color: #0F1F17; display: flex; align-items: center; gap: 4px">พ.ย. 2569<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+      <a href="OwnerMeter.dc.html" style="height: 48px; border-radius: 12px; border: 1.5px solid #047C3B; background: #FFFFFF; color: #047C3B; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 13l4-4"></path></svg>จดมิเตอร์</a>
+      <a href="OwnerInvoice.dc.html" style="height: 48px; border-radius: 12px; background: #047C3B; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>สร้าง/ส่งบิล</a>
+    </div>
+    <div style="display: flex; gap: 6px; overflow: hidden">
+      <sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+        <button aria-pressed="{{c.p}}" style="flex: 0 0 auto; height: 34px; padding: 0 12px; border-radius: 999px; border: {{c.border}}; background: {{c.bg}}; color: {{c.fg}}; font-family: Sarabun, sans-serif; font-size: 13px; font-weight: 600">{{c.label}}</button>
+      </sc-for>
+    </div>
+    <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden">
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+        <a href="{{r.href}}" style="padding: 11px 14px; border-bottom: 1px solid #EEF1EF; text-decoration: none; color: #0F1F17; display: flex; align-items: center; gap: 12px">
+          <span style="width: 52px; font-family: Anuphan, sans-serif; font-size: 15px; font-weight: 700">{{r.room}}</span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">{{r.amt}}</span><span style="font-size: 12px; color: #4F5F57">{{r.type}}</span></span>
+          <span style="padding: 3px 10px; border-radius: 999px; background: {{r.sbg}}; color: {{r.sfg}}; font-size: 12px; font-weight: 700; white-space: nowrap">{{r.status}}</span>
+        </a>
+      </sc-for>
+    </div>
+  </div>
+  <dc-import name="TabBar" role="owner" active="bill" hint-size="390px,82px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const chips = ['ทั้งหมด 40', 'รอชำระ 21', 'รอตรวจ 3', 'เลยกำหนด 2', 'ชำระแล้ว 14'].map((label, i) => ({ label, p: i === 0 ? 'true' : 'false', border: i === 0 ? '1.5px solid #0F1F17' : '1.5px solid #DCE3DF', bg: i === 0 ? '#0F1F17' : '#FFFFFF', fg: i === 0 ? '#FFFFFF' : '#0F1F17' }));
+    const S = { pending: ['รอชำระ', '#EAF1FE', '#1A4FBF'], slip: ['รอตรวจ', '#FEF3E2', '#8A4B05'], paid: ['ชำระแล้ว', '#E7F8EE', '#046A33'], over: ['เลย 6 วัน', '#FDECEA', '#A8221A'] };
+    const raw = [
+      ['A-201', '฿6,800.00', 'ค่าเช่า พ.ย.', 'paid'], ['A-202', '฿6,800.00', 'ค่าเช่า พ.ย.', 'paid'],
+      ['A-203', '฿7,300.00', 'ค่าเช่า พ.ย.', 'pending'], ['A-204', '฿7,480.00', 'ค่าเช่า ต.ค. + ค่าปรับ', 'over'],
+      ['A-205', '฿6,800.00', 'ค่าเช่า พ.ย.', 'paid'], ['A-207', '฿964.00', 'ค่าน้ำไฟ ต.ค.', 'slip'],
+      ['A-208', '฿8,172.00', 'ค่าเช่า + น้ำไฟ', 'slip'], ['A-209', '฿7,300.00', 'ค่าเช่า พ.ย.', 'pending'],
+      ['A-210', '฿6,500.00', 'ค่าเช่า พ.ย.', 'pending']
+    ];
+    const rows = raw.map(([room, amt, type, s]) => ({ room, amt, type, status: S[s][0], sbg: S[s][1], sfg: S[s][2], href: s === 'slip' ? 'OwnerSlip.dc.html' : 'OwnerInvoice.dc.html' }));
+    return { chips, rows };
+  }
+}
+</script>
+</body>
+</html>

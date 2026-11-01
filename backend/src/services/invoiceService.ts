@@ -193,12 +193,15 @@ export function invoiceLineItems(invoice: {
   waterAmount: unknown
   commonFee: unknown
   lateFee?: unknown
+  extraAmount?: unknown
   extraItems?: { label: string; amount: unknown }[]
 }) {
   const items: { label: string; amount: number }[] = []
   if (invoice.type === 'RENT') {
     items.push({ label: 'ค่าเช่า', amount: Number(invoice.rentAmount) })
     if (Number(invoice.commonFee) > 0) items.push({ label: 'ค่าส่วนกลาง', amount: Number(invoice.commonFee) })
+  } else if (invoice.type === 'SHORTFALL') {
+    items.push({ label: 'ส่วนต่างการชำระ', amount: Number(invoice.extraAmount ?? 0) })
   } else {
     if (Number(invoice.electricAmount) > 0) items.push({ label: 'ค่าไฟฟ้า', amount: Number(invoice.electricAmount) })
     if (Number(invoice.waterAmount) > 0) items.push({ label: 'ค่าน้ำ', amount: Number(invoice.waterAmount) })

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ชุมชน</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column; position: relative">
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; justify-content: space-between; align-items: center"><h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 26px; font-weight: 700">ชุมชน</h1><span style="font-size: 13px; font-weight: 600; color: #4F5F57">บ้านสวนรัตนา</span></div>
+    <div style="display: flex; gap: 8px">
+      <sc-for list="{{chips}}" as="c" hint-placeholder-count="4">
+        <button aria-pressed="{{c.p}}" style="height: 36px; padding: 0 14px; border-radius: 999px; border: {{c.border}}; background: {{c.bg}}; color: {{c.fg}}; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600">{{c.label}}</button>
+      </sc-for>
+    </div>
+
+    <article style="background: #FFFFFF; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; gap: 8px; align-items: center"><span style="padding: 2px 8px; border-radius: 6px; background: #FEF3E2; color: #8A4B05; font-size: 12px; font-weight: 700">ประกาศ · ปักหมุด</span><span style="font-size: 12px; color: #4F5F57">เจ้าของ · 2 ชม.</span></div>
+      <strong style="font-size: 16px">งดจ่ายน้ำ 8 พ.ย. 09:00–12:00</strong>
+      <span style="font-size: 14px; line-height: 1.5; color: #33403A">ล้างถังเก็บน้ำประจำปี กรุณาสำรองน้ำไว้ใช้ล่วงหน้า ขออภัยในความไม่สะดวกครับ</span>
+      <span style="font-size: 13px; color: #4F5F57">3 ความคิดเห็น</span>
+    </article>
+
+    <a href="CommunityPost.dc.html" style="background: #FFFFFF; border-radius: 18px; padding: 14px 16px; text-decoration: none; color: #0F1F17; display: flex; gap: 12px">
+      <div style="flex: 0 0 96px; height: 96px; border-radius: 12px; background: #DCE3DF; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #4F5F57">รูปสินค้า</div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; gap: 8px; align-items: center"><span style="padding: 2px 8px; border-radius: 6px; background: #EAF1FE; color: #1A4FBF; font-size: 12px; font-weight: 700">ซื้อขาย</span><span style="font-size: 12px; color: #4F5F57">A-210 · 5 ชม.</span></div>
+        <strong style="font-size: 15px">พัดลมตั้งพื้น 16 นิ้ว สภาพดี</strong>
+        <strong style="font-family: Anuphan, sans-serif; font-size: 18px; color: #047C3B">฿350</strong>
+        <span style="font-size: 13px; color: #4F5F57">2 ความคิดเห็น</span>
+      </div>
+    </a>
+
+    <article style="background: #FFFFFF; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; gap: 8px; align-items: center"><span style="padding: 2px 8px; border-radius: 6px; background: #F0F2F1; color: #33403A; font-size: 12px; font-weight: 700">คุยกัน</span><span style="font-size: 12px; color: #4F5F57">B-105 · เมื่อวาน</span></div>
+      <strong style="font-size: 16px">มีใครรู้จักร้านซักผ้าใกล้ๆ ที่รับส่งถึงห้องบ้างครับ</strong>
+      <span style="font-size: 13px; color: #4F5F57">7 ความคิดเห็น</span>
+    </article>
+  </div>
+  <a href="CommunityNew.dc.html" style="position: absolute; right: 16px; bottom: 98px; height: 52px; padding: 0 20px; border-radius: 999px; background: #047C3B; color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 16px rgba(4,124,59,0.30)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>โพสต์</a>
+  <dc-import name="TabBar" role="tenant" active="community" hint-size="390px,82px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const chips = ['ทั้งหมด', 'ประกาศ', 'คุยกัน', 'ซื้อขาย'].map((label, i) => ({ label, p: i === 0 ? 'true' : 'false', border: i === 0 ? '1.5px solid #0F1F17' : '1.5px solid #DCE3DF', bg: i === 0 ? '#0F1F17' : '#FFFFFF', fg: i === 0 ? '#FFFFFF' : '#0F1F17' }));
+    return { chips };
+  }
+}
+</script>
+</body>
+</html>

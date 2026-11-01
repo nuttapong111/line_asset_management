@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ตั้งเวลาแจ้งเตือน</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <dc-import name="AppBar" title="การแจ้งเตือน" sub="ใช้กับทุกอาคารของคุณ" action="บันทึก" back="OwnerSettings.dc.html" hint-size="390px,56px"></dc-import>
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+    <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+      <section style="background: #FFFFFF; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="flex: 1; display: flex; flex-direction: column"><strong style="font-size: 15px">{{r.title}}</strong><span style="font-size: 12px; color: #4F5F57">{{r.sub}}</span></span>
+          <label style="position: relative; width: 48px; height: 28px; flex: 0 0 48px"><input type="checkbox" checked aria-label="{{r.title}}" style="position: absolute; inset: 0; opacity: 0; margin: 0"><span style="position: absolute; inset: 0; border-radius: 999px; background: #047C3B"></span><span style="position: absolute; top: 3px; left: 23px; width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF"></span></label>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{r.chips}}" as="c" hint-placeholder-count="3">
+            <span style="height: 30px; padding: 0 10px; border-radius: 8px; background: {{c.bg}}; color: {{c.fg}}; border: {{c.border}}; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center">{{c.t}}</span>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const on = (t) => ({ t, bg: '#E7F8EE', fg: '#046A33', border: '1px solid #9FDDB8' });
+    const off = (t) => ({ t, bg: '#FFFFFF', fg: '#4F5F57', border: '1px dashed #C9D2CD' });
+    const rows = [
+      { title: 'ส่งบิลค่าเช่าอัตโนมัติ', sub: 'ก่อนวันครบกำหนด · เวลา 08:00', chips: [on('4 วันก่อน'), off('+ เปลี่ยนเวลา')] },
+      { title: 'เตือนก่อนครบกำหนด', sub: 'ส่งให้ผู้เช่าที่ยังไม่จ่าย', chips: [on('3 วัน'), on('1 วัน'), off('+ เพิ่ม')] },
+      { title: 'เตือนเลยกำหนด', sub: 'ซ้ำจนกว่าจะชำระ', chips: [on('ทุก 1 วัน')] },
+      { title: 'สัญญาใกล้หมด', sub: 'แจ้งคุณและผู้เช่า', chips: [on('60 วัน'), on('30 วัน'), on('14 วัน'), on('7 วัน')] },
+      { title: 'ใบงานซ่อมค้าง “ใหม่”', sub: 'เตือนคุณถ้ายังไม่รับเรื่อง', chips: [on('เกิน 1 ชม.')] },
+      { title: 'ช่วงเงียบ', sub: 'ไม่ส่งข้อความอัตโนมัติช่วงนี้', chips: [on('22:00 – 07:00')] }
+    ];
+    return { rows };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,6 +1,14 @@
-export function baht(n: number | string | undefined | null): string {
+export function baht(n: number | string | undefined | null, digits = 0): string {
   const v = Number(n ?? 0)
-  return '฿' + v.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  return (
+    '฿' +
+    v.toLocaleString('th-TH', { minimumFractionDigits: digits, maximumFractionDigits: Math.max(digits, 2) })
+  )
+}
+
+/** บิลและใบเสร็จ แสดงทศนิยมสองตำแหน่ง */
+export function bahtExact(n: number | string | undefined | null): string {
+  return baht(n, 2)
 }
 
 export function thaiDate(d: string | Date | undefined | null): string {

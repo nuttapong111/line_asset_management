@@ -10,9 +10,11 @@ export type SignaturePadHandle = {
 export function SignaturePad({
   apiRef,
   onChange,
+  bare = false,
 }: {
   apiRef: React.MutableRefObject<SignaturePadHandle | null>
   onChange?: (hasInk: boolean) => void
+  bare?: boolean
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const drawing = useRef(false)
@@ -93,25 +95,25 @@ export function SignaturePad({
     }
   }
 
+  const canvas = (
+    <canvas
+      ref={canvasRef}
+      className={bare ? 'w-full h-[220px] block touch-none cursor-crosshair' : 'w-full h-44 block cursor-crosshair'}
+      onPointerDown={start}
+      onPointerMove={move}
+      onPointerUp={end}
+      onPointerCancel={end}
+    />
+  )
+
+  if (bare) return <div className="touch-none h-full">{canvas}</div>
+
   return (
     <div>
-      <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white overflow-hidden touch-none">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-44 block cursor-crosshair"
-          onPointerDown={start}
-          onPointerMove={move}
-          onPointerUp={end}
-          onPointerCancel={end}
-        />
-      </div>
+      <div className="rounded-xl border-2 border-dashed border-gray-300 bg-white overflow-hidden touch-none">{canvas}</div>
       <div className="flex justify-between items-center mt-2">
         <p className="text-xs text-gray-400">เซ็นด้วยนิ้วหรือปากกาในกรอบ</p>
-        <button
-          type="button"
-          onClick={() => apiRef.current?.clear()}
-          className="text-sm text-gray-500 underline"
-        >
+        <button type="button" onClick={() => apiRef.current?.clear()} className="text-sm text-gray-500 underline">
           ล้างลายเซ็น
         </button>
       </div>

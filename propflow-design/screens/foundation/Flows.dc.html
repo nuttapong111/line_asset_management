@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>PropFlow IA และ User Flows</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 1600px; height: 2000px; box-sizing: border-box; padding: 72px 80px; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column; gap: 48px">
+
+  <header style="display: flex; flex-direction: column; gap: 8px">
+    <h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 40px; font-weight: 700">โครงสร้างข้อมูล (IA) และ User flow หลัก</h1>
+    <p style="margin: 0; font-size: 18px; color: #4F5F57">แยกตามบทบาท ป้าย “ปรับใหม่” คือจุดที่เสนอปรับจาก SRS เดิม</p>
+  </header>
+
+  <section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+    <sc-for list="{{ia}}" as="col" hint-placeholder-count="4">
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="align-self: flex-start; padding: 4px 10px; border-radius: 999px; background: {{col.bg}}; color: {{col.fg}}; font-size: 13px; font-weight: 700">{{col.channel}}</span>
+          <h2 style="margin: 4px 0 0; font-family: Anuphan, sans-serif; font-size: 22px; font-weight: 700">{{col.role}}</h2>
+          <span style="font-size: 14px; color: #4F5F57">{{col.nav}}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <sc-for list="{{col.groups}}" as="g" hint-placeholder-count="4">
+            <div style="border: 1px solid #E3E8E5; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+              <strong style="font-size: 15px">{{g.name}}</strong>
+              <span style="font-size: 13px; line-height: 1.55; color: #4F5F57">{{g.items}}</span>
+              <sc-if value="{{g.isNew}}" hint-placeholder-val="{{ false }}">
+                <span style="align-self: flex-start; padding: 2px 8px; border-radius: 6px; background: #FEF3E2; color: #8A4B05; font-size: 12px; font-weight: 700">ปรับใหม่</span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">User flow หลัก</h2>
+      <div style="display: flex; gap: 16px; font-size: 14px; color: #4F5F57">
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #1A4FBF"></span>ผู้เช่า</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #047C3B"></span>เจ้าของ</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #8A4B05"></span>ระบบอัตโนมัติ</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #6B3FB0"></span>แอดมิน</span>
+      </div>
+    </div>
+    <sc-for list="{{flows}}" as="f" hint-placeholder-count="4">
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 24px 28px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: baseline; gap: 14px">
+          <span style="font-family: Anuphan, sans-serif; font-size: 15px; font-weight: 700; color: #047C3B">{{f.no}}</span>
+          <h3 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 21px; font-weight: 600">{{f.title}}</h3>
+          <span style="font-size: 14px; color: #4F5F57">{{f.goal}}</span>
+        </div>
+        <div style="display: flex; align-items: stretch; gap: 0">
+          <sc-for list="{{f.steps}}" as="s" hint-placeholder-count="6">
+            <div style="flex: 1; display: flex; align-items: center; min-width: 0">
+              <div style="flex: 1; min-width: 0; height: 100%; box-sizing: border-box; border-radius: 14px; background: #F7F9F8; border-top: 4px solid {{s.color}}; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 12px; font-weight: 700; color: {{s.color}}">{{s.actor}}</span>
+                <strong style="font-size: 15px; line-height: 1.35">{{s.title}}</strong>
+                <span style="font-size: 13px; line-height: 1.45; color: #4F5F57">{{s.desc}}</span>
+                <sc-if value="{{s.isNew}}" hint-placeholder-val="{{ false }}">
+                  <span style="align-self: flex-start; margin-top: 2px; padding: 2px 8px; border-radius: 6px; background: #FEF3E2; color: #8A4B05; font-size: 12px; font-weight: 700">ปรับใหม่</span>
+                </sc-if>
+              </div>
+              <sc-if value="{{s.arrow}}" hint-placeholder-val="{{ true }}">
+                <svg width="28" height="20" viewBox="0 0 28 20" fill="none" stroke="#9AA8A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 28px"><path d="M5 10h17M17 5l5 5-5 5"></path></svg>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1600,"height":2000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const T = { c: '#1A4FBF', a: 'ผู้เช่า' };
+    const O = { c: '#047C3B', a: 'เจ้าของ' };
+    const S = { c: '#8A4B05', a: 'ระบบ' };
+    const A = { c: '#6B3FB0', a: 'แอดมิน' };
+    const mk = (rows) => rows.map((r, i) => ({ actor: r[0].a, color: r[0].c, title: r[1], desc: r[2], isNew: !!r[3], arrow: i < rows.length - 1 }));
+    const flows = [
+      { no: 'FLOW 1', title: 'ผู้เช่าชำระเงินจนได้ใบเสร็จ', goal: 'เป้า: จาก Flex บิลถึงส่งสลิป ≤ 4 แตะ', steps: mk([
+        [S, 'ส่ง Flex บิลเข้า LINE', 'ก่อนครบกำหนด 4 วัน เวลา 08:00'],
+        [T, 'แตะ “ชำระเงิน”', 'เปิด LIFF ตรงไปหน้าบิลนั้น ไม่ต้องเลือกซ้ำ', true],
+        [T, 'บันทึก QR / สแกน', 'ปุ่มบันทึก QR ลงเครื่อง ไว้เปิดในแอปธนาคาร', true],
+        [T, 'แนบสลิป', 'เลือกรูปล่าสุดจากแกลเลอรีให้อัตโนมัติ'],
+        [S, 'OCR ตรวจยอด + บัญชี', 'เป็นคำแนะนำ แจ้งเจ้าของทาง LINE'],
+        [O, 'อนุมัติ / ปฏิเสธ', 'จาก LINE หรือคิวตรวจสลิป'],
+        [S, 'ออกใบเสร็จ PDF', 'Flex ใบเสร็จ + สถานะบิลเป็นชำระแล้ว']
+      ]) },
+      { no: 'FLOW 2', title: 'รับผู้เช่าเข้าอยู่', goal: 'เป้า: จบใน 1 หน้าจอแบบขั้นตอน (wizard 3 ขั้น)', steps: mk([
+        [O, 'เลือกห้องว่าง', 'จากผังห้อง แตะห้องสีเทา “ว่าง”'],
+        [O, '1 · ข้อมูลผู้เช่า', 'ชื่อ เบอร์ เลขบัตร (ไม่บังคับ)', true],
+        [O, '2 · สัญญา', 'วันเริ่ม/สิ้นสุด ค่าเช่า มัดจำ วันครบกำหนด ค่าปรับ', true],
+        [O, '3 · ส่งคำเชิญ', 'ดูตัวอย่างข้อความ SMS / LINE ก่อนส่ง', true],
+        [T, 'เปิดลิงก์คำเชิญ', 'LINE Login ผูกห้องอัตโนมัติ (อายุ 7 วัน)'],
+        [S, 'ใส่ Rich Menu ผู้เช่า', 'แจ้งเจ้าของว่าผูกสำเร็จ']
+      ]) },
+      { no: 'FLOW 3', title: 'รอบบิลรายเดือน (ค่าเช่า + ค่าน้ำไฟ)', goal: 'เป้า: จดมิเตอร์ทั้งตึกได้ต่อเนื่อง ไม่ต้องกลับหน้ารายการ', steps: mk([
+        [S, 'สร้างบิลค่าเช่า', 'อัตโนมัติตาม dueDay − 4 วัน'],
+        [O, 'จดมิเตอร์ไล่ห้อง', 'กรอกแล้วเลื่อนห้องถัดไป ถ่ายรูปมิเตอร์ได้', true],
+        [S, 'เตือนค่าผิดปกติ', 'ใช้เกิน 2 เท่าของค่าเฉลี่ย หรือเลขน้อยกว่าครั้งก่อน', true],
+        [O, 'ตรวจ + ส่งบิลน้ำไฟทั้งตึก', 'เพิ่มรายการพิเศษได้ก่อนส่ง'],
+        [S, 'เตือนก่อนครบ / เลยกำหนด', 'เคารพช่วงเงียบ 22:00–07:00'],
+        [S, 'คิดค่าปรับรายวัน', 'สถานะเลยกำหนด + ยอดใหม่']
+      ]) },
+      { no: 'FLOW 4', title: 'แจ้งซ่อมและติดตาม', goal: 'เป้า: ผู้เช่าเห็นสถานะเหมือนติดตามพัสดุ', steps: mk([
+        [T, 'เลือกหมวด + ถ่ายรูป', 'ไฟฟ้า / ประปา / เครื่องใช้ / ทั่วไป'],
+        [S, 'แจ้งเจ้าของทันที', 'เตือนซ้ำถ้าค้าง “ใหม่” เกิน 1 ชม.'],
+        [O, 'รับเรื่อง + นัดวัน', 'เลือกวันเวลานัดช่าง ผู้เช่ายืนยันได้', true],
+        [T, 'คุยในใบงาน', 'แชทพร้อมรูป แจ้ง LINE ทั้งสองฝ่าย'],
+        [O, 'ซ่อมเสร็จ', 'ผู้เช่ากดยืนยัน + ให้คะแนน แล้วปิดงาน', true]
+      ]) },
+      { no: 'FLOW 5', title: 'ค่าบริการแพลตฟอร์ม (Owner → PropFlow)', goal: 'เป้า: เจ้าของรู้ล่วงหน้า ไม่โดนระงับโดยไม่ตั้งตัว', steps: mk([
+        [S, 'เตือน 7 / 3 / 1 วัน', 'แบนเนอร์ในแอป + LINE', true],
+        [O, 'ชำระ ฿499 ผ่าน PromptPay', 'แนบสลิปในหน้าค่าบริการ'],
+        [A, 'ตรวจสลิปค่าบริการ', 'คิวใน Portal / LIFF / ปุ่ม LINE'],
+        [S, 'ต่ออายุ expiresAt', 'ถ้าไม่จ่าย: GRACE 7 วัน แล้ว SUSPENDED (อ่านได้อย่างเดียว)']
+      ]) }
+    ];
+    const ia = [
+      { channel: 'LINE + LIFF', role: 'ผู้เช่า', nav: 'แท็บ: หน้าหลัก · เอกสาร · ชุมชน · แจ้งซ่อม', bg: '#EAF1FE', fg: '#1A4FBF', groups: [
+        { name: 'หน้าหลัก', items: 'ยอดที่ต้องชำระ · บิลล่าสุด · ทางลัด · ประกาศปักหมุด', isNew: false },
+        { name: 'ชำระเงิน', items: 'เลือกบิล → QR → แนบสลิป → สถานะ', isNew: false },
+        { name: 'เอกสาร', items: 'บิล · ใบเสร็จ · สัญญา (ดู/เซ็น/ขอต่อ)', isNew: false },
+        { name: 'แจ้งซ่อม', items: 'รายการ · เปิดใบงาน · ไทม์ไลน์ + แชท', isNew: false },
+        { name: 'ชุมชน', items: 'ประกาศ · คุยกัน · ซื้อขาย', isNew: false },
+        { name: 'ติดต่อเจ้าของ', items: 'โทร · แชท LINE · ข้อมูลห้อง', isNew: false }
+      ] },
+      { channel: 'LIFF', role: 'เจ้าของ (มือถือ)', nav: 'แท็บ: ภาพรวม · บิล · ชุมชน · ตั้งค่า', bg: '#E7F8EE', fg: '#046A33', groups: [
+        { name: 'ภาพรวม + กล่องงาน', items: 'สลิปรอตรวจ · ใบงานใหม่ · มิเตอร์ที่ยังไม่จด · ตัวเลขเดือนนี้', isNew: true },
+        { name: 'อาคาร → ห้อง', items: 'ผังห้องตามชั้น · รายละเอียดห้อง · รับผู้เช่า · ย้ายออก', isNew: false },
+        { name: 'บิล', items: 'บิลทุกห้อง (ตัวกรองสถานะ) · จดมิเตอร์ · สร้าง/ส่งบิล · ตรวจสลิป', isNew: false },
+        { name: 'ชุมชน', items: 'โพสต์ · ปักหมุด · ซ่อน', isNew: false },
+        { name: 'ตั้งค่า', items: 'แจ้งเตือน · เทมเพลต PDF · ค่าบริการ', isNew: false }
+      ] },
+      { channel: 'Web Portal', role: 'เจ้าของ (เดสก์ท็อป)', nav: 'แถบข้าง: ภาพรวม · อาคารและห้อง · บิล · ผู้เช่า · รายงาน · ตั้งค่า', bg: '#F0F2F1', fg: '#33403A', groups: [
+        { name: 'ภาพรวม', items: 'สรุปเดือน · กราฟรายรับ 6 เดือน · กล่องงาน', isNew: false },
+        { name: 'อาคารและห้อง / ผู้เช่า', items: 'จัดการแบบตาราง แก้ไขหลายห้องพร้อมกัน', isNew: true },
+        { name: 'บิล', items: 'ตาราง · ตัวกรอง · ส่งหลายบิล · ส่งออก CSV', isNew: true },
+        { name: 'รายงาน', items: 'รายรับรายเดือน · ค้างชำระ · อัตราเข้าพัก', isNew: false },
+        { name: 'ค่าบริการ', items: 'แพ็กเกจ · วันหมดอายุ · ชำระ', isNew: false }
+      ] },
+      { channel: 'Web Portal + LIFF', role: 'แอดมินแพลตฟอร์ม', nav: 'ภาพรวม · ค่าบริการ · เจ้าของ · ตั้งค่า', bg: '#F1ECFA', fg: '#5A3496', groups: [
+        { name: 'ภาพรวมแพลตฟอร์ม', items: 'เจ้าของทั้งหมด · TRIAL / ACTIVE / GRACE / SUSPENDED · MRR', isNew: true },
+        { name: 'เจ้าของ', items: 'สร้างบัญชี · รีเซ็ตรหัส · กำหนดแพ็กเกจ · ลิงก์ผูก LINE', isNew: false },
+        { name: 'ตรวจสลิปค่าบริการ', items: 'คิวอนุมัติ · ประวัติ', isNew: false },
+        { name: 'อาคารไม่มีเจ้าของ', items: 'ตั้งค่าแจ้งเตือนส่วนกลาง', isNew: false }
+      ] }
+    ];
+    return { flows, ia };
+  }
+}
+</script>
+</body>
+</html>

@@ -14,6 +14,106 @@ function parseYearMonth(q: { year?: string; month?: string }) {
   return { year, month }
 }
 
+type Scope = ReturnType<typeof propertyWhere>
+
+async function ownerTasks(scope: Scope, now: Date) {
+  const month = now.getMonth() + 1
+  const year = now.getFullYear()
+  const in60 = new Date(now)
+  in60.setDate(in60.getDate() + 60)
+
+  const [slips, tickets, meters, contracts, moveOuts] = await Promise.all([
+    prisma.payment.findMany({
+      where: { status: 'UNDER_REVIEW', invoice: { unit: { property: scope } } },
+      include: { invoice: { include: { unit: true } }, tenant: true },
+      orderBy: { slipUploadedAt: 'desc' },
+      take: 20,
+    }),
+    prisma.maintenance.findMany({
+      where: { status: 'NEW', unit: { property: scope } },
+      include: { unit: true },
+      orderBy: { createdAt: 'desc' },
+      take: 12,
+    }),
+    prisma.unit.findMany({
+      where: { status: 'OCCUPIED', property: scope },
+      include: { meterReadings: { where: { month, year }, take: 1 }, property: true },
+    }),
+    prisma.contract.findMany({
+      where: { status: 'ACTIVE', endDate: { gte: now, lte: in60 }, unit: { property: scope } },
+      include: { unit: true, tenant: true },
+      orderBy: { endDate: 'asc' },
+      take: 8,
+    }),
+    prisma.contract.findMany({
+      where: {
+        status: 'ACTIVE',
+        moveOutRequestedAt: { not: null },
+        moveOut: null,
+        unit: { property: scope },
+      },
+      include: { unit: true, tenant: true },
+      orderBy: { moveOutRequestedAt: 'desc' },
+      take: 8,
+    }),
+  ])
+
+  const seenBundle = new Set<string>()
+  const tasks: { kind: string; id: string; title: string; meta: string; href: string }[] = []
+  for (const p of slips) {
+    if (p.bundleId) {
+      if (seenBundle.has(p.bundleId)) continue
+      seenBundle.add(p.bundleId)
+    }
+    tasks.push({
+      kind: 'slip',
+      id: p.id,
+      title: `ตรวจสลิป ห้อง ${p.invoice.unit.roomNumber}`,
+      meta: p.tenant.name,
+      href: `/admin/slip/${p.id}`,
+    })
+  }
+  for (const t of tickets) {
+    tasks.push({
+      kind: 'ticket',
+      id: t.id,
+      title: `แจ้งซ่อม ${t.ticketNo}`,
+      meta: `${t.unit.roomNumber} · ${t.title}`,
+      href: `/admin/maintenance/${t.id}`,
+    })
+  }
+  for (const u of meters) {
+    if (u.meterReadings.length > 0) continue
+    tasks.push({
+      kind: 'meter',
+      id: u.id,
+      title: `จดมิเตอร์ ห้อง ${u.roomNumber}`,
+      meta: u.property.name,
+      href: `/admin/property/${u.propertyId}/meter`,
+    })
+  }
+  for (const c of moveOuts) {
+    tasks.push({
+      kind: 'moveout',
+      id: c.id,
+      title: `แจ้งย้ายออก ห้อง ${c.unit.roomNumber}`,
+      meta: c.tenant.name,
+      href: `/admin/contract/${c.id}/move-out`,
+    })
+  }
+  for (const c of contracts) {
+    const days = Math.ceil((c.endDate.getTime() - now.getTime()) / 86400000)
+    tasks.push({
+      kind: 'contract',
+      id: c.id,
+      title: `สัญญาใกล้หมด ห้อง ${c.unit.roomNumber}`,
+      meta: `อีก ${days} วัน · ${c.tenant.name}`,
+      href: `/admin/contract/${c.id}`,
+    })
+  }
+  return tasks
+}
+
 // GET /api/reports/dashboard — summary cards for portal
 router.get('/dashboard', async (req, res) => {
   const scope = propertyWhere(req.user!)
@@ -193,6 +293,7 @@ router.get('/dashboard', async (req, res) => {
       renewalRequestedAt: c.renewalRequestedAt,
       renewalNote: c.renewalNote,
     })),
+    tasks: await ownerTasks(scope, now),
   })
 })
 

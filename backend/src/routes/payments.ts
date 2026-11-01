@@ -20,6 +20,14 @@ router.use(authMiddleware, requireActiveSubscription)
 
 const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
 
+import {
+  createPaymentBundle,
+  getBundleForTenant,
+  uploadBundleSlip,
+  approveBundle,
+  rejectBundle,
+} from '../services/paymentBundleService'
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -27,6 +35,88 @@ const upload = multer({
     if (['image/jpeg', 'image/png'].includes(file.mimetype)) cb(null, true)
     else cb(new Error('Only JPEG/PNG allowed'))
   },
+})
+
+const bundleBody = z.object({ invoiceIds: z.array(z.string().min(1)).min(1) })
+
+// POST /api/payments/bundle — สลิปเดียวครอบหลายบิล
+router.post('/bundle', async (req, res) => {
+  if (req.user!.role !== 'TENANT' || !req.user!.tenantId || !req.user!.unitId) {
+    return res.status(403).json({ error: 'เฉพาะผู้เช่า' })
+  }
+  const parse = bundleBody.safeParse(req.body)
+  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+  try {
+    const bundle = await createPaymentBundle(req.user!.tenantId, req.user!.unitId, parse.data.invoiceIds)
+    res.status(201).json(bundle)
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message })
+  }
+})
+
+router.get('/bundle/:id', async (req, res) => {
+  if (req.user!.role !== 'TENANT' || !req.user!.tenantId) return res.status(403).json({ error: 'Forbidden' })
+  const bundle = await getBundleForTenant(req.params.id, req.user!.tenantId)
+  if (!bundle) return res.status(404).json({ error: 'ไม่พบรายการ' })
+  res.json(bundle)
+})
+
+router.get('/bundle/:id/qr', async (req, res) => {
+  if (req.user!.role !== 'TENANT' || !req.user!.tenantId) return res.status(403).json({ error: 'Forbidden' })
+  const bundle = await getBundleForTenant(req.params.id, req.user!.tenantId)
+  if (!bundle) return res.status(404).json({ error: 'ไม่พบรายการ' })
+  res.json({
+    payload: bundle.payload,
+    amount: bundle.total,
+    promptpayNumber: bundle.promptpayNumber,
+    hasPaymentQr: bundle.hasPaymentQr,
+    bankName: bundle.bankName,
+    bankAccount: bundle.bankAccount,
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+  })
+})
+
+router.post('/bundle/:id/slip', upload.single('file'), async (req, res) => {
+  if (req.user!.role !== 'TENANT' || !req.user!.tenantId) return res.status(403).json({ error: 'Forbidden' })
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
+  try {
+    const result = await uploadBundleSlip(req.params.id, req.user!.tenantId, req.file)
+    res.json(result)
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message })
+  }
+})
+
+router.post('/bundle/:id/approve', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  const bundle = await prisma.paymentBundle.findUnique({
+    where: { id: req.params.id },
+    include: { payments: { include: { invoice: { include: { unit: { include: { property: true } } } } } } },
+  })
+  if (!bundle) return res.status(404).json({ error: 'ไม่พบรายการ' })
+  const property = bundle.payments[0]?.invoice.unit.property
+  if (!property) return res.status(404).json({ error: 'ไม่พบรายการ' })
+  const scope = propertyWhere(req.user!)
+  const allowed = await prisma.property.findFirst({ where: { id: property.id, ...scope } })
+  if (!allowed) return res.status(403).json({ error: 'Forbidden' })
+  const acceptShortfall = Boolean(req.body?.acceptShortfall)
+  try {
+    await approveBundle(bundle.id, { acceptShortfall })
+    res.json({ ok: true, paymentId: bundle.payments[0]?.id })
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message })
+  }
+})
+
+router.post('/bundle/:id/reject', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  const schema = z.object({ rejectReason: z.string().min(1) })
+  const parse = schema.safeParse(req.body)
+  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+  try {
+    await rejectBundle(req.params.id, parse.data.rejectReason)
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message })
+  }
 })
 
 // GET /api/payments/:invoiceId/qr
@@ -46,6 +136,8 @@ router.get('/:invoiceId/qr', async (req, res) => {
     payload,
     amount,
     promptpayNumber,
+    bankName: invoice.unit.property.bankName,
+    bankAccount: invoice.unit.property.bankAccount,
     // Static QR image uploaded by the manager (served via authenticated stream, not raw storage URL)
     hasPaymentQr: Boolean(invoice.unit.property.paymentQrUrl),
     expiresAt: new Date(Date.now() + 30 * 60 * 1000),
@@ -170,7 +262,7 @@ router.post('/:invoiceId/slip', upload.single('file'), async (req, res) => {
 async function visiblePayment(req: import('express').Request, paymentId: string) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
-    include: { invoice: { include: { unit: { include: { property: true } } } }, tenant: true },
+    include: { invoice: { include: { unit: { include: { property: true } } } }, tenant: true, bundle: { include: { payments: { include: { invoice: true } } } } },
   })
   if (!payment) return null
 
@@ -296,6 +388,16 @@ router.get('/:paymentId', async (req, res) => {
     hasReceipt: !!(receiptPdfUrl || receiptUrl),
     expectedPromptpay: prop.promptpayNumber || env.DEFAULT_PROMPTPAY_NUMBER || null,
     expectedBankAccount: prop.bankAccount || null,
+    bundleTotal: payment.bundle ? Number(payment.bundle.total) : null,
+    bundleInvoices: payment.bundle
+      ? payment.bundle.payments.map((p) => ({
+          id: p.invoice.id,
+          type: p.invoice.type,
+          total: Number(p.invoice.total),
+          month: p.invoice.month,
+          year: p.invoice.year,
+        }))
+      : null,
   })
 })
 
@@ -304,7 +406,13 @@ router.post('/:paymentId/approve', requireRole('ADMIN', 'OWNER'), async (req, re
   if (!(await managerOwnsPayment(req, req.params.paymentId)))
     return res.status(404).json({ error: 'Payment not found' })
   try {
-    await approvePayment(req.params.paymentId)
+    const acceptShortfall = Boolean(req.body?.acceptShortfall)
+    const existing = await prisma.payment.findUnique({ where: { id: req.params.paymentId } })
+    if (existing?.bundleId) {
+      await approveBundle(existing.bundleId, { acceptShortfall })
+    } else {
+      await approvePayment(req.params.paymentId, { acceptShortfall })
+    }
     const payment = await prisma.payment.findUnique({ where: { id: req.params.paymentId } })
     res.json({ ok: true, payment })
   } catch (e) {
@@ -320,7 +428,9 @@ router.post('/:paymentId/reject', requireRole('ADMIN', 'OWNER'), async (req, res
   if (!(await managerOwnsPayment(req, req.params.paymentId)))
     return res.status(404).json({ error: 'Payment not found' })
   try {
-    await rejectPayment(req.params.paymentId, parse.data.rejectReason)
+    const existing = await prisma.payment.findUnique({ where: { id: req.params.paymentId } })
+    if (existing?.bundleId) await rejectBundle(existing.bundleId, parse.data.rejectReason)
+    else await rejectPayment(req.params.paymentId, parse.data.rejectReason)
     res.json({ ok: true })
   } catch (e) {
     res.status(400).json({ error: (e as Error).message })

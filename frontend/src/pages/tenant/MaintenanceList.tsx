@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../lib/axios'
-import { Card, Badge, Chip } from '../../components/ui'
 import { BottomNav } from '../../components/layout/BottomNav'
-import { TopBar } from '../../components/layout/TopBar'
 import { thaiDate } from '../../lib/utils'
 
 interface Ticket {
@@ -13,61 +11,82 @@ interface Ticket {
   category: string
   status: string
   createdAt: string
+  scheduledAt?: string | null
+  scheduleSlot?: string | null
+  technicianName?: string | null
 }
 
-const STATUS_TH: Record<string, string> = {
-  NEW: 'แจ้งใหม่', ACKNOWLEDGED: 'รับเรื่อง', IN_PROGRESS: 'กำลังซ่อม', SCHEDULED: 'นัดหมาย', DONE: 'เสร็จแล้ว', CLOSED: 'ปิดงาน',
+const STATUS: Record<string, { label: string; cls: string }> = {
+  NEW: { label: 'แจ้งใหม่', cls: 'bg-danger-bg text-danger' },
+  ACKNOWLEDGED: { label: 'รับเรื่อง', cls: 'bg-info-bg text-info' },
+  IN_PROGRESS: { label: 'กำลังดำเนินการ', cls: 'bg-warn-bg text-warn-fg' },
+  SCHEDULED: { label: 'นัดช่างแล้ว', cls: 'bg-warn-bg text-warn-fg' },
+  DONE: { label: 'เสร็จแล้ว', cls: 'bg-ok-bg text-ok-fg' },
+  CLOSED: { label: 'ปิดงาน', cls: 'bg-neutral-bg text-neutral-fg' },
 }
-const CAT_ICON: Record<string, string> = { ELECTRIC: '⚡', PLUMBING: '🚰', APPLIANCE: '🔌', GENERAL: '🔧' }
 
-const FILTERS = [
-  { key: 'all', label: 'ทั้งหมด' },
-  { key: 'open', label: 'รอดำเนินการ' },
-  { key: 'progress', label: 'กำลังซ่อม' },
-  { key: 'done', label: 'เสร็จแล้ว' },
-]
+const CAT: Record<string, string> = { ELECTRIC: 'ไฟฟ้า', PLUMBING: 'ประปา', APPLIANCE: 'เครื่องใช้', GENERAL: 'ทั่วไป' }
+const ORDER = ['NEW', 'ACKNOWLEDGED', 'IN_PROGRESS', 'SCHEDULED', 'DONE', 'CLOSED']
 
 export default function MaintenanceList() {
   const nav = useNavigate()
   const [tickets, setTickets] = useState<Ticket[]>([])
-  const [filter, setFilter] = useState('all')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/maintenance').then((r) => setTickets(r.data))
+    api
+      .get('/maintenance')
+      .then((r) => setTickets(r.data))
+      .finally(() => setLoading(false))
   }, [])
 
-  const filtered = tickets.filter((t) => {
-    if (filter === 'all') return true
-    if (filter === 'open') return ['NEW', 'ACKNOWLEDGED'].includes(t.status)
-    if (filter === 'progress') return ['IN_PROGRESS', 'SCHEDULED'].includes(t.status)
-    if (filter === 'done') return ['DONE', 'CLOSED'].includes(t.status)
-    return true
-  })
-
   return (
-    <div className="pb-24">
-      <TopBar title="แจ้งซ่อม" back={false} />
-      <div className="p-4 space-y-3">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {FILTERS.map((f) => <Chip key={f.key} active={filter === f.key} onClick={() => setFilter(f.key)}>{f.label}</Chip>)}
-        </div>
-        {filtered.map((t) => (
-          <Card key={t.id} className="flex items-center gap-3" onClick={() => nav(`/tenant/maintenance/${t.id}`)}>
-            <span className="text-2xl">{CAT_ICON[t.category]}</span>
-            <div className="flex-1">
-              <div className="font-medium">{t.title}</div>
-              <div className="text-xs text-gray-400">{t.ticketNo} · {thaiDate(t.createdAt)}</div>
-            </div>
-            <Badge kind={['DONE', 'CLOSED'].includes(t.status) ? 'paid' : 'info'}>{STATUS_TH[t.status]}</Badge>
-          </Card>
-        ))}
-        {filtered.length === 0 && <p className="text-center text-gray-400 py-8">ไม่มีรายการ</p>}
+    <div className="pb-28">
+      <div className="px-4 pt-5 flex flex-col gap-4">
+        <h1 className="font-display text-[26px] font-bold m-0">แจ้งซ่อม</h1>
+        {loading && <div className="h-24 rounded-card bg-surface-2" />}
+        {!loading && tickets.length === 0 && <p className="text-sm text-muted">ยังไม่มีเรื่องแจ้งซ่อม</p>}
+        {tickets.map((t) => {
+          const st = STATUS[t.status] || STATUS.NEW
+          const idx = Math.max(0, ORDER.indexOf(t.status))
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => nav(`/tenant/maintenance/${t.id}`)}
+              className="bg-white rounded-card px-4 py-3.5 text-left text-ink flex flex-col gap-2.5"
+            >
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-[13px] text-muted">
+                  {t.ticketNo} · {CAT[t.category] || t.category}
+                </span>
+                <span className={`px-2.5 py-1 rounded-full text-[13px] font-semibold shrink-0 ${st.cls}`}>{st.label}</span>
+              </div>
+              <strong className="text-[15px]">{t.title}</strong>
+              <div className="flex gap-1" aria-label={`ความคืบหน้า ${idx + 1} จาก 6`}>
+                {ORDER.map((step, i) => (
+                  <span key={step} className={`flex-1 h-1 rounded ${i <= idx ? 'bg-primary' : 'bg-[#DCE3DF]'}`} />
+                ))}
+              </div>
+              <span className="text-[13px] text-muted">{scheduleLine(t)}</span>
+            </button>
+          )
+        })}
+        <button
+          type="button"
+          onClick={() => nav('/tenant/maintenance/new')}
+          className="h-[52px] rounded-cta bg-primary text-white font-bold text-[17px]"
+        >
+          แจ้งเรื่องใหม่
+        </button>
       </div>
-
-      <button onClick={() => nav('/tenant/maintenance/new')} className="fixed bottom-20 right-4 z-30 bg-line text-white w-14 h-14 rounded-full shadow-lg text-2xl">
-        +
-      </button>
       <BottomNav role="TENANT" />
     </div>
   )
+}
+
+function scheduleLine(t: Ticket) {
+  if (!t.scheduledAt) return thaiDate(t.createdAt)
+  const when = new Date(t.scheduledAt).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' })
+  return `ช่างเข้า ${when}${t.scheduleSlot ? ` ${t.scheduleSlot}` : ''}${t.technicianName ? ` · ${t.technicianName}` : ''}`
 }

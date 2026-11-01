@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ผู้เช่า แจ้งซ่อม</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <header style="flex: 0 0 56px; background: #FFFFFF; display: flex; align-items: center; gap: 4px; padding: 0 6px; border-bottom: 1px solid #E3E8E5">
+    <a href="TenantHome.dc.html" aria-label="ย้อนกลับ" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #0F1F17"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"></path></svg></a>
+    <strong style="font-family: Anuphan, sans-serif; font-size: 18px">แจ้งซ่อม</strong>
+  </header>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 16px">
+    <a href="TenantTicket.dc.html" style="background: #FFFFFF; border-radius: 16px; padding: 14px 16px; text-decoration: none; color: #0F1F17; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 13px; color: #4F5F57">MT-2569-0142 · ประปา</span><span style="padding: 4px 10px; border-radius: 999px; background: #FEF3E2; color: #8A4B05; font-size: 13px; font-weight: 600">นัดช่างแล้ว</span></div>
+      <strong style="font-size: 15px">ก๊อกอ่างล้างจานน้ำหยด</strong>
+      <div style="display: flex; gap: 4px" aria-label="ความคืบหน้า 4 จาก 6">
+        <span style="flex: 1; height: 4px; border-radius: 4px; background: #047C3B"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: #047C3B"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: #047C3B"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: #047C3B"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: #DCE3DF"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: #DCE3DF"></span>
+      </div>
+      <span style="font-size: 13px; color: #4F5F57">ช่างเข้า ส. 2 พ.ย. 10:00–12:00 · 2 ข้อความใหม่</span>
+    </a>
+
+    <h2 style="margin: 4px 0 0; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600">แจ้งเรื่องใหม่</h2>
+
+    <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px">
+      <legend style="font-size: 14px; font-weight: 600; margin-bottom: 8px">หมวด</legend>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{cats}}" as="c" hint-placeholder-count="4">
+          <button aria-pressed="{{c.pressed}}" style="height: 76px; border-radius: 14px; border: {{c.border}}; background: {{c.bg}}; color: #0F1F17; font-family: Sarabun, sans-serif; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.icon}}"></path></svg>{{c.label}}
+          </button>
+        </sc-for>
+      </div>
+    </fieldset>
+
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">หัวข้อ
+      <input value="ปลั๊กห้องนอนไม่มีไฟ" style="height: 48px; box-sizing: border-box; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 0 14px; font-family: Sarabun, sans-serif; font-size: 16px; color: #0F1F17; background: #FFFFFF">
+    </label>
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">รายละเอียด
+      <textarea style="height: 84px; box-sizing: border-box; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 12px 14px; font-family: Sarabun, sans-serif; font-size: 15px; line-height: 1.5; color: #0F1F17; background: #FFFFFF; resize: none">ปลั๊กข้างเตียงใช้ไม่ได้ตั้งแต่เมื่อคืน เบรกเกอร์ไม่ตัด</textarea>
+    </label>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 14px; font-weight: 600">รูปภาพ (ไม่บังคับ)</span>
+      <div style="display: flex; gap: 8px">
+        <div style="width: 72px; height: 72px; border-radius: 12px; background: #DCE3DF; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #4F5F57">รูป 1</div>
+        <button aria-label="เพิ่มรูป" style="width: 72px; height: 72px; border-radius: 12px; border: 1.5px dashed #9AA8A1; background: #FFFFFF; color: #047C3B; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex: 0 0 auto; background: #FFFFFF; padding: 12px 16px 24px; border-top: 1px solid #E3E8E5">
+    <button style="width: 100%; height: 52px; border: 0; border-radius: 14px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 17px; font-weight: 700">ส่งเรื่องแจ้งซ่อม</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sel = (this.state && this.state.cat) || 'el';
+    const list = [
+      { id: 'el', label: 'ไฟฟ้า', icon: 'M13 2 4 14h7l-1 8 9-12h-7z' },
+      { id: 'pl', label: 'ประปา', icon: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z' },
+      { id: 'ap', label: 'เครื่องใช้', icon: 'M4 5h16v11H4zM8 20h8M12 16v4' },
+      { id: 'ge', label: 'ทั่วไป', icon: 'M4 6h16M4 12h16M4 18h10' }
+    ];
+    const cats = list.map((c) => ({ ...c, pressed: c.id === sel ? 'true' : 'false', border: c.id === sel ? '2px solid #047C3B' : '1.5px solid #DCE3DF', bg: c.id === sel ? '#E7F8EE' : '#FFFFFF' }));
+    return { cats };
+  }
+}
+</script>
+</body>
+</html>

@@ -4,6 +4,9 @@ import { prisma } from '../lib/prisma'
 import { authMiddleware, requireRole } from '../middleware/auth'
 import { requireActiveSubscription } from '../middleware/subscriptionGuard'
 import { propertyWhere, invoiceWhere } from '../lib/scope'
+import { pushRentReminder } from '../lib/line/lineService'
+import { liffEntryUrl } from '../lib/env'
+import { linkedTenant } from '../services/tenantLifecycle'
 import {
   buildRentInvoiceDraft,
   buildUtilityInvoiceDraft,
@@ -25,10 +28,34 @@ router.get('/', async (req, res) => {
       : invoiceWhere(req.user!)
   const invoices = await prisma.invoice.findMany({
     where,
-    include: { unit: true, payment: true, extraItems: true },
+    include: {
+      unit: { include: { tenants: { where: { isActive: true }, take: 1, select: { name: true } } } },
+      payment: true,
+      extraItems: true,
+    },
     orderBy: { createdAt: 'desc' },
   })
-  res.json(invoices)
+  const utility = invoices.filter((i) => i.type === 'UTILITY')
+  const readings = utility.length
+    ? await prisma.meterReading.findMany({
+        where: {
+          OR: utility.map((i) => ({ unitId: i.unitId, month: i.month, year: i.year })),
+        },
+      })
+    : []
+  res.json(
+    invoices.map((inv) => {
+      const meter = readings.find((r) => r.unitId === inv.unitId && r.month === inv.month && r.year === inv.year)
+      const { tenants, ...unit } = inv.unit
+      return {
+        ...inv,
+        unit,
+        tenantName: tenants[0]?.name || null,
+        usedElec: meter ? Math.max(0, Number(meter.currElec) - Number(meter.prevElec)) : null,
+        usedWater: meter ? Math.max(0, Number(meter.currWater) - Number(meter.prevWater)) : null,
+      }
+    })
+  )
 })
 
 // GET /api/invoices/:id
@@ -153,6 +180,40 @@ async function sendAllHandler(req: import('express').Request, res: import('expre
 }
 router.post('/send-bulk', requireRole('ADMIN', 'OWNER'), sendAllHandler)
 router.post('/send-all', requireRole('ADMIN', 'OWNER'), sendAllHandler)
+
+const liff = (path: string) => `${liffEntryUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`
+
+// POST /api/invoices/remind — ส่งเตือนบิลที่เลือก (Portal bulk)
+router.post('/remind', requireRole('ADMIN', 'OWNER'), async (req, res) => {
+  const schema = z.object({ invoiceIds: z.array(z.string().min(1)).min(1).max(200) })
+  const parse = schema.safeParse(req.body)
+  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      id: { in: parse.data.invoiceIds },
+      status: { in: ['PENDING', 'OVERDUE'] },
+      unit: { property: propertyWhere(req.user!) },
+    },
+    include: { unit: { include: { tenants: { where: { isActive: true } } } } },
+  })
+  let sent = 0
+  for (const inv of invoices) {
+    const t = linkedTenant(inv.unit.tenants)
+    if (!t?.lineUserId) continue
+    const daysLeft = Math.ceil((inv.dueDate.getTime() - Date.now()) / 86400000)
+    await pushRentReminder(t.lineUserId, {
+      invoiceId: inv.id,
+      roomNumber: inv.unit.roomNumber,
+      tenantName: t.name,
+      daysLeft,
+      amount: Number(inv.total),
+      dueDate: inv.dueDate.toLocaleDateString('th-TH'),
+      liffUrl: liff(`/payment/${inv.id}`),
+    })
+    sent += 1
+  }
+  res.json({ ok: true, sent, matched: invoices.length })
+})
 
 const extraItemsSchema = z.object({
   items: z.array(z.object({ label: z.string().min(1), amount: z.number() })),

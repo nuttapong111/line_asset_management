@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>รายละเอียดห้อง</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <dc-import name="AppBar" title="ห้อง A-203" sub="บ้านสวนรัตนา · ชั้น 2" action="บันทึก" back="OwnerProperty.dc.html" hint-size="390px,56px"></dc-import>
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+    <a href="TenantContract.dc.html" style="background: #FFFFFF; border-radius: 16px; padding: 14px; text-decoration: none; color: #0F1F17; display: flex; align-items: center; gap: 12px">
+      <span style="width: 44px; height: 44px; border-radius: 50%; background: #EAF1FE; color: #1A4FBF; font-weight: 700; display: flex; align-items: center; justify-content: center">ม</span>
+      <span style="flex: 1; display: flex; flex-direction: column"><strong style="font-size: 15px">คุณมานพ ใจดี</strong><span style="font-size: 13px; color: #4F5F57">สัญญาถึง 30 พ.ย. 69 · ขอต่อสัญญาแล้ว</span></span>
+      <span style="padding: 3px 10px; border-radius: 999px; background: #FEF3E2; color: #8A4B05; font-size: 12px; font-weight: 700">รออนุมัติต่อ</span>
+    </a>
+
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+      <strong style="font-size: 14px">สถานะห้อง</strong>
+      <div role="radiogroup" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+        <button role="radio" aria-checked="true" style="height: 40px; border-radius: 10px; border: 2px solid #047C3B; background: #E7F8EE; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 700; color: #046A33">มีผู้เช่า</button>
+        <button role="radio" aria-checked="false" style="height: 40px; border-radius: 10px; border: 1.5px solid #DCE3DF; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600; color: #4F5F57">ว่าง</button>
+        <button role="radio" aria-checked="false" style="height: 40px; border-radius: 10px; border: 1.5px solid #DCE3DF; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600; color: #4F5F57">ปิดซ่อม</button>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{fields}}" as="f" hint-placeholder-count="4">
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #4F5F57">{{f.label}}
+            <input value="{{f.value}}" style="height: 44px; box-sizing: border-box; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 0 12px; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 600; color: #0F1F17">
+          </label>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><strong style="font-size: 14px">ค่าใช้จ่ายประจำ (รวมในบิลค่าเช่า)</strong></div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #EEF1EF"><span>ที่จอดรถ</span><span style="font-weight: 600">฿500</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #EEF1EF"><span>อินเทอร์เน็ต Wi-Fi</span><span style="font-weight: 600">฿0 (รวมในค่าส่วนกลาง)</span></div>
+      <button style="align-self: flex-start; height: 34px; padding: 0; border: 0; background: transparent; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 700; color: #047C3B">+ เพิ่มรายการ</button>
+    </section>
+  </div>
+  <div style="flex: 0 0 auto; background: #FFFFFF; padding: 12px 16px 24px; border-top: 1px solid #E3E8E5; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+    <a href="OwnerMoveOut.dc.html" style="height: 50px; border-radius: 14px; background: #FDECEA; color: #A8221A; text-decoration: none; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center">ย้ายออก</a>
+    <button style="height: 50px; border: 0; border-radius: 14px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">อนุมัติต่อสัญญา</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const fields = [
+      { label: 'ค่าเช่า / เดือน', value: '6,500' },
+      { label: 'ค่าส่วนกลาง', value: '300' },
+      { label: 'ค่าไฟ / หน่วย', value: '5' },
+      { label: 'ค่าน้ำ / หน่วย', value: '18' }
+    ];
+    return { fields };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ตั้งค่า</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 20px 16px 12px; display: flex; flex-direction: column; gap: 14px">
+    <h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 26px; font-weight: 700">ตั้งค่า</h1>
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; gap: 12px">
+      <span style="width: 52px; height: 52px; border-radius: 50%; background: #E7F8EE; color: #047C3B; font-family: Anuphan, sans-serif; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center">ร</span>
+      <span style="flex: 1; display: flex; flex-direction: column"><strong style="font-size: 16px">คุณรัตนา</strong><span style="font-size: 13px; color: #4F5F57">เจ้าของ · ผูก LINE แล้ว · username: rattana</span></span>
+    </section>
+    <a href="OwnerSub.dc.html" style="background: #0F3D25; color: #FFFFFF; border-radius: 18px; padding: 14px 16px; text-decoration: none; display: flex; align-items: center; gap: 12px">
+      <span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 12px; color: #BFE9CF">แพ็กเกจ</span><strong style="font-size: 16px">ทดลองใช้ · เหลือ 5 วัน</strong></span>
+      <span style="height: 36px; padding: 0 14px; border-radius: 10px; background: #06C755; color: #0F1F17; font-size: 14px; font-weight: 700; display: flex; align-items: center">ต่ออายุ</span>
+    </a>
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <section style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 13px; font-weight: 700; color: #4F5F57; padding-left: 4px">{{g.name}}</span>
+        <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden">
+          <sc-for list="{{g.items}}" as="i" hint-placeholder-count="2">
+            <a href="{{i.href}}" style="height: 52px; padding: 0 14px; border-bottom: 1px solid #EEF1EF; text-decoration: none; color: #0F1F17; display: flex; align-items: center; gap: 12px">
+              <span style="flex: 1; font-size: 15px">{{i.t}}</span><span style="font-size: 13px; color: #4F5F57">{{i.v}}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9AA8A1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+  </div>
+  <dc-import name="TabBar" role="owner" active="settings" hint-size="390px,82px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const groups = [
+      { name: 'อาคารและการรับเงิน', items: [{ t: 'อาคารทั้งหมด', v: '2', href: 'OwnerPortfolio.dc.html' }, { t: 'PromptPay และรูป QR', v: '2 อาคาร', href: '#' }] },
+      { name: 'อัตโนมัติ', items: [{ t: 'การแจ้งเตือน', v: 'เปิด 6', href: 'OwnerNotif.dc.html' }, { t: 'เทมเพลตสัญญา / ใบเสร็จ', v: '', href: 'OwnerTemplate.dc.html' }] },
+      { name: 'บัญชี', items: [{ t: 'รายงานรายรับ', v: '', href: '#' }, { t: 'รหัสผ่าน Web Portal', v: '', href: '#' }, { t: 'ออกจากระบบ', v: '', href: '#' }] }
+    ];
+    return { groups };
+  }
+}
+</script>
+</body>
+</html>

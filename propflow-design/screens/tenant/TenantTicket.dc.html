@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ใบงานซ่อม</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <dc-import name="AppBar" title="ก๊อกอ่างล้างจานน้ำหยด" sub="MT-2569-0142 · ประปา" back="TenantMaint.dc.html" hint-size="390px,56px"></dc-import>
+  <div style="flex: 0 0 auto; background: #FFFFFF; padding: 14px 16px; border-bottom: 1px solid #E3E8E5; display: flex; flex-direction: column; gap: 12px">
+    <ol aria-label="สถานะ" style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px">
+      <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+        <li style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start"><span style="width: 100%; height: 4px; border-radius: 4px; background: {{s.bar}}"></span><span style="font-size: 11px; font-weight: {{s.w}}; color: {{s.fg}}">{{s.label}}</span></li>
+      </sc-for>
+    </ol>
+    <div style="background: #FEF3E2; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A4B05" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+      <div style="flex: 1; display: flex; flex-direction: column"><strong style="font-size: 14px; color: #6E3C04">นัดช่าง ส. 2 พ.ย. 10:00–12:00</strong><span style="font-size: 12px; color: #6E3C04">ช่างสมชาย · จะมีคนอยู่ห้องไหม?</span></div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: -4px">
+      <button style="height: 40px; border: 1.5px solid #DCE3DF; border-radius: 10px; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600; color: #0F1F17">ขอเลื่อนนัด</button>
+      <button style="height: 40px; border: 0; border-radius: 10px; background: #047C3B; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 700; color: #FFFFFF">ยืนยันนัด</button>
+    </div>
+  </div>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+    <span style="align-self: center; font-size: 12px; color: #4F5F57">31 ต.ค.</span>
+    <div style="align-self: flex-end; max-width: 250px; display: flex; flex-direction: column; gap: 6px; align-items: flex-end">
+      <div style="width: 160px; height: 110px; border-radius: 14px; background: #DCE3DF; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #4F5F57">รูปที่แนบ</div>
+      <div style="background: #047C3B; color: #FFFFFF; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 14px; line-height: 1.5">ก๊อกหยดตลอดเวลา ปิดสุดแล้วก็ยังหยดครับ</div>
+    </div>
+    <div style="align-self: flex-start; display: flex; gap: 8px; max-width: 280px">
+      <span style="flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: #E7F8EE; color: #047C3B; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">ร</span>
+      <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #4F5F57">คุณรัตนา (เจ้าของ)</span><div style="background: #FFFFFF; border-radius: 16px 16px 16px 4px; padding: 10px 14px; font-size: 14px; line-height: 1.5">รับเรื่องแล้วครับ นัดช่างพรุ่งนี้สิบโมงนะครับ</div></div>
+    </div>
+    <div style="align-self: center; padding: 4px 12px; border-radius: 999px; background: #E8ECEA; font-size: 12px; color: #33403A">สถานะเปลี่ยนเป็น “นัดช่างแล้ว”</div>
+  </div>
+
+  <div style="flex: 0 0 auto; background: #FFFFFF; padding: 10px 12px 24px; border-top: 1px solid #E3E8E5; display: flex; gap: 8px; align-items: center">
+    <button aria-label="แนบรูป" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: #F0F2F1; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#33403A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg></button>
+    <input aria-label="ข้อความ" placeholder="พิมพ์ข้อความถึงเจ้าของ" style="flex: 1; min-width: 0; height: 44px; box-sizing: border-box; border: 1.5px solid #DCE3DF; border-radius: 999px; padding: 0 16px; font-family: Sarabun, sans-serif; font-size: 15px">
+    <button aria-label="ส่ง" style="width: 44px; height: 44px; border: 0; border-radius: 50%; background: #047C3B; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12 20 4l-6 16-3-7z"></path></svg></button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const labels = ['แจ้งแล้ว', 'รับเรื่อง', 'กำลังดำเนินการ', 'นัดช่าง', 'เสร็จแล้ว'];
+    const cur = 3;
+    const steps = labels.map((label, i) => ({ label, bar: i < cur ? '#047C3B' : (i === cur ? '#B26A00' : '#DCE3DF'), fg: i === cur ? '#8A4B05' : (i < cur ? '#047C3B' : '#4F5F57'), w: i <= cur ? 700 : 600 }));
+    return { steps };
+  }
+}
+</script>
+</body>
+</html>

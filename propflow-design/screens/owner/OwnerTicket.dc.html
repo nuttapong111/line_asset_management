@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>จัดการใบงานซ่อม</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <dc-import name="AppBar" title="ปลั๊กห้องนอนไม่มีไฟ" sub="MT-2569-0147 · A-203 · ไฟฟ้า" back="OwnerHome.dc.html" hint-size="390px,56px"></dc-import>
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="background: #FDECEA; border-radius: 14px; padding: 10px 14px; display: flex; align-items: center; gap: 10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A8221A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span style="font-size: 14px; color: #8A1C15"><strong>ใหม่ · ยังไม่รับเรื่อง 45 นาที</strong> ผู้เช่าเห็นสถานะนี้อยู่</span></div>
+
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 14px; line-height: 1.6">“ปลั๊กข้างเตียงใช้ไม่ได้ตั้งแต่เมื่อคืน เบรกเกอร์ไม่ตัด”</span>
+      <div style="display: flex; gap: 8px"><div style="width: 72px; height: 72px; border-radius: 10px; background: #DCE3DF; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #4F5F57">รูป 1</div></div>
+      <span style="font-size: 12px; color: #4F5F57">คุณมานพ · วันนี้ 07:58</span>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+      <strong style="font-size: 14px">นัดช่าง (ไม่บังคับ)</strong>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+          <button aria-pressed="{{d.p}}" style="flex: 1; height: 58px; border-radius: 12px; border: {{d.border}}; background: {{d.bg}}; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0"><span style="font-size: 12px; color: #4F5F57">{{d.dow}}</span><strong style="font-size: 16px">{{d.n}}</strong></button>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <button style="flex: 1; height: 38px; border-radius: 10px; border: 1.5px solid #DCE3DF; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 13px; font-weight: 600">09–12</button>
+        <button aria-pressed="true" style="flex: 1; height: 38px; border-radius: 10px; border: 2px solid #047C3B; background: #E7F8EE; color: #046A33; font-family: Sarabun, sans-serif; font-size: 13px; font-weight: 700">13–16</button>
+        <button style="flex: 1; height: 38px; border-radius: 10px; border: 1.5px solid #DCE3DF; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 13px; font-weight: 600">16–18</button>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #4F5F57">ช่าง<input value="ช่างสมชาย (ไฟฟ้า)" style="height: 44px; box-sizing: border-box; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 0 12px; font-family: Sarabun, sans-serif; font-size: 15px; color: #0F1F17"></label>
+    </section>
+
+    <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #4F5F57">ข้อความถึงผู้เช่า<input value="รับเรื่องแล้วครับ ช่างเข้าบ่ายวันนี้" style="height: 44px; box-sizing: border-box; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 0 12px; font-family: Sarabun, sans-serif; font-size: 14px; color: #0F1F17; background: #FFFFFF"></label>
+  </div>
+  <div style="flex: 0 0 auto; background: #FFFFFF; padding: 12px 16px 24px; border-top: 1px solid #E3E8E5; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 10px">
+    <button style="height: 52px; border: 1.5px solid #DCE3DF; border-radius: 14px; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 600; color: #0F1F17">รับเรื่องอย่างเดียว</button>
+    <button style="height: 52px; border: 0; border-radius: 14px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">รับเรื่อง + นัดช่าง</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const days = [['วันนี้', '1', true], ['อา.', '2'], ['จ.', '3'], ['อ.', '4'], ['พ.', '5']].map(([dow, n, s]) => ({ dow, n, p: s ? 'true' : 'false', border: s ? '2px solid #047C3B' : '1.5px solid #DCE3DF', bg: s ? '#E7F8EE' : '#FFFFFF' }));
+    return { days };
+  }
+}
+</script>
+</body>
+</html>

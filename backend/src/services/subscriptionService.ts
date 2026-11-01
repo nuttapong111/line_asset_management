@@ -232,7 +232,7 @@ export async function ensureSubscriptionBill(ownerId: string, opts?: { force?: b
     data: {
       ownerId,
       billNo: await nextBillNo(),
-      amount: env.SUBSCRIPTION_PRICE,
+      amount: owner.plan === 'YEARLY' ? env.SUBSCRIPTION_YEARLY_PRICE : env.SUBSCRIPTION_PRICE,
       periodDays,
       status: 'PENDING_SLIP',
     },
@@ -274,6 +274,8 @@ export async function getSubscriptionSummary(ownerId: string) {
       qrPayload,
       graceDays: env.SUBSCRIPTION_GRACE_DAYS,
       periodDays: env.SUBSCRIPTION_PERIOD_DAYS,
+      monthlyPrice: env.SUBSCRIPTION_PRICE,
+      yearlyPrice: env.SUBSCRIPTION_YEARLY_PRICE,
     },
   }
 }

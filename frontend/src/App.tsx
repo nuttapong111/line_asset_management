@@ -121,7 +121,7 @@ function LiffApp() {
       : '/link-room'
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-[#f5f6f8]">
+    <div className="max-w-liff mx-auto min-h-screen bg-canvas text-ink">
       <Routes>
         <Route path="/" element={<Navigate to={home} replace />} />
         <Route path="/link" element={<LinkInvite />} />

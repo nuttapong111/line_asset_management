@@ -100,10 +100,11 @@ cd ../frontend && npm run dev   # http://localhost:5173
    ```
    > Railway ตั้ง `PORT` ให้เองอัตโนมัติ — โค้ดอ่านค่าจาก `process.env.PORT`
 
-5. **Migrate** จะรันอัตโนมัติทุกครั้งที่ deploy ผ่าน start command:
-   ```
-   npx prisma migrate deploy && node dist/app.js
-   ```
+5. **Migrate** รันอัตโนมัติทุกครั้งที่ container สตาร์ท ก่อนเปิด API ด้วย Prisma 5.22
+   - ฐานว่าง หรือมีประวัติ migration อยู่แล้ว: `migrate deploy` ใส่เฉพาะส่วนที่ยังขาด
+   - มีแถว migration ที่ล้มค้าง: เคลียร์แถวนั้นแล้วลองใหม่
+   - ตารางมีอยู่แล้วแต่ประวัติไม่ตรง (เช่น เคย `db push`): sync จาก `schema.prisma` โดยไม่ลบข้อมูล แล้วบันทึกว่า migration ทั้งหมดถูกใช้แล้ว
+   - ถ้ายังทำไม่สำเร็จ container จะไม่เปิด เพื่อไม่ให้ระบบรันบน schema ไม่ครบ
 
 6. **Seed (ครั้งแรก, ถ้าต้องการข้อมูลตัวอย่าง)** — รันใน Railway shell ของ service:
    ```bash

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Portal ตรวจสลิปค่าบริการ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="min-height: 1000px; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-wrap: wrap; align-items: stretch">
+  <aside style="flex: 1 1 240px; max-width: 100%; box-sizing: border-box; background: #1E1638; color: #FFFFFF; padding: 24px 16px; display: flex; flex-direction: column; gap: 24px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+      <span style="width: 36px; height: 36px; border-radius: 10px; background: #06C755; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg></span>
+      <div style="display: flex; flex-direction: column"><strong style="font-family: Anuphan, sans-serif; font-size: 18px">PropFlow</strong><span style="font-size: 11px; font-weight: 700; color: #C8B8F0; letter-spacing: 1px">ADMIN</span></div>
+    </div>
+    <nav aria-label="เมนูแอดมิน" style="display: flex; flex-direction: column; gap: 4px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="5">
+        <a href="{{n.href}}" style="height: 44px; border-radius: 10px; padding: 0 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: {{n.fg}}; background: {{n.bg}}; font-size: 15px; font-weight: 600"><span style="flex: 1">{{n.label}}</span><span style="font-size: 12px; color: #E3A13B; font-weight: 700">{{n.badge}}</span></a>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px clamp(16px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 18px">
+    <header style="display: flex; flex-direction: column; gap: 2px"><h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">ตรวจสลิปค่าบริการ</h1><span style="font-size: 14px; color: #4F5F57">รอตรวจ 2 · อนุมัติแล้วเดือนนี้ 29</span></header>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section aria-label="คิวรอตรวจ" style="flex: 1 1 260px; min-width: 0; background: #FFFFFF; border-radius: 18px; overflow: hidden">
+        <sc-for list="{{queue}}" as="q" hint-placeholder-count="2">
+          <a href="#" style="padding: 14px 16px; border-bottom: 1px solid #EEF1EF; background: {{q.bg}}; text-decoration: none; color: #0F1F17; display: flex; flex-direction: column; gap: 2px">
+            <div style="display: flex; justify-content: space-between"><strong style="font-size: 15px">{{q.name}}</strong><strong>฿499</strong></div>
+            <span style="font-size: 12px; color: #4F5F57">{{q.no}} · ส่ง {{q.at}}</span>
+          </a>
+        </sc-for>
+      </section>
+      <section style="flex: 2 1 380px; min-width: 0; background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; justify-content: center">
+        <div role="img" aria-label="รูปสลิปขนาดใหญ่" style="width: 300px; height: 520px; max-width: 100%; border-radius: 14px; background: #F0F2F1; border: 1px solid #DCE3DF; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #4F5F57">รูปสลิป (ซูม / หมุนได้)</div>
+      </section>
+      <aside style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+        <strong style="font-family: Anuphan, sans-serif; font-size: 18px">คุณประเสริฐ</strong>
+        <sc-for list="{{facts}}" as="f" hint-placeholder-count="5">
+          <div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: #4F5F57">{{f.k}}</span><span style="font-weight: 600; color: {{f.c}}">{{f.v}}</span></div>
+        </sc-for>
+        <div style="background: #FEF3E2; border-radius: 12px; padding: 10px 12px; font-size: 13px; color: #6E3C04">สถานะผ่อนผัน เหลือ 2 วันก่อนถูกระงับการเขียนข้อมูล</div>
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #4F5F57">เหตุผล (ถ้าปฏิเสธ)<input placeholder="เช่น ยอดไม่ครบ" style="height: 42px; box-sizing: border-box; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 0 12px; font-family: Sarabun, sans-serif; font-size: 14px"></label>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 10px">
+          <button style="height: 46px; border: 0; border-radius: 10px; background: #FDECEA; color: #A8221A; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">ปฏิเสธ</button>
+          <button style="height: 46px; border: 0; border-radius: 10px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">อนุมัติ + ต่ออายุ</button>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const on = { fg: '#FFFFFF', bg: 'rgba(200,184,240,0.20)' }, off = { fg: '#CFC6E6', bg: 'transparent' };
+    const nav = [
+      { label: 'ภาพรวม', href: '#', ...off, badge: '' },
+      { label: 'เจ้าของ', href: 'PortalOwners.dc.html', ...off, badge: '' },
+      { label: 'ตรวจสลิปค่าบริการ', href: 'PortalSubs.dc.html', ...on, badge: '2' },
+      { label: 'อาคารไม่มีเจ้าของ', href: '#', ...off, badge: '' },
+      { label: 'ตั้งค่า', href: '#', ...off, badge: '' }
+    ];
+    const queue = [
+      { name: 'คุณประเสริฐ', no: 'SUB-2569-00041', at: 'วันนี้ 06:12', bg: '#F3FBF6' },
+      { name: 'คุณวรรณา', no: 'SUB-2569-00040', at: 'เมื่อวาน 21:40', bg: '#FFFFFF' }
+    ];
+    const facts = [
+      { k: 'บิล', v: 'SUB-2569-00041', c: '#0F1F17' },
+      { k: 'แพ็กเกจ', v: 'รายเดือน ฿499', c: '#0F1F17' },
+      { k: 'OCR ยอด', v: '฿499.00 ตรง', c: '#046A33' },
+      { k: 'บัญชีปลายทาง', v: 'ตรงกับแพลตฟอร์ม', c: '#046A33' },
+      { k: 'ต่ออายุถึง', v: '1 ธ.ค. 2569', c: '#0F1F17' }
+    ];
+    return { nav, queue, facts };
+  }
+}
+</script>
+</body>
+</html>

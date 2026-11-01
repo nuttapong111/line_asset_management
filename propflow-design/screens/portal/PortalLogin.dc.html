@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Portal เข้าสู่ระบบ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-wrap: wrap">
+  <section style="flex: 1 1 420px; box-sizing: border-box; background: #0F3D25; color: #FFFFFF; padding: clamp(32px, 6vw, 80px); display: flex; flex-direction: column; justify-content: space-between; gap: 40px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="width: 44px; height: 44px; border-radius: 12px; background: #06C755; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg></span>
+      <strong style="font-family: Anuphan, sans-serif; font-size: 22px">PropFlow</strong>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; max-width: 520px">
+      <h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: clamp(32px, 4vw, 48px); font-weight: 700; line-height: 1.2">จัดการบ้านเช่าทุกห้อง<br>จากที่เดียว</h1>
+      <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #BFE9CF">ผู้เช่าจ่ายผ่าน LINE คุณตรวจสลิป ออกใบเสร็จ และดูรายรับได้ทันที</p>
+    </div>
+    <span style="font-size: 13px; color: #8FCBA6">ผู้เช่าไม่ต้องเข้าที่นี่ ใช้งานผ่าน LINE ได้เลย</span>
+  </section>
+  <section style="flex: 1 1 420px; box-sizing: border-box; padding: clamp(24px, 5vw, 64px); display: flex; align-items: center; justify-content: center">
+    <form style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">เข้าสู่ระบบ</h2><span style="font-size: 15px; color: #4F5F57">สำหรับเจ้าของและแอดมิน</span></div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">Username<input value="rattana" style="height: 48px; box-sizing: border-box; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 0 14px; font-family: Sarabun, sans-serif; font-size: 16px; background: #FFFFFF"></label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">รหัสผ่าน<input type="password" value="password" style="height: 48px; box-sizing: border-box; border: 1.5px solid #A8221A; border-radius: 10px; padding: 0 14px; font-family: Sarabun, sans-serif; font-size: 16px; background: #FFFFFF"></label>
+      <span role="alert" style="margin-top: -10px; font-size: 13px; color: #A8221A">รหัสผ่านไม่ถูกต้อง ลองอีกครั้ง หรือติดต่อแอดมินให้รีเซ็ต</span>
+      <button style="height: 50px; border: 0; border-radius: 12px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 17px; font-weight: 700">เข้าสู่ระบบ</button>
+      <div style="display: flex; align-items: center; gap: 12px; color: #4F5F57; font-size: 13px"><span style="flex: 1; height: 1px; background: #DCE3DF"></span>หรือ<span style="flex: 1; height: 1px; background: #DCE3DF"></span></div>
+      <a href="#" style="height: 50px; border-radius: 12px; border: 1.5px solid #DCE3DF; background: #FFFFFF; color: #0F1F17; text-decoration: none; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px"><span style="width: 22px; height: 22px; border-radius: 6px; background: #06C755"></span>เปิดใน LINE (มือถือ)</a>
+    </form>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

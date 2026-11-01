@@ -26,6 +26,7 @@ const propertySchema = z.object({
   bankName: z.string().optional(),
   bankAccount: z.string().optional(),
   promptpayNumber: z.string().min(1),
+  emergencyPhone: z.string().optional(),
   paymentQrUrl: z.string().optional(),
   ownerId: z.string().optional(), // admin may assign an owner
 })

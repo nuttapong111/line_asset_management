@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>PropFlow Design System</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 1440px; height: 2000px; box-sizing: border-box; padding: 72px 80px; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column; gap: 56px">
+
+  <header style="display: flex; align-items: center; justify-content: space-between">
+    <div style="display: flex; align-items: center; gap: 20px">
+      <div style="width: 64px; height: 64px; border-radius: 18px; background: #06C755; display: flex; align-items: center; justify-content: center">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path><path d="M10 20v-5h4v5"></path></svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 44px; font-weight: 700; letter-spacing: -0.5px">PropFlow Design System</h1>
+        <p style="margin: 0; font-size: 18px; color: #4F5F57">ระบบจัดการบ้านเช่าผ่าน LINE และ Web Portal · v1.0</p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <span style="padding: 8px 14px; border-radius: 999px; background: #FFFFFF; border: 1px solid #DCE3DF; font-size: 14px; font-weight: 600">LIFF 360–390px</span>
+      <span style="padding: 8px 14px; border-radius: 999px; background: #FFFFFF; border: 1px solid #DCE3DF; font-size: 14px; font-weight: 600">Portal ≥1280px</span>
+    </div>
+  </header>
+
+  <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 13px; font-weight: 700; color: #047C3B; letter-spacing: 1px">หลักการ 01</span>
+      <h3 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 22px; font-weight: 600">LINE-first, ไม่ต้องจำรหัส</h3>
+      <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4F5F57">ผู้เช่าทำทุกอย่างจากแชท LINE ภาษาเดียวกับ Flex Message ปุ่มใหญ่ กดได้ด้วยนิ้วโป้ง</p>
+    </div>
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 13px; font-weight: 700; color: #047C3B; letter-spacing: 1px">หลักการ 02</span>
+      <h3 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 22px; font-weight: 600">ยอดเงินกับสถานะต้องชัดก่อนอย่างอื่น</h3>
+      <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4F5F57">ตัวเลขใหญ่ ตัวเลขเรียงตรง สถานะบิลมีสีและคำเสมอ ไม่ใช้สีอย่างเดียว</p>
+    </div>
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 13px; font-weight: 700; color: #047C3B; letter-spacing: 1px">หลักการ 03</span>
+      <h3 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 22px; font-weight: 600">หนึ่งหน้าจอ หนึ่งงาน</h3>
+      <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4F5F57">งานที่เจ้าของทำบ่อย (ตรวจสลิป จดมิเตอร์ ส่งบิล) อยู่ไม่เกิน 2 แตะจากหน้าภาพรวม</p>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 20px">
+    <h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">สี</h2>
+    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px">
+      <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden">
+        <div style="height: 96px; background: #06C755"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">LINE Green</strong><span style="font-size: 13px; color: #4F5F57">#06C755 · แบรนด์ ไอคอน ไม่ใช้กับตัวอักษรขาว</span></div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden">
+        <div style="height: 96px; background: #047C3B"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">Primary</strong><span style="font-size: 13px; color: #4F5F57">#047C3B · ปุ่มหลัก ลิงก์ (5.3:1)</span></div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden">
+        <div style="height: 96px; background: #E7F8EE"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">Primary soft</strong><span style="font-size: 13px; color: #4F5F57">#E7F8EE · พื้นหลังไฮไลต์</span></div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden">
+        <div style="height: 96px; background: #0F1F17"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">Ink</strong><span style="font-size: 13px; color: #4F5F57">#0F1F17 · ตัวอักษรหลัก</span></div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden">
+        <div style="height: 96px; background: #4F5F57"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">Muted</strong><span style="font-size: 13px; color: #4F5F57">#4F5F57 · ข้อความรอง (6.4:1)</span></div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden">
+        <div style="height: 96px; background: #F4F6F5; border-bottom: 1px solid #DCE3DF"></div>
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">Canvas / Line</strong><span style="font-size: 13px; color: #4F5F57">#F4F6F5 · เส้น #DCE3DF</span></div>
+      </div>
+    </div>
+
+    <h3 style="margin: 16px 0 0; font-family: Anuphan, sans-serif; font-size: 20px; font-weight: 600">สถานะ (บิล · การชำระ · ใบงาน · ค่าบริการ)</h3>
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: #EAF1FE; color: #1A4FBF; font-size: 14px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #1A4FBF"></span>รอชำระ</span>
+        <span style="font-size: 13px; color: #4F5F57">PENDING · WAITING_SLIP · NEW · TRIAL</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: #FEF3E2; color: #8A4B05; font-size: 14px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #8A4B05"></span>รอตรวจสลิป</span>
+        <span style="font-size: 13px; color: #4F5F57">SLIP_UPLOADED · UNDER_REVIEW · IN_PROGRESS · GRACE</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: #E7F8EE; color: #046A33; font-size: 14px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #046A33"></span>ชำระแล้ว</span>
+        <span style="font-size: 13px; color: #4F5F57">PAID · APPROVED · DONE · ACTIVE</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: #FDECEA; color: #A8221A; font-size: 14px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #A8221A"></span>เลยกำหนด</span>
+        <span style="font-size: 13px; color: #4F5F57">OVERDUE · REJECTED · SUSPENDED</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: #F0F2F1; color: #4A5550; font-size: 14px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4A5550"></span>ยกเลิก</span>
+        <span style="font-size: 13px; color: #4F5F57">CANCELLED · CLOSED · VACANT</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 24px">
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 32px; display: flex; flex-direction: column; gap: 22px">
+      <h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">ตัวอักษร</h2>
+      <div style="display: flex; align-items: baseline; gap: 24px; border-bottom: 1px solid #EEF1EF; padding-bottom: 16px"><span style="width: 150px; font-size: 13px; color: #4F5F57">Display · Anuphan 700 · 32/40</span><span style="font-family: Anuphan, sans-serif; font-size: 32px; font-weight: 700">ยอดที่ต้องชำระ</span></div>
+      <div style="display: flex; align-items: baseline; gap: 24px; border-bottom: 1px solid #EEF1EF; padding-bottom: 16px"><span style="width: 150px; font-size: 13px; color: #4F5F57">Title · Anuphan 600 · 22/30</span><span style="font-family: Anuphan, sans-serif; font-size: 22px; font-weight: 600">บิลค่าเช่า พฤศจิกายน 2569</span></div>
+      <div style="display: flex; align-items: baseline; gap: 24px; border-bottom: 1px solid #EEF1EF; padding-bottom: 16px"><span style="width: 150px; font-size: 13px; color: #4F5F57">Body · Sarabun 400 · 16/26</span><span style="font-size: 16px">ชำระภายในวันที่ 5 เพื่อหลีกเลี่ยงค่าปรับวันละ 30 บาท</span></div>
+      <div style="display: flex; align-items: baseline; gap: 24px; border-bottom: 1px solid #EEF1EF; padding-bottom: 16px"><span style="width: 150px; font-size: 13px; color: #4F5F57">Label · Sarabun 600 · 14/20</span><span style="font-size: 14px; font-weight: 600">เลขมิเตอร์ไฟ (ครั้งนี้)</span></div>
+      <div style="display: flex; align-items: baseline; gap: 24px; border-bottom: 1px solid #EEF1EF; padding-bottom: 16px"><span style="width: 150px; font-size: 13px; color: #4F5F57">Caption · Sarabun 400 · 13/18</span><span style="font-size: 13px; color: #4F5F57">อัปเดตล่าสุด 08:00 น.</span></div>
+      <div style="display: flex; align-items: baseline; gap: 24px"><span style="width: 150px; font-size: 13px; color: #4F5F57">Amount · Anuphan 700 · tabular</span><span style="font-family: Anuphan, sans-serif; font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums">฿7,300.00</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 24px">
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 32px; display: flex; flex-direction: column; gap: 18px">
+        <h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">ระยะห่าง</h2>
+        <div style="display: flex; align-items: flex-end; gap: 18px">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 4px; height: 4px; background: #06C755"></div><span style="font-size: 13px; color: #4F5F57">4</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 8px; height: 8px; background: #06C755"></div><span style="font-size: 13px; color: #4F5F57">8</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 12px; height: 12px; background: #06C755"></div><span style="font-size: 13px; color: #4F5F57">12</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 16px; height: 16px; background: #06C755"></div><span style="font-size: 13px; color: #4F5F57">16</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 24px; height: 24px; background: #06C755"></div><span style="font-size: 13px; color: #4F5F57">24</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 32px; height: 32px; background: #06C755"></div><span style="font-size: 13px; color: #4F5F57">32</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 48px; height: 48px; background: #06C755"></div><span style="font-size: 13px; color: #4F5F57">48</span></div>
+        </div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 32px; display: flex; flex-direction: column; gap: 18px">
+        <h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">มุมโค้ง</h2>
+        <div style="display: flex; gap: 18px">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 64px; height: 64px; border-radius: 8px; border: 2px solid #047C3B"></div><span style="font-size: 13px; color: #4F5F57">8 · input</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 64px; height: 64px; border-radius: 12px; border: 2px solid #047C3B"></div><span style="font-size: 13px; color: #4F5F57">12 · ปุ่ม</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 64px; height: 64px; border-radius: 20px; border: 2px solid #047C3B"></div><span style="font-size: 13px; color: #4F5F57">20 · การ์ด</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 64px; height: 64px; border-radius: 999px; border: 2px solid #047C3B"></div><span style="font-size: 13px; color: #4F5F57">full · ชิป</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 20px">
+    <h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">คอมโพเนนต์</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 13px; font-weight: 700; color: #4F5F57">ปุ่ม · สูง 52 (มือถือ) / 44 (Portal)</span>
+        <button style="height: 52px; border: 0; border-radius: 12px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 17px; font-weight: 700">ชำระเงิน ฿7,300</button>
+        <button style="height: 52px; border: 1.5px solid #047C3B; border-radius: 12px; background: #FFFFFF; color: #047C3B; font-family: Sarabun, sans-serif; font-size: 17px; font-weight: 700">ดูรายละเอียดบิล</button>
+        <div style="display: flex; gap: 12px">
+          <button style="flex: 1; height: 44px; border: 0; border-radius: 12px; background: #F0F2F1; color: #0F1F17; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 600">ยกเลิก</button>
+          <button style="flex: 1; height: 44px; border: 0; border-radius: 12px; background: #FDECEA; color: #A8221A; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">ปฏิเสธสลิป</button>
+        </div>
+      </div>
+
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 13px; font-weight: 700; color: #4F5F57">ช่องกรอก</span>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">เลขมิเตอร์ไฟ (ครั้งนี้)
+          <input value="4,862" style="height: 48px; box-sizing: border-box; border: 1.5px solid #047C3B; border-radius: 10px; padding: 0 14px; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600; color: #0F1F17; outline: 3px solid #E7F8EE">
+        </label>
+        <span style="font-size: 13px; color: #4F5F57; margin-top: -6px">ครั้งก่อน 4,720 · ใช้ไป 142 หน่วย</span>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">เลข PromptPay
+          <input value="08x-xxx-xxxx" style="height: 48px; box-sizing: border-box; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 0 14px; font-family: Sarabun, sans-serif; font-size: 16px; color: #0F1F17">
+        </label>
+      </div>
+
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 13px; font-weight: 700; color: #4F5F57">การ์ดบิล</span>
+        <div style="border: 1px solid #DCE3DF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <span style="font-size: 14px; font-weight: 600; color: #4F5F57">ค่าเช่า · พ.ย. 2569</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #EAF1FE; color: #1A4FBF; font-size: 13px; font-weight: 600">รอชำระ</span>
+          </div>
+          <span style="font-family: Anuphan, sans-serif; font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums">฿7,300.00</span>
+          <span style="font-size: 14px; color: #4F5F57">ครบกำหนด 5 พ.ย. · อีก 4 วัน</span>
+        </div>
+        <div style="border: 1px solid #DCE3DF; border-radius: 16px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center">
+          <div style="display: flex; flex-direction: column"><span style="font-size: 15px; font-weight: 600">ค่าน้ำไฟ · ต.ค.</span><span style="font-size: 13px; color: #4F5F57">฿872.00</span></div>
+          <span style="padding: 4px 10px; border-radius: 999px; background: #E7F8EE; color: #046A33; font-size: 13px; font-weight: 600">ชำระแล้ว</span>
+        </div>
+      </div>
+
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 13px; font-weight: 700; color: #4F5F57">ตัวเลขสรุป (Stat tile)</span>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+          <div style="background: #F4F6F5; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; color: #4F5F57">รับแล้วเดือนนี้</span><span style="font-family: Anuphan, sans-serif; font-size: 24px; font-weight: 700">฿84,200</span></div>
+          <div style="background: #F4F6F5; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; color: #4F5F57">ค้างชำระ</span><span style="font-family: Anuphan, sans-serif; font-size: 24px; font-weight: 700; color: #A8221A">฿14,600</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; justify-content: space-between; font-size: 13px"><span style="color: #4F5F57">อัตราเข้าพัก</span><strong>18 / 20 ห้อง</strong></div>
+          <div style="height: 8px; border-radius: 999px; background: #E3E8E5"><div style="width: 90%; height: 8px; border-radius: 999px; background: #06C755"></div></div>
+        </div>
+      </div>
+
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 13px; font-weight: 700; color: #4F5F57">แท็บล่าง LIFF (ผู้เช่า)</span>
+        <nav style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #DCE3DF; border-radius: 16px; padding: 8px 0">
+          <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; text-decoration: none; color: #047C3B; font-size: 12px; font-weight: 700"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20H3z"></path></svg>หน้าหลัก</a>
+          <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; text-decoration: none; color: #4F5F57; font-size: 12px; font-weight: 600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M9 12h7M9 16h5"></path></svg>เอกสาร</a>
+          <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; text-decoration: none; color: #4F5F57; font-size: 12px; font-weight: 600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><path d="M16 5a3 3 0 0 1 0 6M21 20c0-2.6-1.7-4.8-4-5.6"></path></svg>ชุมชน</a>
+          <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; text-decoration: none; color: #4F5F57; font-size: 12px; font-weight: 600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"></path></svg>แจ้งซ่อม</a>
+        </nav>
+        <span style="font-size: 13px; color: #4F5F57; line-height: 1.5">แท็บที่เลือกใช้ Primary + ตัวหนา เป้าแตะ ≥ 48px Owner: ภาพรวม · บิล · ชุมชน · ตั้งค่า</span>
+      </div>
+
+      <div style="background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 13px; font-weight: 700; color: #4F5F57">คำแนะนำจาก OCR (ไม่อนุมัติอัตโนมัติ)</span>
+        <div style="background: #E7F8EE; border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#046A33" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>
+          <div style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px; color: #046A33">ยอดตรง ฿7,300.00</strong><span style="font-size: 13px; color: #0F1F17">บัญชีปลายทางตรงกับอาคาร</span></div>
+        </div>
+        <div style="background: #FEF3E2; border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A4B05" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"></path><path d="M12 10v4M12 17h.01"></path></svg>
+          <div style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px; color: #8A4B05">ยอดไม่ตรง: สลิป ฿7,000.00</strong><span style="font-size: 13px; color: #0F1F17">ขาด ฿300.00 · โปรดตรวจก่อนอนุมัติ</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2000}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

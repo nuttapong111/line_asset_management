@@ -2,77 +2,60 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import api from '../lib/axios'
 import { useAuthStore } from '../store/authStore'
-import { Button } from '../components/ui'
 
 /**
- * Fallback when a NEW LINE user opens the OA/LIFF without an invite token.
- * With a token, redirects to /link for auto-connect.
+ * Shown when a LINE user is not linked to a room yet.
+ * An invite token is handed off to /link, which confirms before linking.
  */
 export default function LinkRoom() {
   const [params] = useSearchParams()
   const token = params.get('token') || ''
   const nav = useNavigate()
-  const { setAuth, user } = useAuthStore()
-  const [loading, setLoading] = useState(false)
+  const { user } = useAuthStore()
   const [error, setError] = useState<string>()
 
   useEffect(() => {
-    if (token) {
-      nav(`/link?token=${encodeURIComponent(token)}`, { replace: true })
-    }
+    if (token) nav(`/link?token=${encodeURIComponent(token)}`, { replace: true })
   }, [token, nav])
 
-  async function link() {
+  async function retry() {
     if (!token) return
-    setLoading(true)
     setError(undefined)
     try {
-      const { data } = await api.post('/tenants/link', { inviteToken: token })
-      if (data.token) {
-        const authUser = user || {
-          lineUserId: data.tenant?.lineUserId || '',
-          name: data.tenant?.name || 'ผู้เช่า',
-        }
-        setAuth(data.token, 'TENANT', authUser, { unitId: data.tenant?.unitId })
-      }
+      await api.post('/tenants/link', { inviteToken: token })
       nav('/tenant/home', { replace: true })
-    } catch (e: any) {
-      setError(e.response?.data?.error || 'ไม่สามารถผูกบัญชีได้')
-    } finally {
-      setLoading(false)
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } }
+      setError(err.response?.data?.error || 'ไม่สามารถผูกบัญชีได้')
     }
-  }
-
-  if (token) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-line text-white">
-        <p className="text-white/80 text-sm">{loading ? 'กำลังเชื่อมบัญชี...' : 'กำลังเปิดลิงก์เชิญ...'}</p>
-        {error && (
-          <div className="mt-4 text-center space-y-3">
-            <p className="text-sm text-white/90">{error}</p>
-            <Button className="bg-white text-line" onClick={link}>
-              ลองอีกครั้ง
-            </Button>
-          </div>
-        )}
-      </div>
-    )
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-line text-white">
-      <div className="w-full max-w-xs text-center">
-        <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-5">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 12l9-9 9 9M5 10v10h14V10" />
+    <div className="min-h-screen flex flex-col bg-hero text-white">
+      <div className="px-6 pt-16 flex flex-col items-center gap-3.5 text-center">
+        <div className="w-[72px] h-[72px] rounded-[22px] bg-brand text-ink flex items-center justify-center">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M3 10.5 12 3l9 7.5" />
+            <path d="M5 9.5V20h14V9.5" />
+            <path d="M10 20v-5h4v5" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold">PropFlow</h1>
-        <p className="text-white/80 text-sm mt-3 leading-relaxed">
-          ยังไม่ได้ผูกห้องพัก
-          <br />
-          กรุณาเปิดลิงก์คำเชิญจากเจ้าของห้อง
+        <h1 className="font-display text-[28px] font-bold leading-snug m-0">
+          {token ? 'กำลังเปิดคำเชิญ' : 'ยังไม่ได้ผูกห้อง'}
+        </h1>
+        <p className="text-sm text-primary-soft m-0">
+          {user?.name ? `${user.name}` : 'เปิดลิงก์คำเชิญจากเจ้าของห้อง'}
         </p>
+      </div>
+      <div className="mt-8 flex-1 bg-canvas text-ink rounded-t-[28px] px-5 py-6">
+        <p className="text-sm text-muted text-center leading-relaxed">
+          {error || (token ? 'กำลังไปหน้ายืนยันคำเชิญ' : 'กรุณาเปิดลิงก์คำเชิญที่เจ้าของส่งทาง LINE หรือ SMS')}
+        </p>
+        {error && token && (
+          <button type="button" onClick={retry} className="mt-4 w-full h-[52px] rounded-cta bg-primary text-white font-bold text-[17px]">
+            ลองอีกครั้ง
+          </button>
+        )}
       </div>
     </div>
   )

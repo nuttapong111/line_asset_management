@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Portal บิลทุกห้อง</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="min-height: 1080px; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <aside style="flex: 1 1 240px; max-width: 100%; box-sizing: border-box; background: #0F2A1C; color: #FFFFFF; padding: 24px 16px; display: flex; flex-direction: column; gap: 24px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+      <span style="width: 36px; height: 36px; border-radius: 10px; background: #06C755; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg></span>
+      <strong style="font-family: Anuphan, sans-serif; font-size: 20px">PropFlow</strong>
+    </div>
+    <nav aria-label="เมนูหลัก" style="display: flex; flex-direction: column; gap: 4px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+        <a href="{{n.href}}" style="height: 44px; border-radius: 10px; padding: 0 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: {{n.fg}}; background: {{n.bg}}; font-size: 15px; font-weight: 600">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.icon}}"></path></svg>
+          <span style="flex: 1">{{n.label}}</span>
+        </a>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px clamp(16px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 18px">
+    <header style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">บิลและการชำระ</h1>
+        <span style="font-size: 14px; color: #4F5F57">พ.ย. 2569 · ทุกอาคาร · 40 บิล</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px">
+        <button style="height: 44px; padding: 0 16px; border: 1.5px solid #DCE3DF; border-radius: 10px; background: #FFFFFF; color: #0F1F17; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 600">ส่งออก CSV</button>
+        <button style="height: 44px; padding: 0 16px; border: 1.5px solid #047C3B; border-radius: 10px; background: #FFFFFF; color: #047C3B; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">จดมิเตอร์</button>
+        <button style="height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">สร้างบิลน้ำไฟ ต.ค.</button>
+      </div>
+    </header>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+      <div role="tablist" style="display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #E8ECEA">
+        <button role="tab" aria-selected="true" style="height: 36px; padding: 0 16px; border: 0; border-radius: 9px; background: #FFFFFF; color: #0F1F17; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 700">ทั้งหมด</button>
+        <button role="tab" aria-selected="false" style="height: 36px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; color: #4F5F57; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600">ค่าเช่า</button>
+        <button role="tab" aria-selected="false" style="height: 36px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; color: #4F5F57; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600">ค่าน้ำไฟ</button>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+          <button aria-pressed="{{f.pressed}}" style="height: 36px; padding: 0 12px; border-radius: 999px; border: {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600">{{f.label}} · {{f.n}}</button>
+        </sc-for>
+      </div>
+      <label style="flex: 0 1 260px; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #DCE3DF; background: #FFFFFF">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F5F57" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input aria-label="ค้นหา" placeholder="ค้นหาห้อง หรือชื่อผู้เช่า" style="flex: 1; min-width: 0; border: 0; outline: 0; font-family: Sarabun, sans-serif; font-size: 14px; background: transparent">
+      </label>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 3 1 560px; min-width: 0; background: #FFFFFF; border-radius: 18px; overflow: hidden">
+        <div style="background: #0F2A1C; color: #FFFFFF; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+          <strong style="font-size: 14px">เลือก 2 บิล</strong>
+          <button style="height: 34px; padding: 0 12px; border: 0; border-radius: 8px; background: #06C755; color: #0F1F17; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 700">ส่งเตือนทาง LINE</button>
+          <button style="height: 34px; padding: 0 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: transparent; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600">เพิ่มรายการพิเศษ</button>
+        </div>
+        <div style="overflow-x: auto">
+          <table style="width: 100%; min-width: 680px; border-collapse: collapse; font-size: 14px">
+            <thead><tr style="text-align: left; color: #4F5F57; font-size: 13px">
+              <th style="padding: 10px 16px; border-bottom: 1px solid #DCE3DF; width: 24px"><input type="checkbox" aria-label="เลือกทั้งหมด" style="width: 18px; height: 18px; accent-color: #047C3B"></th>
+              <th style="padding: 10px 8px; border-bottom: 1px solid #DCE3DF; font-weight: 600">ห้อง</th>
+              <th style="padding: 10px 8px; border-bottom: 1px solid #DCE3DF; font-weight: 600">ผู้เช่า</th>
+              <th style="padding: 10px 8px; border-bottom: 1px solid #DCE3DF; font-weight: 600">ประเภท</th>
+              <th style="padding: 10px 8px; border-bottom: 1px solid #DCE3DF; font-weight: 600">ครบกำหนด</th>
+              <th style="padding: 10px 8px; border-bottom: 1px solid #DCE3DF; font-weight: 600; text-align: right">ยอด</th>
+              <th style="padding: 10px 16px; border-bottom: 1px solid #DCE3DF; font-weight: 600">สถานะ</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="9">
+                <tr style="background: {{r.rowBg}}">
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #EEF1EF"><input type="checkbox" checked="{{r.checked}}" aria-label="เลือก {{r.room}}" style="width: 18px; height: 18px; accent-color: #047C3B"></td>
+                  <td style="padding: 12px 8px; border-bottom: 1px solid #EEF1EF; font-weight: 700">{{r.room}}</td>
+                  <td style="padding: 12px 8px; border-bottom: 1px solid #EEF1EF">{{r.name}}</td>
+                  <td style="padding: 12px 8px; border-bottom: 1px solid #EEF1EF; color: #4F5F57">{{r.type}}</td>
+                  <td style="padding: 12px 8px; border-bottom: 1px solid #EEF1EF; color: #4F5F57">{{r.due}}</td>
+                  <td style="padding: 12px 8px; border-bottom: 1px solid #EEF1EF; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums">{{r.amt}}</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #EEF1EF"><span style="display: inline-flex; padding: 3px 10px; border-radius: 999px; background: {{r.sbg}}; color: {{r.sfg}}; font-size: 13px; font-weight: 600; white-space: nowrap">{{r.status}}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside aria-label="ตรวจสลิป A-208" style="flex: 1 1 320px; min-width: 0; background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: center"><strong style="font-family: Anuphan, sans-serif; font-size: 18px">ตรวจสลิป · A-208</strong><span style="padding: 3px 10px; border-radius: 999px; background: #FEF3E2; color: #8A4B05; font-size: 13px; font-weight: 600">รอตรวจ</span></div>
+        <div style="display: flex; gap: 14px">
+          <div role="img" aria-label="รูปสลิป" style="flex: 0 0 120px; height: 180px; border-radius: 12px; background: #F0F2F1; border: 1px solid #DCE3DF; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #4F5F57">รูปสลิป</div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+            <div style="display: flex; flex-direction: column"><span style="font-size: 12px; color: #4F5F57">ยอดบิล</span><strong>฿8,172.00</strong></div>
+            <div style="display: flex; flex-direction: column"><span style="font-size: 12px; color: #4F5F57">ยอดในสลิป (OCR)</span><strong style="color: #A8221A">฿8,000.00 · ขาด ฿172</strong></div>
+            <div style="display: flex; flex-direction: column"><span style="font-size: 12px; color: #4F5F57">บัญชีปลายทาง</span><strong style="color: #046A33">ตรงกับอาคาร</strong></div>
+            <div style="display: flex; flex-direction: column"><span style="font-size: 12px; color: #4F5F57">เวลาโอน</span><span>1 พ.ย. 08:39</span></div>
+          </div>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #4F5F57">เหตุผล (ถ้าปฏิเสธ)
+          <select style="height: 42px; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 0 10px; font-family: Sarabun, sans-serif; font-size: 14px; color: #0F1F17; background: #FFFFFF"><option>ยอดไม่ครบ</option></select>
+        </label>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 10px">
+          <button style="height: 44px; border: 0; border-radius: 10px; background: #FDECEA; color: #A8221A; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">ปฏิเสธ</button>
+          <button style="height: 44px; border: 0; border-radius: 10px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">อนุมัติ + ใบเสร็จ</button>
+        </div>
+        <span style="font-size: 12px; color: #4F5F57; text-align: center">คีย์ลัด A อนุมัติ · R ปฏิเสธ · J/K สลิปถัดไป</span>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const on = { fg: '#FFFFFF', bg: 'rgba(6,199,85,0.22)' }, off = { fg: '#C9D6CF', bg: 'transparent' };
+    const nav = [
+      { label: 'ภาพรวม', href: 'PortalDash.dc.html', icon: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z', ...off },
+      { label: 'อาคารและห้อง', href: '#', icon: 'M4 21V5l8-2 8 2v16M9 21v-4h6v4M8 9h2M14 9h2M8 13h2M14 13h2', ...off },
+      { label: 'บิลและการชำระ', href: 'PortalBilling.dc.html', icon: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', ...on },
+      { label: 'ผู้เช่าและสัญญา', href: '#', icon: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c0-3.9 3.1-7 7-7s7 3.1 7 7M17 11h5M19.5 8.5v5', ...off },
+      { label: 'แจ้งซ่อม', href: '#', icon: 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z', ...off },
+      { label: 'รายงาน', href: '#', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2', ...off },
+      { label: 'ตั้งค่า', href: '#', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4 12h2M18 12h2M12 4v2M12 18v2', ...off }
+    ];
+    const S = {
+      pending: ['รอชำระ', '#EAF1FE', '#1A4FBF'],
+      slip: ['รอตรวจสลิป', '#FEF3E2', '#8A4B05'],
+      paid: ['ชำระแล้ว', '#E7F8EE', '#046A33'],
+      over: ['เลยกำหนด', '#FDECEA', '#A8221A']
+    };
+    const f = [['ทั้งหมด', 40, true], ['รอชำระ', 21], ['รอตรวจสลิป', 3], ['ชำระแล้ว', 14], ['เลยกำหนด', 2]];
+    const filters = f.map(([label, n, sel]) => ({ label, n, pressed: sel ? 'true' : 'false', border: sel ? '1.5px solid #0F1F17' : '1.5px solid #DCE3DF', bg: sel ? '#0F1F17' : '#FFFFFF', fg: sel ? '#FFFFFF' : '#0F1F17' }));
+    const raw = [
+      ['A-204', 'คุณวีระ', 'ค่าเช่า ต.ค.', '5 ต.ค.', '฿7,480.00', 'over', true],
+      ['B-107', 'คุณกนกวรรณ', 'ค่าเช่า ต.ค.', '5 ต.ค.', '฿6,290.00', 'over', true],
+      ['A-208', 'คุณศิริพร', 'ค่าเช่า พ.ย.', '5 พ.ย.', '฿7,300.00', 'slip', false, true],
+      ['A-203', 'คุณมานพ', 'ค่าเช่า พ.ย.', '5 พ.ย.', '฿7,300.00', 'pending'],
+      ['A-205', 'คุณปิยะ', 'ค่าเช่า พ.ย.', '5 พ.ย.', '฿6,800.00', 'paid'],
+      ['A-207', 'คุณนภา', 'ค่าน้ำไฟ ต.ค.', '5 พ.ย.', '฿964.00', 'slip'],
+      ['A-209', 'คุณธนา', 'ค่าเช่า พ.ย.', '10 พ.ย.', '฿7,300.00', 'pending'],
+      ['B-101', 'คุณอรอุมา', 'ค่าเช่า พ.ย.', '1 พ.ย.', '฿5,900.00', 'paid'],
+      ['B-102', 'คุณชาตรี', 'ค่าน้ำไฟ ต.ค.', '5 พ.ย.', '฿1,108.00', 'pending']
+    ];
+    const rows = raw.map(([room, name, type, due, amt, s, checked, active]) => ({ room, name, type, due, amt, status: S[s][0], sbg: S[s][1], sfg: S[s][2], checked: !!checked, rowBg: active ? '#F3FBF6' : (checked ? '#FAFBFA' : '#FFFFFF') }));
+    return { nav, filters, rows };
+  }
+}
+</script>
+</body>
+</html>

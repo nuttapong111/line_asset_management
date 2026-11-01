@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Portal ค่าบริการ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="min-height: 1080px; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-wrap: wrap; align-items: stretch">
+  <aside style="flex: 1 1 240px; max-width: 100%; box-sizing: border-box; background: #0F2A1C; color: #FFFFFF; padding: 24px 16px; display: flex; flex-direction: column; gap: 24px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+      <span style="width: 36px; height: 36px; border-radius: 10px; background: #06C755; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg></span>
+      <strong style="font-family: Anuphan, sans-serif; font-size: 20px">PropFlow</strong>
+    </div>
+    <nav aria-label="เมนูหลัก" style="display: flex; flex-direction: column; gap: 4px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+        <a href="{{n.href}}" style="height: 44px; border-radius: 10px; padding: 0 12px; display: flex; align-items: center; text-decoration: none; color: {{n.fg}}; background: {{n.bg}}; font-size: 15px; font-weight: 600">{{n.label}}</a>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px clamp(16px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 20px">
+    <header style="display: flex; flex-direction: column; gap: 2px"><h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 28px; font-weight: 700">ค่าบริการ PropFlow</h1><span style="font-size: 14px; color: #4F5F57">แยกจากค่าเช่าที่ผู้เช่าจ่ายให้คุณ</span></header>
+
+    <section style="background: #FEF3E2; border-radius: 18px; padding: 18px 22px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 17px; color: #6E3C04">ทดลองใช้เหลือ 5 วัน (หมด 6 พ.ย. 2569)</strong><span style="font-size: 14px; color: #6E3C04">หลังหมดอายุใช้ต่อได้อีก 7 วัน จากนั้นจะเขียนข้อมูลไม่ได้จนกว่าจะชำระ</span></div>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 2 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
+          <button aria-pressed="true" style="border-radius: 18px; border: 2px solid #047C3B; background: #FFFFFF; padding: 22px; font-family: Sarabun, sans-serif; color: #0F1F17; text-align: left; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; font-weight: 700; color: #046A33">รายเดือน · เลือกอยู่</span><strong style="font-family: Anuphan, sans-serif; font-size: 34px">฿499<span style="font-size: 16px; font-weight: 600; color: #4F5F57"> / 30 วัน</span></strong><span style="font-size: 14px; color: #4F5F57">ทุกอาคาร ทุกห้อง ไม่จำกัดผู้เช่า</span></button>
+          <button aria-pressed="false" style="border-radius: 18px; border: 1.5px solid #DCE3DF; background: #FFFFFF; padding: 22px; font-family: Sarabun, sans-serif; color: #0F1F17; text-align: left; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; font-weight: 700; color: #4F5F57">รายปี</span><strong style="font-family: Anuphan, sans-serif; font-size: 34px">[ราคา]<span style="font-size: 16px; font-weight: 600; color: #4F5F57"> / 365 วัน</span></strong><span style="font-size: 14px; color: #4F5F57">จ่ายครั้งเดียว ไม่ต้องกังวลทั้งปี</span></button>
+        </div>
+        <div style="background: #FFFFFF; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+          <h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600">ประวัติการชำระ</h2>
+          <div style="overflow-x: auto">
+            <table style="width: 100%; min-width: 520px; border-collapse: collapse; font-size: 14px">
+              <thead><tr style="text-align: left; color: #4F5F57; font-size: 13px"><th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600">เลขบิล</th><th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600">ช่วง</th><th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600; text-align: right">ยอด</th><th style="padding: 10px 12px; border-bottom: 1px solid #DCE3DF; font-weight: 600">สถานะ</th></tr></thead>
+              <tbody>
+                <tr><td style="padding: 12px; border-bottom: 1px solid #EEF1EF; font-weight: 700">SUB-2569-00042</td><td style="padding: 12px; border-bottom: 1px solid #EEF1EF">6 พ.ย. – 6 ธ.ค. 69</td><td style="padding: 12px; border-bottom: 1px solid #EEF1EF; text-align: right">฿499.00</td><td style="padding: 12px; border-bottom: 1px solid #EEF1EF"><span style="padding: 3px 10px; border-radius: 999px; background: #EAF1FE; color: #1A4FBF; font-size: 12px; font-weight: 700">รอชำระ</span></td></tr>
+                <tr><td style="padding: 12px; color: #4F5F57" colspan="4">ยังไม่มีประวัติก่อนหน้า (อยู่ในช่วงทดลองใช้)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <aside style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px; align-items: stretch">
+        <strong style="font-family: Anuphan, sans-serif; font-size: 18px">ชำระบิล SUB-2569-00042</strong>
+        <div role="img" aria-label="QR PromptPay ของแพลตฟอร์ม" style="align-self: center; width: 200px; height: 200px; border-radius: 14px; border: 1px solid #DCE3DF; background: #F0F2F1; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #4F5F57">QR PromptPay ฿499</div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: #4F5F57">ยอด</span><strong>฿499.00</strong></div>
+        <div style="height: 96px; border-radius: 12px; border: 1.5px dashed #9AA8A1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #047C3B; font-size: 15px; font-weight: 700">ลากสลิปมาวางที่นี่<span style="font-size: 12px; font-weight: 400; color: #4F5F57">หรือคลิกเพื่อเลือกไฟล์</span></div>
+        <button style="height: 48px; border: 0; border-radius: 12px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 16px; font-weight: 700">ส่งสลิปให้แอดมินตรวจ</button>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const off = { fg: '#C9D6CF', bg: 'transparent' };
+    const nav = [
+      ['ภาพรวม', 'PortalDash.dc.html'], ['อาคารและห้อง', '#'], ['บิลและการชำระ', 'PortalBilling.dc.html'], ['ผู้เช่าและสัญญา', '#'], ['แจ้งซ่อม', '#'], ['รายงาน', 'PortalReports.dc.html'], ['ตั้งค่า', 'PortalSettings.dc.html']
+    ].map(([label, href]) => ({ label, href, ...(label === 'ตั้งค่า' ? { fg: '#FFFFFF', bg: 'rgba(6,199,85,0.22)' } : off) }));
+    return { nav };
+  }
+}
+</script>
+</body>
+</html>

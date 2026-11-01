@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ผู้เช่า หน้าหลัก</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 16px">
+
+    <header style="display: flex; align-items: center; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 14px; color: #4F5F57">สวัสดีครับ</span>
+        <strong style="font-family: Anuphan, sans-serif; font-size: 22px">คุณมานพ</strong>
+      </div>
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #FFFFFF; border: 1px solid #DCE3DF; font-size: 13px; font-weight: 600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20H3z"></path></svg>บ้านสวนรัตนา · A-203</span>
+    </header>
+
+    <section style="background: #0F3D25; color: #FFFFFF; border-radius: 22px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 14px; color: #BFE9CF">ยอดที่ต้องชำระทั้งหมด</span>
+        <span style="padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.14); font-size: 12px; font-weight: 700">2 บิล</span>
+      </div>
+      <strong style="font-family: Anuphan, sans-serif; font-size: 38px; line-height: 1; font-variant-numeric: tabular-nums">฿8,172.00</strong>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+        <div style="display: flex; justify-content: space-between"><span style="color: #BFE9CF">ค่าเช่า พ.ย.</span><span>฿7,300.00 · ครบ 5 พ.ย.</span></div>
+        <div style="display: flex; justify-content: space-between"><span style="color: #BFE9CF">ค่าน้ำไฟ ต.ค.</span><span>฿872.00 · ครบ 5 พ.ย.</span></div>
+      </div>
+      <a href="TenantPay.dc.html" style="height: 52px; border-radius: 14px; background: #06C755; color: #0F1F17; font-size: 17px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3M21 14v7h-7"></path></svg>จ่ายรวมครั้งเดียว</a>
+      <span style="font-size: 12px; color: #BFE9CF; text-align: center; margin-top: -4px">หรือแตะบิลด้านล่างเพื่อจ่ายแยก</span>
+    </section>
+
+    <section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+      <a href="#" style="background: #FFFFFF; border-radius: 16px; padding: 12px 0; text-decoration: none; color: #0F1F17; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600"><span style="width: 40px; height: 40px; border-radius: 12px; background: #E7F8EE; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M9 12h7M9 16h5"></path></svg></span>ใบเสร็จ</a>
+      <a href="#" style="background: #FFFFFF; border-radius: 16px; padding: 12px 0; text-decoration: none; color: #0F1F17; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600"><span style="width: 40px; height: 40px; border-radius: 12px; background: #E7F8EE; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13 7l4 4"></path></svg></span>สัญญา</a>
+      <a href="TenantMaint.dc.html" style="background: #FFFFFF; border-radius: 16px; padding: 12px 0; text-decoration: none; color: #0F1F17; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600"><span style="width: 40px; height: 40px; border-radius: 12px; background: #E7F8EE; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"></path></svg></span>แจ้งซ่อม</a>
+      <a href="#" style="background: #FFFFFF; border-radius: 16px; padding: 12px 0; text-decoration: none; color: #0F1F17; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600"><span style="width: 40px; height: 40px; border-radius: 12px; background: #E7F8EE; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></span>ติดต่อ</a>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600">บิลล่าสุด</h2><a href="#" style="font-size: 14px; font-weight: 600">ดูทั้งหมด</a></div>
+      <a href="TenantPay.dc.html" style="background: #FFFFFF; border-radius: 16px; padding: 14px 16px; text-decoration: none; color: #0F1F17; display: flex; justify-content: space-between; align-items: center">
+        <div style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">ค่าเช่า · พ.ย. 2569</strong><span style="font-size: 13px; color: #4F5F57">฿7,300.00 · อีก 4 วัน</span></div>
+        <span style="padding: 4px 10px; border-radius: 999px; background: #EAF1FE; color: #1A4FBF; font-size: 13px; font-weight: 600">รอชำระ</span>
+      </a>
+      <a href="TenantPay.dc.html" style="background: #FFFFFF; border-radius: 16px; padding: 14px 16px; text-decoration: none; color: #0F1F17; display: flex; justify-content: space-between; align-items: center">
+        <div style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">ค่าน้ำไฟ · ต.ค. 2569</strong><span style="font-size: 13px; color: #4F5F57">ไฟ 142 หน่วย · น้ำ 9 หน่วย · ฿872.00</span></div>
+        <span style="padding: 4px 10px; border-radius: 999px; background: #EAF1FE; color: #1A4FBF; font-size: 13px; font-weight: 600">รอชำระ</span>
+      </a>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start">
+      <span style="flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; background: #FEF3E2; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A4B05" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h3l6 5V5L7 10z"></path><path d="M17 9a4 4 0 0 1 0 6"></path></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; font-weight: 700; color: #8A4B05">ประกาศปักหมุด</span><strong style="font-size: 15px">งดจ่ายน้ำ 8 พ.ย. 09:00–12:00</strong><span style="font-size: 13px; color: #4F5F57">ล้างถังเก็บน้ำประจำปี</span></div>
+    </section>
+  </div>
+
+  <nav style="flex: 0 0 auto; background: #FFFFFF; border-top: 1px solid #DCE3DF; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px 0 18px">
+    <a href="TenantHome.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; text-decoration: none; color: #047C3B; font-size: 12px; font-weight: 700"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20H3z"></path></svg>หน้าหลัก</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; text-decoration: none; color: #4F5F57; font-size: 12px; font-weight: 600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M9 12h7M9 16h5"></path></svg>เอกสาร</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; text-decoration: none; color: #4F5F57; font-size: 12px; font-weight: 600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><path d="M16 5a3 3 0 0 1 0 6M21 20c0-2.6-1.7-4.8-4-5.6"></path></svg>ชุมชน</a>
+    <a href="TenantMaint.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; text-decoration: none; color: #4F5F57; font-size: 12px; font-weight: 600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"></path></svg>แจ้งซ่อม</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

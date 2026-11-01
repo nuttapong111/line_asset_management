@@ -86,6 +86,12 @@ router.post('/', requireRole('ADMIN', 'OWNER'), async (req, res) => {
   res.status(201).json(contract)
 })
 
+async function withContractNo<T extends { startDate: Date; createdAt: Date }>(contract: T) {
+  const year = contract.startDate.getFullYear()
+  const seq = (await prisma.contract.count({ where: { createdAt: { lte: contract.createdAt } } })) || 1
+  return { ...contract, contractNo: `CTR-${year}-${String(seq).padStart(5, '0')}` }
+}
+
 // GET /api/contracts/me — current tenant's active contract
 router.get('/me', async (req, res) => {
   if (req.user!.role !== 'TENANT' || !req.user!.unitId) {
@@ -94,10 +100,17 @@ router.get('/me', async (req, res) => {
   const contract = await prisma.contract.findFirst({
     where: { unitId: req.user!.unitId, status: 'ACTIVE' },
     orderBy: { createdAt: 'desc' },
-    include: { tenant: true, unit: { include: { property: true } } },
+    include: {
+      tenant: true,
+      unit: {
+        include: {
+          property: { include: { owner: { select: { name: true, phone: true } }, admin: { select: { name: true, phone: true } } } },
+        },
+      },
+    },
   })
   if (!contract) return res.status(404).json({ error: 'No contract' })
-  res.json(contract)
+  res.json(await withContractNo(contract))
 })
 
 async function loadContract(
@@ -218,7 +231,7 @@ router.delete('/:id/signed', requireRole('ADMIN', 'OWNER'), async (req, res) => 
 router.get('/:id', async (req, res) => {
   const contract = await loadContract(req.params.id, req.user!)
   if (!contract) return res.status(404).json({ error: 'Contract not found' })
-  res.json(contract)
+  res.json(await withContractNo(contract))
 })
 
 // POST /api/contracts/:id/pdf — regenerate PDF
@@ -287,6 +300,31 @@ router.post('/:id/renew-request', async (req, res) => {
   await notifyOwnersOfProperty(
     contract.unit.property.id,
     `ผู้เช่าขอต่อสัญญา\nห้อง ${contract.unit.roomNumber} · ${contract.tenant.name}\nหมดอายุในอีก ${monthsLeft} วัน\nตรวจสอบ: ${env.LIFF_BASE_URL}/admin/contract/${contract.id}`
+  )
+  res.json(updated)
+})
+
+// POST /api/contracts/:id/move-out-request (tenant) — ask the owner to start move-out
+router.post('/:id/move-out-request', async (req, res) => {
+  if (req.user!.role !== 'TENANT') return res.status(403).json({ error: 'Forbidden' })
+  const contract = await loadContract(req.params.id, req.user!)
+  if (!contract) return res.status(404).json({ error: 'Contract not found' })
+  if (contract.status !== 'ACTIVE') return res.status(400).json({ error: 'สัญญานี้ไม่พร้อมแจ้งย้ายออก' })
+  if (contract.moveOut) return res.status(400).json({ error: 'ย้ายออกแล้ว' })
+  const schema = z.object({ note: z.string().max(500).optional() })
+  const parse = schema.safeParse(req.body ?? {})
+  if (!parse.success) return res.status(400).json({ error: parse.error.flatten() })
+
+  const updated = await prisma.contract.update({
+    where: { id: contract.id },
+    data: {
+      moveOutRequestedAt: contract.moveOutRequestedAt || new Date(),
+      moveOutNote: parse.data.note || contract.moveOutNote,
+    },
+  })
+  await notifyOwnersOfProperty(
+    contract.unit.property.id,
+    `ผู้เช่าแจ้งย้ายออก\nห้อง ${contract.unit.roomNumber} · ${contract.tenant.name}${parse.data.note ? `\n${parse.data.note}` : ''}\nดำเนินการ: ${env.LIFF_BASE_URL}/admin/contract/${contract.id}/move-out`
   )
   res.json(updated)
 })

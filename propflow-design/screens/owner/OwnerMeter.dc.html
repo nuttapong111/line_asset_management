@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>เจ้าของ บันทึกมิเตอร์</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <header style="flex: 0 0 auto; background: #FFFFFF; border-bottom: 1px solid #E3E8E5; display: flex; flex-direction: column; gap: 10px; padding: 6px 6px 12px">
+    <div style="display: flex; align-items: center; gap: 4px">
+      <a href="OwnerHome.dc.html" aria-label="ย้อนกลับ" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #0F1F17"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"></path></svg></a>
+      <div style="flex: 1; display: flex; flex-direction: column"><strong style="font-family: Anuphan, sans-serif; font-size: 18px">จดมิเตอร์ ต.ค. 2569</strong><span style="font-size: 12px; color: #4F5F57">บ้านสวนรัตนา · จดแล้ว 13/18</span></div>
+    </div>
+    <div style="display: flex; gap: 6px; padding: 0 10px; overflow: hidden">
+      <sc-for list="{{rooms}}" as="r" hint-placeholder-count="7">
+        <span style="flex: 0 0 auto; height: 34px; padding: 0 10px; border-radius: 10px; border: {{r.border}}; background: {{r.bg}}; color: {{r.fg}}; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px">{{r.no}}</span>
+      </sc-for>
+    </div>
+  </header>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline"><strong style="font-family: Anuphan, sans-serif; font-size: 24px">ห้อง A-209</strong><span style="font-size: 13px; color: #4F5F57">คุณธนา</span></div>
+
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B26A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg><strong style="font-size: 16px">ไฟฟ้า</strong><span style="margin-left: auto; font-size: 13px; color: #4F5F57">฿5 / หน่วย</span></div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600; color: #4F5F57">ครั้งก่อน</span><span style="height: 48px; border-radius: 10px; background: #F0F2F1; display: flex; align-items: center; padding: 0 14px; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600; color: #4F5F57">4,720</span></div>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">ครั้งนี้
+          <input inputmode="numeric" value="4,862" style="height: 48px; box-sizing: border-box; border: 2px solid #047C3B; border-radius: 10px; padding: 0 14px; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600; color: #0F1F17; outline: 3px solid #E7F8EE">
+        </label>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: #4F5F57">ใช้ไป 142 หน่วย</span><strong>฿710.00</strong></div>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A4FBF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"></path></svg><strong style="font-size: 16px">น้ำประปา</strong><span style="margin-left: auto; font-size: 13px; color: #4F5F57">฿18 / หน่วย</span></div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600; color: #4F5F57">ครั้งก่อน</span><span style="height: 48px; border-radius: 10px; background: #F0F2F1; display: flex; align-items: center; padding: 0 14px; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600; color: #4F5F57">812</span></div>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">ครั้งนี้
+          <input inputmode="numeric" value="841" style="height: 48px; box-sizing: border-box; border: 2px solid #8A4B05; border-radius: 10px; padding: 0 14px; font-family: Anuphan, sans-serif; font-size: 18px; font-weight: 600; color: #0F1F17">
+        </label>
+      </div>
+      <div style="background: #FEF3E2; border-radius: 10px; padding: 8px 12px; display: flex; gap: 8px; align-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A4B05" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"></path><path d="M12 10v4M12 17h.01"></path></svg><span style="font-size: 13px; color: #6E3C04">ใช้ 29 หน่วย สูงกว่าเฉลี่ย 3 เดือน (10) เกือบ 3 เท่า</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: #4F5F57">ใช้ไป 29 หน่วย</span><strong>฿522.00</strong></div>
+    </section>
+
+    <button style="height: 48px; border-radius: 12px; border: 1.5px dashed #9AA8A1; background: #FFFFFF; color: #047C3B; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>ถ่ายรูปมิเตอร์ (แนบเป็นหลักฐาน)</button>
+  </div>
+
+  <div style="flex: 0 0 auto; background: #FFFFFF; padding: 12px 16px 24px; border-top: 1px solid #E3E8E5; display: flex; flex-direction: column; gap: 6px">
+    <button style="height: 52px; border: 0; border-radius: 14px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px">บันทึก แล้วไป A-210<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+    <span style="text-align: center; font-size: 12px; color: #4F5F57">ยอดบิลน้ำไฟห้องนี้ ฿1,232.00 · ส่งทั้งตึกได้เมื่อจดครบ</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = {
+      d: ['1px solid #CBEFD9', '#E7F8EE', '#046A33'],
+      c: ['2px solid #047C3B', '#047C3B', '#FFFFFF'],
+      t: ['1px solid #DCE3DF', '#FFFFFF', '#4F5F57']
+    };
+    const rooms = [['✓ 207','d'],['✓ 208','d'],['209','c'],['210','t'],['301','t'],['302','t']]
+      .map(([no, k]) => ({ no, border: s[k][0], bg: s[k][1], fg: s[k][2] }));
+    return { rooms };
+  }
+}
+</script>
+</body>
+</html>

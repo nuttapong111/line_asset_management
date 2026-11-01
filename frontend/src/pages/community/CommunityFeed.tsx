@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../lib/axios'
-import { Badge } from '../../components/ui'
 import { BottomNav } from '../../components/layout/BottomNav'
-import { baht, thaiDateTime } from '../../lib/utils'
 import { useAuthStore } from '../../store/authStore'
 import { AuthImage } from '../../components/AuthImage'
 
@@ -27,20 +25,45 @@ export interface CommunityPost {
 const FILTERS: { key: string; label: string }[] = [
   { key: '', label: 'ทั้งหมด' },
   { key: 'ANNOUNCEMENT', label: 'ประกาศ' },
-  { key: 'DISCUSSION', label: 'พูดคุย' },
+  { key: 'DISCUSSION', label: 'คุยกัน' },
   { key: 'MARKETPLACE', label: 'ซื้อขาย' },
 ]
 
-const typeLabel: Record<string, string> = {
-  ANNOUNCEMENT: 'ประกาศ',
-  DISCUSSION: 'พูดคุย',
-  MARKETPLACE: 'ซื้อขาย',
+function ago(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'เมื่อสักครู่'
+  if (m < 60) return `${m} นาที`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h} ชม.`
+  const d = Math.floor(h / 24)
+  if (d === 1) return 'เมื่อวาน'
+  return `${d} วัน`
+}
+
+function badge(p: CommunityPost) {
+  if (p.type === 'ANNOUNCEMENT') {
+    return { label: p.pinned ? 'ประกาศ · ปักหมุด' : 'ประกาศ', cls: 'bg-warn-bg text-warn-fg' }
+  }
+  if (p.type === 'MARKETPLACE') return { label: 'ซื้อขาย', cls: 'bg-info-bg text-info' }
+  return { label: 'คุยกัน', cls: 'bg-surface-2 text-ink-2' }
+}
+
+function who(p: CommunityPost) {
+  if (p.authorRole !== 'TENANT') return `เจ้าของ · ${ago(p.createdAt)}`
+  return `${p.roomNumber || p.propertyName || 'ห้อง'} · ${ago(p.createdAt)}`
 }
 
 export default function CommunityFeed() {
   const nav = useNavigate()
   const role = useAuthStore((s) => s.role)
-  const [meta, setMeta] = useState<{ ownerId: string; ownerName: string; canAnnounce: boolean; owners?: { id: string; name: string }[] }>()
+  const [meta, setMeta] = useState<{
+    ownerId: string
+    ownerName: string
+    canAnnounce: boolean
+    properties?: { id: string; name: string }[]
+    owners?: { id: string; name: string }[]
+  }>()
   const [posts, setPosts] = useState<CommunityPost[]>([])
   const [type, setType] = useState('')
   const [ownerId, setOwnerId] = useState('')
@@ -64,117 +87,140 @@ export default function CommunityFeed() {
   }
 
   useEffect(() => {
-    api.get('/community/meta').then((r) => {
-      setMeta(r.data)
-      if (r.data.ownerId) setOwnerId(r.data.ownerId)
-    }).catch(() => {})
+    api
+      .get('/community/meta')
+      .then((r) => {
+        setMeta(r.data)
+        if (r.data.ownerId) setOwnerId(r.data.ownerId)
+      })
+      .catch(() => {})
     load('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const navRole = role === 'TENANT' ? 'TENANT' : role === 'OWNER' ? 'OWNER' : 'ADMIN'
+  const place = meta?.properties?.[0]?.name || posts.find((p) => p.propertyName)?.propertyName || meta?.ownerName
 
   return (
-    <div className="pb-24 min-h-screen bg-[#f3f4f6]">
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-100">
-        <div className="px-4 h-14 flex items-center justify-between">
-          <div>
-            <div className="text-xs text-gray-400">ชุมชน</div>
-            <h1 className="font-semibold text-lg leading-tight truncate max-w-[220px]">
-              {meta?.ownerName || 'ลูกบ้าน'}
-            </h1>
-          </div>
-          <button
-            onClick={() => nav(ownerId ? `/community/new?ownerId=${ownerId}` : '/community/new')}
-            className="bg-line text-white text-sm font-medium rounded-full px-4 py-2"
-          >
-            + โพสต์
-          </button>
+    <div className="pb-28 min-h-screen bg-canvas relative">
+      <div className="px-4 pt-5 flex flex-col gap-3">
+        <div className="flex justify-between items-center gap-3">
+          <h1 className="font-display text-[26px] font-bold m-0">ชุมชน</h1>
+          {place && <span className="text-[13px] font-semibold text-muted truncate">{place}</span>}
         </div>
-        <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
-          {(meta?.owners?.length || 0) > 1 &&
-            meta!.owners!.map((o) => (
+        {(meta?.owners?.length || 0) > 1 && (
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {meta!.owners!.map((o) => (
               <button
                 key={o.id}
+                type="button"
                 onClick={() => {
                   setOwnerId(o.id)
                   setMeta({ ...meta!, ownerId: o.id, ownerName: o.name })
                   load(type, o.id)
                 }}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap border ${
-                  ownerId === o.id ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200'
+                className={`h-9 px-3.5 rounded-full text-sm font-semibold whitespace-nowrap border-[1.5px] ${
+                  ownerId === o.id ? 'bg-ink text-white border-ink' : 'bg-white text-ink border-[#DCE3DF]'
                 }`}
               >
                 {o.name}
               </button>
             ))}
-          {FILTERS.map((f) => (
-            <button
-              key={f.key || 'all'}
-              onClick={() => {
-                setType(f.key)
-                load(f.key, ownerId)
-              }}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap border ${
-                type === f.key ? 'bg-line text-white border-line' : 'bg-white text-gray-600 border-gray-200'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="p-3 space-y-3">
-        {error && <p className="text-center text-gray-400 py-8">{error}</p>}
-        {loading && <p className="text-center text-gray-400 py-8">กำลังโหลด...</p>}
-        {!loading &&
-          posts.map((p) => (
-            <button
-              key={p.id}
-              className="w-full text-left bg-white rounded-2xl border border-gray-100 overflow-hidden"
-              onClick={() => nav(`/community/${p.id}`)}
-            >
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-line-light text-line-dark flex items-center justify-center text-sm font-bold shrink-0">
-                      {p.authorName.slice(0, 1)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {p.authorName}
-                        {p.authorRole !== 'TENANT' && (
-                          <span className="ml-1 text-[10px] text-line font-semibold">เจ้าของ</span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-gray-400">
-                        {p.roomNumber ? `ห้อง ${p.roomNumber}` : p.propertyName || typeLabel[p.type]} · {thaiDateTime(p.createdAt)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    {p.pinned && <Badge kind="info">ปักหมุด</Badge>}
-                    {p.sold && <Badge kind="gray">ขายแล้ว</Badge>}
-                  </div>
-                </div>
-                {p.title && <div className="mt-3 font-semibold">{p.title}</div>}
-                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap line-clamp-4">{p.body}</p>
-                {p.type === 'MARKETPLACE' && p.price != null && (
-                  <div className={`mt-2 font-bold ${p.sold ? 'text-gray-400 line-through' : 'text-line'}`}>{baht(p.price)}</div>
-                )}
-              </div>
-              {p.photoUrls[0] && (
-                <AuthImage path={`/community/posts/${p.id}/photos/0`} className="w-full h-48 object-cover bg-gray-100" />
-              )}
-              <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-50">
-                ความเห็น {p.commentCount}
-              </div>
-            </button>
-          ))}
-        {!loading && !error && posts.length === 0 && (
-          <p className="text-center text-gray-400 py-12">ยังไม่มีโพสต์ในหมวดนี้</p>
+          </div>
         )}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {FILTERS.map((f) => {
+            const on = type === f.key
+            return (
+              <button
+                key={f.key || 'all'}
+                type="button"
+                aria-pressed={on}
+                onClick={() => {
+                  setType(f.key)
+                  load(f.key, ownerId)
+                }}
+                className={`h-9 px-3.5 rounded-full text-sm font-semibold whitespace-nowrap border-[1.5px] ${
+                  on ? 'bg-ink text-white border-ink' : 'bg-white text-ink border-[#DCE3DF]'
+                }`}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {error && <p className="text-sm text-danger bg-danger-bg rounded-card px-3 py-2">{error}</p>}
+        {loading && (
+          <div className="flex flex-col gap-3">
+            <div className="h-24 rounded-[18px] bg-surface-2" />
+            <div className="h-28 rounded-[18px] bg-surface-2" />
+          </div>
+        )}
+        {!loading &&
+          posts.map((p) => {
+            const tag = badge(p)
+            const price =
+              p.price != null
+                ? '฿' + Number(p.price).toLocaleString('th-TH', { maximumFractionDigits: 0 })
+                : null
+            if (p.type === 'MARKETPLACE') {
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => nav(`/community/${p.id}`)}
+                  className="bg-white rounded-[18px] p-4 text-left text-ink flex gap-3"
+                >
+                  {p.photoUrls[0] ? (
+                    <AuthImage path={`/community/posts/${p.id}/photos/0`} alt="" className="w-24 h-24 rounded-xl object-cover bg-surface-2 shrink-0" />
+                  ) : (
+                    <div className="w-24 h-24 rounded-xl bg-surface-2 shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="flex gap-2 items-center">
+                      <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${tag.cls}`}>{tag.label}</span>
+                      <span className="text-xs text-muted">{who(p)}</span>
+                    </div>
+                    <strong className="text-[15px]">{p.title || p.body}</strong>
+                    {price && (
+                      <strong className={`font-display text-lg ${p.sold ? 'text-muted line-through' : 'text-primary'}`}>{price}</strong>
+                    )}
+                    <span className="text-[13px] text-muted">{p.commentCount} ความคิดเห็น</span>
+                  </div>
+                </button>
+              )
+            }
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => nav(`/community/${p.id}`)}
+                className="bg-white rounded-[18px] px-4 py-3.5 text-left text-ink flex flex-col gap-2"
+              >
+                <div className="flex gap-2 items-center">
+                  <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${tag.cls}`}>{tag.label}</span>
+                  <span className="text-xs text-muted">{who(p)}</span>
+                </div>
+                <strong className="text-base">{p.title || p.body}</strong>
+                {p.title && <span className="text-sm leading-normal text-ink-2 line-clamp-3">{p.body}</span>}
+                <span className="text-[13px] text-muted">{p.commentCount} ความคิดเห็น</span>
+              </button>
+            )
+          })}
+        {!loading && !error && posts.length === 0 && <p className="text-center text-muted py-12">ยังไม่มีโพสต์ในหมวดนี้</p>}
+      </div>
+      <div className="fixed bottom-[98px] inset-x-0 z-30 max-w-liff mx-auto flex justify-end px-4 pointer-events-none">
+        <button
+          type="button"
+          onClick={() => nav(ownerId ? `/community/new?ownerId=${ownerId}` : '/community/new')}
+          className="pointer-events-auto h-[52px] px-5 rounded-full bg-primary text-white font-bold text-base shadow-fab flex items-center gap-2"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          โพสต์
+        </button>
       </div>
       <BottomNav role={navRole} />
     </div>

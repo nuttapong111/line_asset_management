@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Portal เปลี่ยนรหัสผ่าน</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="min-height: 900px; box-sizing: border-box; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; align-items: center; justify-content: center; padding: 24px 16px">
+  <form style="width: 100%; max-width: 440px; box-sizing: border-box; background: #FFFFFF; border-radius: 24px; padding: clamp(24px, 4vw, 40px); display: flex; flex-direction: column; gap: 18px">
+    <span style="width: 52px; height: 52px; border-radius: 14px; background: #E7F8EE; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#047C3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span>
+    <div style="display: flex; flex-direction: column; gap: 6px"><h1 style="margin: 0; font-family: Anuphan, sans-serif; font-size: 26px; font-weight: 700">ตั้งรหัสผ่านใหม่</h1><span style="font-size: 15px; line-height: 1.6; color: #4F5F57">นี่คือการเข้าใช้ครั้งแรก กรุณาเปลี่ยนรหัสชั่วคราวก่อนเริ่มใช้งาน</span></div>
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">รหัสผ่านใหม่<input type="password" value="newpassword1" style="height: 48px; box-sizing: border-box; border: 1.5px solid #047C3B; border-radius: 10px; padding: 0 14px; font-family: Sarabun, sans-serif; font-size: 16px"></label>
+    <div style="display: flex; gap: 4px" aria-label="ความแข็งแรงของรหัส: ดี"><span style="flex: 1; height: 4px; border-radius: 4px; background: #047C3B"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: #047C3B"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: #047C3B"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: #DCE3DF"></span></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; margin-top: -6px">
+      <span style="color: #046A33">✓ อย่างน้อย 8 ตัวอักษร</span>
+      <span style="color: #046A33">✓ มีตัวเลข</span>
+      <span style="color: #4F5F57">○ ไม่ซ้ำกับรหัสชั่วคราว</span>
+    </div>
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">ยืนยันรหัสผ่าน<input type="password" style="height: 48px; box-sizing: border-box; border: 1.5px solid #C9D2CD; border-radius: 10px; padding: 0 14px; font-family: Sarabun, sans-serif; font-size: 16px"></label>
+    <button style="height: 50px; border: 0; border-radius: 12px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 17px; font-weight: 700">บันทึกและเริ่มใช้งาน</button>
+    <span style="font-size: 13px; color: #4F5F57; text-align: center">ระบบจะเริ่มนับวันทดลองใช้ 14 วันจากวันนี้</span>
+  </form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -27,14 +27,14 @@ export function BottomNav({ role }: { role: NavRole }) {
   const loc = useLocation()
   const items = navItemsForRole(role)
   return (
-    <div className="fixed bottom-0 inset-x-0 z-20 bg-white border-t border-gray-100 grid grid-cols-4 h-16 max-w-md mx-auto">
+    <div className="fixed bottom-0 inset-x-0 z-20 bg-white border-t border-[#DCE3DF] max-w-liff mx-auto grid grid-cols-4 pt-2 pb-[18px]">
       {items.map((it) => {
         const active = loc.pathname.startsWith(it.path)
         return (
           <button
             key={it.path}
             onClick={() => nav(it.path)}
-            className={cls('flex flex-col items-center justify-center gap-0.5 text-xs', active ? 'text-line' : 'text-gray-400')}
+            className={cls('flex flex-col items-center justify-center gap-1 text-xs min-h-11', active ? 'text-primary font-bold' : 'text-muted font-semibold')}
           >
             <Icon d={ICONS[it.path] || ICONS['/admin/portfolio']} />
             <span>{it.label}</span>

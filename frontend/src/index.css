@@ -4,6 +4,7 @@
 
 :root {
   font-family: 'Sarabun', sans-serif;
+  color: #0f1f17;
 }
 
 html,
@@ -14,9 +15,23 @@ body,
 
 body {
   margin: 0;
-  background: #f5f6f8;
-  color: #1f2937;
+  background: #f4f6f5;
+  color: #0f1f17;
   -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: Anuphan, Sarabun, sans-serif;
+}
+
+.pf-amount {
+  font-family: Anuphan, Sarabun, sans-serif;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 * {

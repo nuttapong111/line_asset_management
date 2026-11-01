@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>แท็บล่าง</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav aria-label="เมนูหลัก" style="width: 390px; height: 82px; box-sizing: border-box; background: #FFFFFF; border-top: 1px solid #DCE3DF; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px 0 18px; font-family: Sarabun, sans-serif; color: #0F1F17">
+  <sc-for list="{{items}}" as="t" hint-placeholder-count="4">
+    <a href="{{t.href}}" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0; text-decoration: none; color: {{t.color}}; font-size: 12px; font-weight: {{t.weight}}">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>{{t.label}}
+    </a>
+  </sc-for>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"role":{"editor":"enum","options":["tenant","owner","admin"],"default":"tenant"},"active":{"editor":"text","default":"home"},"$preview":{"width":390,"height":82}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const I = {
+      home: 'M3 10.5 12 3l9 7.5V20H3z',
+      docs: 'M6 3h9l4 4v14H6zM9 12h7M9 16h5',
+      people: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5a3 3 0 0 1 0 6M21 20c0-2.6-1.7-4.8-4-5.6',
+      wrench: 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z',
+      grid: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z',
+      bill: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6',
+      gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4',
+      card: 'M3 6h18v12H3zM3 10h18M7 15h3',
+      user: 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4.4 3.6-8 8-8s8 3.6 8 8'
+    };
+    const sets = {
+      tenant: [['home', 'หน้าหลัก', 'home', 'TenantHome.dc.html'], ['docs', 'เอกสาร', 'docs', 'TenantDocs.dc.html'], ['community', 'ชุมชน', 'people', 'Community.dc.html'], ['maint', 'แจ้งซ่อม', 'wrench', 'TenantMaint.dc.html']],
+      owner: [['home', 'ภาพรวม', 'grid', 'OwnerHome.dc.html'], ['bill', 'บิล', 'bill', 'OwnerBilling.dc.html'], ['community', 'ชุมชน', 'people', 'Community.dc.html'], ['settings', 'ตั้งค่า', 'gear', 'OwnerSettings.dc.html']],
+      admin: [['home', 'ภาพรวม', 'grid', 'AdminHome.dc.html'], ['subs', 'ค่าบริการ', 'card', 'AdminSubs.dc.html'], ['owners', 'เจ้าของ', 'user', 'AdminOwners.dc.html'], ['settings', 'ตั้งค่า', 'gear', '#']]
+    };
+    const role = this.props.role ?? 'tenant';
+    const active = this.props.active ?? 'home';
+    const items = (sets[role] || sets.tenant).map(([k, label, ic, href]) => ({ label, href, icon: I[ic], color: k === active ? '#047C3B' : '#4F5F57', weight: k === active ? 700 : 600 }));
+    return { items };
+  }
+}
+</script>
+</body>
+</html>

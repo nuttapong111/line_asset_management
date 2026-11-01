@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>เทมเพลต PDF</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&amp;family=Sarabun:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#047C3B}a:hover{color:#035E2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #F4F6F5; font-family: Sarabun, sans-serif; color: #0F1F17; display: flex; flex-direction: column">
+  <dc-import name="AppBar" title="เทมเพลตเอกสาร" sub="ใบเสร็จ · ค่าเริ่มต้นทุกอาคาร" action="บันทึก" back="OwnerSettings.dc.html" hint-size="390px,56px"></dc-import>
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+    <div role="tablist" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: #E8ECEA">
+      <button role="tab" aria-selected="false" style="height: 36px; border: 0; border-radius: 9px; background: transparent; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 600; color: #4F5F57">สัญญา</button>
+      <button role="tab" aria-selected="true" style="height: 36px; border: 0; border-radius: 9px; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 14px; font-weight: 700; color: #0F1F17">ใบเสร็จ</button>
+    </div>
+
+    <div style="align-self: center; width: 260px; height: 368px; background: #FFFFFF; border-radius: 4px; box-shadow: 0 2px 10px rgba(15,31,23,0.12); position: relative; overflow: hidden">
+      <div style="position: absolute; left: 0; right: 0; top: 0; height: 56px; background: #0F3D25"></div>
+      <span style="position: absolute; left: 16px; top: 18px; color: #FFFFFF; font-family: Anuphan, sans-serif; font-size: 14px; font-weight: 700">ภาพพื้นหลังที่อัปโหลด</span>
+      <span style="position: absolute; left: 16px; top: 160px; right: 16px; height: 1px; background: #E3E8E5"></span>
+      <span style="position: absolute; left: 16px; top: 250px; right: 16px; height: 1px; background: #E3E8E5"></span>
+      <sc-for list="{{vars}}" as="v" hint-placeholder-count="6">
+        <span style="position: absolute; left: {{v.x}}; top: {{v.y}}; padding: 2px 6px; border-radius: 4px; border: {{v.border}}; background: {{v.bg}}; color: {{v.fg}}; font-size: 10px; font-weight: 700; white-space: nowrap">{{v.label}}</span>
+      </sc-for>
+    </div>
+
+    <section style="background: #FFFFFF; border-radius: 14px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px">
+      <div style="display: flex; flex-direction: column"><strong style="font-size: 14px">{ยอดรวม} ที่เลือก</strong><span style="font-size: 12px; color: #4F5F57">x 0.62 · y 0.71 · ขนาด 14 · ชิดขวา</span></div>
+      <button style="height: 36px; padding: 0 12px; border-radius: 10px; border: 1.5px solid #DCE3DF; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 13px; font-weight: 600">ตั้งค่า</button>
+    </section>
+
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 13px; font-weight: 600; color: #4F5F57">ลากตัวแปรวางบนหน้า</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px">
+        <sc-for list="{{palette}}" as="p" hint-placeholder-count="6">
+          <span style="height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid #DCE3DF; background: #FFFFFF; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center">{{p}}</span>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  <div style="flex: 0 0 auto; background: #FFFFFF; padding: 12px 16px 24px; border-top: 1px solid #E3E8E5; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+    <button style="height: 50px; border: 1.5px solid #DCE3DF; border-radius: 14px; background: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 600">เปลี่ยนพื้นหลัง</button>
+    <button style="height: 50px; border: 0; border-radius: 14px; background: #047C3B; color: #FFFFFF; font-family: Sarabun, sans-serif; font-size: 15px; font-weight: 700">ดูตัวอย่าง PDF</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const n = { border: '1px dashed #1A4FBF', bg: '#EAF1FE', fg: '#1A4FBF' };
+    const s = { border: '2px solid #047C3B', bg: '#E7F8EE', fg: '#046A33' };
+    const vars = [
+      { label: '{เลขที่ใบเสร็จ}', x: '16px', y: '76px', ...n },
+      { label: '{วันที่}', x: '170px', y: '76px', ...n },
+      { label: '{ชื่อผู้เช่า}', x: '16px', y: '110px', ...n },
+      { label: '{ห้อง}', x: '170px', y: '110px', ...n },
+      { label: '{รายการ}', x: '16px', y: '180px', ...n },
+      { label: '{ยอดรวม}', x: '160px', y: '262px', ...s },
+      { label: '{ลายเซ็น}', x: '160px', y: '320px', ...n }
+    ];
+    const palette = ['{ชื่อผู้เช่า}', '{ห้อง}', '{อาคาร}', '{ยอดรวม}', '{ยอดเป็นตัวอักษร}', '{วันที่}', '{เลขที่}', '{ลายเซ็น}'];
+    return { vars, palette };
+  }
+}
+</script>
+</body>
+</html>

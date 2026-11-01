@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/axios'
 import { TopBar } from '../../components/layout/TopBar'
-import { Badge, Button } from '../../components/ui'
-import { baht, thaiDateTime } from '../../lib/utils'
 import { useAuthStore } from '../../store/authStore'
 import { AuthImage } from '../../components/AuthImage'
 import type { CommunityPost } from './CommunityFeed'
@@ -21,6 +19,21 @@ interface PostDetail extends CommunityPost {
   hidden?: boolean
 }
 
+const TYPE_TITLE: Record<string, string> = {
+  ANNOUNCEMENT: 'ประกาศ',
+  DISCUSSION: 'คุยกัน',
+  MARKETPLACE: 'ซื้อขาย',
+}
+
+function ago(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 60) return m < 1 ? 'เมื่อสักครู่' : `${m} นาทีที่แล้ว`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h} ชม.ที่แล้ว`
+  return `${Math.floor(h / 24)} วันที่แล้ว`
+}
+
 export default function CommunityDetail() {
   const { id } = useParams()
   const nav = useNavigate()
@@ -28,6 +41,7 @@ export default function CommunityDetail() {
   const canModerate = role === 'ADMIN' || role === 'OWNER'
   const [post, setPost] = useState<PostDetail>()
   const [message, setMessage] = useState('')
+  const [photo, setPhoto] = useState(0)
   const [error, setError] = useState<string>()
 
   function load() {
@@ -69,84 +83,111 @@ export default function CommunityDetail() {
     }
   }
 
-  if (!post) return <div className="p-8 text-center text-gray-400">กำลังโหลด...</div>
+  if (!post) return <div className="p-6"><div className="h-64 bg-surface-2" /></div>
+
+  const price = post.price != null ? '฿' + Number(post.price).toLocaleString('th-TH', { maximumFractionDigits: 0 }) : null
+  const photos = post.photoUrls.length
 
   return (
-    <div className="pb-24">
-      <TopBar title={post.title || 'โพสต์'} />
-      <div className="p-4 space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-line-light text-line-dark flex items-center justify-center font-bold">
-            {post.authorName.slice(0, 1)}
-          </div>
-          <div>
-            <div className="font-medium">
-              {post.authorName}
-              {post.authorRole !== 'TENANT' && <span className="ml-1 text-xs text-line">เจ้าของ</span>}
-            </div>
-            <div className="text-xs text-gray-400">
-              {post.roomNumber ? `ห้อง ${post.roomNumber}` : post.propertyName} · {thaiDateTime(post.createdAt)}
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {post.pinned && <Badge kind="info">ปักหมุด</Badge>}
-          {post.sold && <Badge kind="gray">ขายแล้ว</Badge>}
-        </div>
-        {post.title && <h2 className="font-semibold text-lg">{post.title}</h2>}
-        <p className="text-sm whitespace-pre-wrap">{post.body}</p>
-        {post.type === 'MARKETPLACE' && post.price != null && (
-          <div className={`font-bold text-lg ${post.sold ? 'text-gray-400 line-through' : 'text-line'}`}>{baht(post.price)}</div>
+    <div className="h-screen flex flex-col bg-canvas">
+      <TopBar title={TYPE_TITLE[post.type] || 'โพสต์'} />
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+        {photos > 0 && (
+          <button
+            type="button"
+            className="h-[260px] bg-surface-2 relative"
+            onClick={() => setPhoto((n) => (n + 1) % photos)}
+            aria-label={`รูป ${photo + 1} จาก ${photos}`}
+          >
+            <AuthImage path={`/community/posts/${post.id}/photos/${photo}`} alt="" className="w-full h-[260px] object-cover" />
+            {photos > 1 && (
+              <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
+                {post.photoUrls.map((_, i) => (
+                  <span key={i} className={`h-1.5 rounded-full bg-white ${i === photo ? 'w-[18px]' : 'w-1.5 opacity-60'}`} />
+                ))}
+              </div>
+            )}
+          </button>
         )}
-        {post.photoUrls.map((_, i) => (
-          <AuthImage key={i} path={`/community/posts/${post.id}/photos/${i}`} className="w-full rounded-xl bg-gray-100 min-h-[180px]" />
-        ))}
+        <section className="bg-white p-4 flex flex-col gap-2">
+          {post.type === 'MARKETPLACE' && price && (
+            <div className="flex justify-between items-center">
+              <strong className={`font-display text-[26px] ${post.sold ? 'text-muted line-through' : 'text-primary'}`}>{price}</strong>
+              <span className={`px-2.5 py-1 rounded-full text-[13px] font-bold ${post.sold ? 'bg-neutral-bg text-neutral-fg' : 'bg-ok-bg text-ok-fg'}`}>
+                {post.sold ? 'ขายแล้ว' : 'ยังขายอยู่'}
+              </span>
+            </div>
+          )}
+          {post.title && <strong className="text-lg">{post.title}</strong>}
+          <span className="text-sm leading-relaxed text-ink-2 whitespace-pre-wrap">{post.body}</span>
+          <div className="flex items-center gap-2.5 pt-1.5">
+            <span className="w-8 h-8 rounded-full bg-info-bg text-info text-[13px] font-bold flex items-center justify-center">
+              {post.authorName.slice(0, 1)}
+            </span>
+            <span className="text-sm">
+              <strong>{post.authorName}</strong>
+              {' · '}
+              {post.roomNumber || (post.authorRole !== 'TENANT' ? 'เจ้าของ' : post.propertyName)}
+              {' · '}
+              {ago(post.createdAt)}
+            </span>
+          </div>
+        </section>
 
         {canModerate && (
-          <div className="flex gap-2">
-            <Button variant="secondary" className="flex-1" onClick={pin}>
+          <div className="px-4 pt-3 flex gap-2">
+            <button type="button" onClick={pin} className="h-10 px-3 rounded-input bg-white text-sm font-semibold text-primary">
               {post.pinned ? 'เลิกปักหมุด' : 'ปักหมุด'}
-            </Button>
+            </button>
             {post.type === 'MARKETPLACE' && (
-              <Button variant="secondary" className="flex-1" onClick={sold}>
+              <button type="button" onClick={sold} className="h-10 px-3 rounded-input bg-white text-sm font-semibold">
                 {post.sold ? 'ยังขายอยู่' : 'ขายแล้ว'}
-              </Button>
+              </button>
             )}
-            <Button variant="ghost" className="flex-1 text-red-500" onClick={hide}>
+            <button type="button" onClick={hide} className="h-10 px-3 rounded-input bg-white text-sm font-semibold text-danger">
               ซ่อน
-            </Button>
+            </button>
           </div>
         )}
-        {post.type === 'MARKETPLACE' && !canModerate && !post.sold && (
-          <Button variant="secondary" className="w-full" onClick={sold}>
-            ทำเครื่องหมายขายแล้ว
-          </Button>
+        {post.type === 'MARKETPLACE' && !canModerate && (
+          <div className="px-4 pt-3">
+            <button type="button" onClick={sold} className="h-10 px-3 rounded-input bg-white text-sm font-semibold text-primary">
+              {post.sold ? 'ยังขายอยู่' : 'ทำเครื่องหมายขายแล้ว'}
+            </button>
+          </div>
         )}
 
-        <div className="border-t pt-4">
-          <h3 className="font-medium mb-3">ความเห็น ({post.comments.length})</h3>
-          <div className="space-y-3">
-            {post.comments.map((c) => (
-              <div key={c.id} className="text-sm">
-                <span className="font-medium">{c.authorName}</span>
-                {c.authorRole !== 'TENANT' && <span className="ml-1 text-[10px] text-line">เจ้าของ</span>}
-                <span className="text-gray-400 text-xs ml-2">{thaiDateTime(c.createdAt)}</span>
-                <p className="text-gray-700 mt-0.5">{c.message}</p>
+        <section className="px-4 py-3.5 flex flex-col gap-3">
+          <strong className="text-[15px]">ความคิดเห็น {post.comments.length}</strong>
+          {post.comments.map((c) => (
+            <div key={c.id} className="flex gap-2.5">
+              <span className="w-8 h-8 rounded-full bg-surface-2 text-[13px] font-bold flex items-center justify-center shrink-0">
+                {c.authorName.slice(0, 1)}
+              </span>
+              <div className="bg-white rounded-[4px_16px_16px_16px] px-3.5 py-2.5 flex flex-col gap-0.5">
+                <span className="text-xs text-muted">
+                  {c.authorName}
+                  {c.authorRole !== 'TENANT' ? ' · เจ้าของ' : ''}
+                </span>
+                <span className="text-sm">{c.message}</span>
               </div>
-            ))}
-            {post.comments.length === 0 && <p className="text-gray-400 text-sm">ยังไม่มีความเห็น</p>}
-          </div>
-        </div>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+            </div>
+          ))}
+          {post.comments.length === 0 && <p className="text-sm text-muted">ยังไม่มีความคิดเห็น</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
+        </section>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 flex gap-2">
+      <div className="bg-white border-t border-[#EEF1EF] px-3 pt-2.5 pb-6 flex gap-2 items-center">
         <input
-          className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm"
-          placeholder="เขียนความเห็น..."
+          aria-label="ความคิดเห็น"
+          placeholder="เขียนความคิดเห็น"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          className="flex-1 min-w-0 h-11 box-border border-[1.5px] border-[#DCE3DF] rounded-full px-4 text-[15px] outline-none focus:border-primary"
         />
-        <Button onClick={send}>ส่ง</Button>
+        <button type="button" onClick={send} className="h-11 px-[18px] rounded-full bg-primary text-white text-[15px] font-bold">
+          ส่ง
+        </button>
       </div>
     </div>
   )
